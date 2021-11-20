@@ -1,0 +1,2 @@
+dmr-kaitai>=0.6
+bitarray>=2.3.4
