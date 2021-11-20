@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from array import array
+from typing import Union
 
 from bitarray import bitarray
 from bitarray.util import ba2int
@@ -57,24 +58,28 @@ TRELLIS34_CONSTELLATION_POINTS_REVERSE: dict[int, tuple[int, int]] = dict(
 # fmt: on
 
 
-def trellis34_make_dibits(stream: bitarray) -> array:
+def trellis34_bits_to_dibits(stream: bitarray) -> array:
     """
-    Converts each 2 bits from input to Trellis3/4 dibit (values 3,1,-1,3)
+    Convert each 2-bits from input to Trellis3/4 dibit (values 3,1,-1,3)
     :rtype: int[]
     """
-    assert len(stream) == 196, "t34_make_dibits expects 196 bits in bitarray"
-
     # "b" means array stores signed chars, aka -128 through +128
-    out: array = array("b", [0] * 98)
+    out: array = array("b", [0] * (int(len(stream) / 2)))
 
-    for i in range(0, 196, 2):
+    for i in range(0, len(stream), 2):
         o = int(i / 2)
         out[o] = TRELLIS34_DIBITS[(stream[i], stream[i + 1])]
 
     return out
 
 
-def trellis34_reverse_dibits(dibits: array) -> bitarray:
+def trellis34_dibits_to_bits(dibits: array) -> bitarray:
+    """
+    Convert each input array value (3,1,-1,-3) to 2-bit representation
+
+    :param dibits:
+    :return: bitarray of size 2xlen(input)
+    """
     out: bitarray = bitarray()
 
     for dibit in dibits:
@@ -86,15 +91,15 @@ def trellis34_reverse_dibits(dibits: array) -> bitarray:
 
 def trellis34_deinterleave(original: array) -> array:
     """
-    De-Interleaves dibits
+    De-Interleaves input array with Trellis 3/4 interleave matrix
 
     :rtype: int[]
     """
 
     # "b" means array stores signed chars, aka -128 through +128
-    out: array = array("b", [0] * 98)
+    out: array = array("b", [0] * len(original))
 
-    for i in range(0, 98):
+    for i in range(0, len(original)):
         out[TRELLIS34_INTERLEAVE_MATRIX[i]] = original[i]
 
     return out
@@ -102,33 +107,29 @@ def trellis34_deinterleave(original: array) -> array:
 
 def trellis34_interleave(deinterleaved: array) -> array:
     """
-    Interleave dibits
+    Interleave input array with Trellis 3/4 interleave matrix
 
     :param deinterleaved:
     :return:
     """
     out: array = array("b", [0] * len(deinterleaved))
 
-    # print("deinterleaved", len(deinterleaved), deinterleaved)
-    # print("matrix", len(TRELLIS34_INTERLEAVE_MATRIX))
-
     for i in range(0, len(deinterleaved)):
-        # print(i, TRELLIS34_INTERLEAVE_MATRIX[i]) #, deinterleaved[TRELLIS34_INTERLEAVE_MATRIX[i]])
         out[i] = deinterleaved[TRELLIS34_INTERLEAVE_MATRIX[i]]
 
     return out
 
 
-def trellis34_constellation_points(deinterleaved: array) -> array:
+def trellis34_dibits_to_points(deinterleaved: array) -> array:
     """
-    Converts de-interleaved dibits (values 3,1,-1,-3) to constellation values (values 0 through 15)
+    Converts de-interleaved dibits (values 3,1,-1,-3) to constellation points (values 0 through 15)
 
     :rtype: int[]
     """
     # "B" means array stores unsigned chars, aka 0 through 255
-    out: array = array("B", [0] * 49)
+    out: array = array("B", [0] * int(len(deinterleaved) / 2))
 
-    for i in range(0, 98, 2):
+    for i in range(0, len(deinterleaved), 2):
         o = int(i / 2)
         out[o] = TRELLIS34_CONSTELLATION_POINTS[
             (deinterleaved[i], deinterleaved[i + 1])
@@ -137,7 +138,13 @@ def trellis34_constellation_points(deinterleaved: array) -> array:
     return out
 
 
-def trellis34_reverse_constellation_points(constellations: array) -> array:
+def trellis34_points_to_dibits(constellations: array) -> array:
+    """
+    Convert constellation points (values 0 through 15) to dibits (values 3,1,-1,-3)
+
+    :param constellations:
+    :return:
+    """
     out: array = array("b")
 
     for constellation in constellations:
@@ -147,9 +154,9 @@ def trellis34_reverse_constellation_points(constellations: array) -> array:
     return out
 
 
-def trellis34_extract_tribits(constellation_points: array) -> array:
+def trellis34_points_to_tribits(constellation_points: array) -> array:
     """
-
+    Convert each constellation point into 3-bit value
 
     :rtype: object
     """
@@ -169,12 +176,18 @@ def trellis34_extract_tribits(constellation_points: array) -> array:
 
         assert (
             matches
-        ), f"Trellis data corrupted, point {i} constellation {constellation_points[i]}"
+        ), f"Trellis data corrupted, index {i} constellation point {constellation_points[i]}"
 
     return out
 
 
-def trellis34_reverse_extract_tribits(tribits: array) -> array:
+def trellis34_tribits_to_points(tribits: array) -> array:
+    """
+    Convert 3-bit values to constellation points
+
+    :param tribits:
+    :return:
+    """
     out: array = array("B", [0] * 49)
     state: int = 0
 
@@ -185,7 +198,13 @@ def trellis34_reverse_extract_tribits(tribits: array) -> array:
     return out
 
 
-def trellis34_tribits_to_binary(tribits: array) -> bitarray:
+def trellis34_tribits_to_bits(tribits: array) -> bitarray:
+    """
+    Convert 3-bit representations to raw bitstream
+
+    :param tribits:
+    :return:
+    """
     assert len(tribits) == 48, f"Expected 48 tribits got {len(tribits)}"
     out: bitarray = bitarray(196 * "0", endian="big")
 
@@ -198,7 +217,13 @@ def trellis34_tribits_to_binary(tribits: array) -> bitarray:
     return out
 
 
-def trellis34_binary_to_tribits(original: bitarray) -> array:
+def trellis34_bits_to_tribits(original: bitarray) -> array:
+    """
+    Convert raw bitstream to 3-bit representations
+
+    :param original:
+    :return:
+    """
     out: array = array("B")
 
     for i in range(0, len(original), 3):
@@ -207,39 +232,47 @@ def trellis34_binary_to_tribits(original: bitarray) -> array:
     return out[:48]
 
 
-def trellis_34_decode(encoded: bitarray) -> bitarray:
+def trellis34_decode(
+    encoded: bitarray, as_bytes: bool = False
+) -> Union[bitarray, bytes]:
+    """
+    Convert Trellis3/4 encoded bitstream to raw data bits (or bytes)
+
+    :param encoded:
+    :param as_bytes: if return should be of type "bytes"
+    :return:
+    """
     assert (
         len(encoded) == 196
     ), f"trellis_34_decode requires 18 bytes (196 bits), got {len(encoded)} bits"
-    dibits: array = trellis34_make_dibits(encoded)
-    deinterleaved: array = trellis34_deinterleave(dibits)
-    points: array = trellis34_constellation_points(deinterleaved)
-    tribits: array = trellis34_extract_tribits(points)
-    decoded: bitarray = trellis34_tribits_to_binary(tribits)
-    return decoded
+    dibits: array = trellis34_bits_to_dibits(encoded)
+    deinterleaved_dibits: array = trellis34_deinterleave(dibits)
+    points: array = trellis34_dibits_to_points(deinterleaved_dibits)
+    tribits: array = trellis34_points_to_tribits(points)
+    decoded: bitarray = trellis34_tribits_to_bits(tribits)
+    return decoded.tobytes() if as_bytes else decoded
 
 
-def trellis_34_encode(decoded: bitarray) -> bitarray:
+def trellis34_encode(decoded: Union[bitarray, bytes]) -> bitarray:
+    """
+    Convert raw data bits (or bytes) to Trellis3/4 encoded bitstream
+
+    :param decoded:
+    :return:
+    """
+    if isinstance(decoded, bytes):
+        bits: bitarray = bitarray(endian="big")
+        bits.frombytes(decoded)
+        decoded = bits
+
     assert (
         len(decoded) >= 196
     ), f"trellis_34_encode requires 18 bytes (196 bits), got {len(decoded)} bits"
     decoded = decoded[:196]
 
-    tribits: array = trellis34_binary_to_tribits(decoded)
-    points: array = trellis34_reverse_extract_tribits(tribits)
-    deinterleaved: array = trellis34_reverse_constellation_points(points)
-    dibits: array = trellis34_interleave(deinterleaved)
-    encoded: bitarray = trellis34_reverse_dibits(dibits)
-
+    tribits: array = trellis34_bits_to_tribits(decoded)
+    points: array = trellis34_tribits_to_points(tribits)
+    dibits: array = trellis34_points_to_dibits(points)
+    interleaved_dibits: array = trellis34_interleave(dibits)
+    encoded: bitarray = trellis34_dibits_to_bits(interleaved_dibits)
     return encoded
-
-
-def trellis_34_encode_bytes(payload: bytes) -> bitarray:
-    bits: bitarray = bitarray(endian="big")
-    bits.frombytes(payload)
-    return trellis_34_encode(bits)
-
-
-def trellis_34_decode_as_bytes(encoded: bitarray) -> bytes:
-    decoded: bitarray = trellis_34_decode(encoded)
-    return decoded.tobytes()
