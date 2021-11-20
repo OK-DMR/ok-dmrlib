@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 from array import array
-from typing import Union
+from typing import Union, List, Dict, Tuple
 
 from bitarray import bitarray
 from bitarray.util import ba2int
 
 # disable black formatting for following scalar arrays, see https://github.com/psf/black/issues/1281
 # fmt: off
-TRELLIS34_INTERLEAVE_MATRIX: list[int] = [
+TRELLIS34_INTERLEAVE_MATRIX: List[int] = [
     0, 1, 8, 9, 16, 17, 24, 25, 32, 33, 40, 41, 48, 49, 56, 57, 64, 65, 72, 73, 80, 81, 88, 89, 96, 97,
     2, 3, 10, 11, 18, 19, 26, 27, 34, 35, 42, 43, 50, 51, 58, 59, 66, 67, 74, 75, 82, 83, 90, 91,
     4, 5, 12, 13, 20, 21, 28, 29, 36, 37, 44, 45, 52, 53, 60, 61, 68, 69, 76, 77, 84, 85, 92, 93,
     6, 7, 14, 15, 22, 23, 30, 31, 38, 39, 46, 47, 54, 55, 62, 63, 70, 71, 78, 79, 86, 87, 94, 95,
 ]
 
-TRELLIS34_ENCODER_STATE_TRANSITION: list[int] = [
+TRELLIS34_ENCODER_STATE_TRANSITION: List[int] = [
     0, 8, 4, 12, 2, 10, 6, 14,
     4, 12, 2, 10, 6, 14, 0, 8,
     1, 9, 5, 13, 3, 11, 7, 15,
@@ -25,15 +25,15 @@ TRELLIS34_ENCODER_STATE_TRANSITION: list[int] = [
     6, 14, 0, 8, 4, 12, 2, 10,
 ]
 
-TRELLIS34_DIBITS: dict[tuple[int, int], int] = {
+TRELLIS34_DIBITS: Dict[Tuple[int, int], int] = {
     (0, 1): 3,
     (0, 0): 1,
     (1, 0): -1,
     (1, 1): -3,
 }
-TRELLIS34_DIBITS_REVERSE: dict[int, tuple[int, int]] = dict((v, k) for k, v in TRELLIS34_DIBITS.items())
+TRELLIS34_DIBITS_REVERSE: Dict[int, Tuple[int, int]] = dict((v, k) for k, v in TRELLIS34_DIBITS.items())
 
-TRELLIS34_CONSTELLATION_POINTS: dict[tuple[int, int], int] = {
+TRELLIS34_CONSTELLATION_POINTS: Dict[Tuple[int, int], int] = {
     (1, -1): 0,
     (-1, -1): 1,
     (3, -3): 2,
@@ -51,7 +51,7 @@ TRELLIS34_CONSTELLATION_POINTS: dict[tuple[int, int], int] = {
     (3, 1): 14,
     (-3, 1): 15,
 }
-TRELLIS34_CONSTELLATION_POINTS_REVERSE: dict[int, tuple[int, int]] = dict(
+TRELLIS34_CONSTELLATION_POINTS_REVERSE: Dict[int, Tuple[int, int]] = dict(
     (v, k) for k, v in TRELLIS34_CONSTELLATION_POINTS.items())
 
 
