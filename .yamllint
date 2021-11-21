@@ -1,0 +1,10 @@
+extends: default
+
+yaml-files:
+  - '*.yaml'
+  - '*.ksy'
+
+rules:
+  document-start: disable
+  line-length: disable
+  new-line-at-end-of-file: disable

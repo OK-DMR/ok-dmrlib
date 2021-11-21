@@ -149,7 +149,9 @@ class Trellis34:
         out: array = array("b")
 
         for constellation in constellations:
-            for dibit in Trellis34.TRELLIS34_CONSTELLATION_POINTS_REVERSE[constellation]:
+            for dibit in Trellis34.TRELLIS34_CONSTELLATION_POINTS_REVERSE[
+                constellation
+            ]:
                 out.append(dibit)
 
         return out
@@ -169,7 +171,10 @@ class Trellis34:
             matches = False
 
             for j in range(start, start + 8):
-                if constellation_points[i] == Trellis34.TRELLIS34_ENCODER_STATE_TRANSITION[j]:
+                if (
+                    constellation_points[i]
+                    == Trellis34.TRELLIS34_ENCODER_STATE_TRANSITION[j]
+                ):
                     matches = True
                     last = abs((j - start) % 255)
                     out[i] = last
@@ -193,7 +198,9 @@ class Trellis34:
         state: int = 0
 
         for i in range(0, len(tribits)):
-            out[i] = Trellis34.TRELLIS34_ENCODER_STATE_TRANSITION[state * 8 + tribits[i]]
+            out[i] = Trellis34.TRELLIS34_ENCODER_STATE_TRANSITION[
+                state * 8 + tribits[i]
+            ]
             state = tribits[i]
 
         return out
@@ -228,14 +235,12 @@ class Trellis34:
         out: array = array("B")
 
         for i in range(0, len(original), 3):
-            out.append(ba2int(original[i: i + 3], signed=False))
+            out.append(ba2int(original[i : i + 3], signed=False))
 
         return out[:48]
 
     @staticmethod
-    def decode(
-            encoded: bitarray, as_bytes: bool = False
-    ) -> Union[bitarray, bytes]:
+    def decode(encoded: bitarray, as_bytes: bool = False) -> Union[bitarray, bytes]:
         """
         Convert Trellis3/4 encoded bitstream to raw data bits (or bytes)
 
@@ -244,7 +249,7 @@ class Trellis34:
         :return:
         """
         assert (
-                len(encoded) == 196
+            len(encoded) == 196
         ), f"trellis_34_decode requires 18 bytes (196 bits), got {len(encoded)} bits"
         dibits: array = Trellis34.bits_to_dibits(encoded)
         deinterleaved_dibits: array = Trellis34.deinterleave(dibits)
@@ -267,7 +272,7 @@ class Trellis34:
             decoded = bits
 
         assert (
-                len(decoded) >= 196
+            len(decoded) >= 196
         ), f"trellis_34_encode requires 18 bytes (196 bits), got {len(decoded)} bits"
         decoded = decoded[:196]
 

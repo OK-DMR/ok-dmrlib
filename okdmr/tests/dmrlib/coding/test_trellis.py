@@ -56,54 +56,54 @@ def test_trellis_encode():
 
 def test_bits_dibits():
     assert (
-            Trellis34.bits_to_dibits(TRELLIS_MESSAGE_PARTS["encoded"])
-            == TRELLIS_MESSAGE_PARTS["dibits_interleaved"]
+        Trellis34.bits_to_dibits(TRELLIS_MESSAGE_PARTS["encoded"])
+        == TRELLIS_MESSAGE_PARTS["dibits_interleaved"]
     )
     assert (
-            Trellis34.dibits_to_bits(TRELLIS_MESSAGE_PARTS["dibits_interleaved"])
-            == TRELLIS_MESSAGE_PARTS["encoded"]
+        Trellis34.dibits_to_bits(TRELLIS_MESSAGE_PARTS["dibits_interleaved"])
+        == TRELLIS_MESSAGE_PARTS["encoded"]
     )
 
 
 def test_interleave_deinterleave():
     assert (
-            Trellis34.deinterleave(TRELLIS_MESSAGE_PARTS["dibits_interleaved"])
-            == TRELLIS_MESSAGE_PARTS["dibits_deinterleaved"]
+        Trellis34.deinterleave(TRELLIS_MESSAGE_PARTS["dibits_interleaved"])
+        == TRELLIS_MESSAGE_PARTS["dibits_deinterleaved"]
     )
     assert (
-            Trellis34.interleave(TRELLIS_MESSAGE_PARTS["dibits_deinterleaved"])
-            == TRELLIS_MESSAGE_PARTS["dibits_interleaved"]
+        Trellis34.interleave(TRELLIS_MESSAGE_PARTS["dibits_deinterleaved"])
+        == TRELLIS_MESSAGE_PARTS["dibits_interleaved"]
     )
 
 
 def test_deinterleaved_constellations():
     assert (
-            Trellis34.dibits_to_points(TRELLIS_MESSAGE_PARTS["dibits_deinterleaved"])
-            == TRELLIS_MESSAGE_PARTS["points"]
+        Trellis34.dibits_to_points(TRELLIS_MESSAGE_PARTS["dibits_deinterleaved"])
+        == TRELLIS_MESSAGE_PARTS["points"]
     )
     assert (
-            Trellis34.points_to_dibits(TRELLIS_MESSAGE_PARTS["points"])
-            == TRELLIS_MESSAGE_PARTS["dibits_deinterleaved"]
+        Trellis34.points_to_dibits(TRELLIS_MESSAGE_PARTS["points"])
+        == TRELLIS_MESSAGE_PARTS["dibits_deinterleaved"]
     )
 
 
 def test_tribits_constellations():
     assert (
-            Trellis34.points_to_tribits(TRELLIS_MESSAGE_PARTS["points"])
-            == TRELLIS_MESSAGE_PARTS["tribits"]
+        Trellis34.points_to_tribits(TRELLIS_MESSAGE_PARTS["points"])
+        == TRELLIS_MESSAGE_PARTS["tribits"]
     )
     assert (
-            Trellis34.tribits_to_points(TRELLIS_MESSAGE_PARTS["tribits"])
-            == TRELLIS_MESSAGE_PARTS["points"]
+        Trellis34.tribits_to_points(TRELLIS_MESSAGE_PARTS["tribits"])
+        == TRELLIS_MESSAGE_PARTS["points"]
     )
 
 
 def test_binary_tribits():
     assert (
-            Trellis34.tribits_to_bits(TRELLIS_MESSAGE_PARTS["tribits"])
-            == TRELLIS_MESSAGE_PARTS["decoded"]
+        Trellis34.tribits_to_bits(TRELLIS_MESSAGE_PARTS["tribits"])
+        == TRELLIS_MESSAGE_PARTS["decoded"]
     )
     assert (
-            Trellis34.bits_to_tribits(TRELLIS_MESSAGE_PARTS["decoded"])
-            == TRELLIS_MESSAGE_PARTS["tribits"]
+        Trellis34.bits_to_tribits(TRELLIS_MESSAGE_PARTS["decoded"])
+        == TRELLIS_MESSAGE_PARTS["tribits"]
     )
