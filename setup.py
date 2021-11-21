@@ -9,11 +9,11 @@ HERE = pathlib.Path(__file__).parent
 README = (HERE / "README.md").read_text()
 
 setup(
-    name="ok-dmrutils",
+    name="ok-dmrlib",
     description="Parse, assemble and handle DMR protocols",
     long_description=README,
     long_description_content_type="text/markdown",
-    url="https://github.com/OK-DMR/ok-dmrutils",
+    url="https://github.com/OK-DMR/ok-dmrlib",
     author="Marek Sebera",
     author_email="marek.sebera@gmail.com",
     license="AGPL-3.0",
