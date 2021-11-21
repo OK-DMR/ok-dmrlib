@@ -25,7 +25,7 @@ setup(
     zip_safe=True,
     scripts=[],
     keywords="dmr etsi ham mmdvm homebrew radio hytera motorola",
-    python_requires="~=3.9",
+    python_requires="~=3.7",
     install_requires=["dmr-kaitai>=0.6", "bitarray>=2.3.4"],
     classifiers=[
         "Development Status :: 3 - Alpha",
