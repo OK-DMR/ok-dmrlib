@@ -20,6 +20,7 @@ setup(
     version="0.1",
     packages=[
         "okdmr.dmrlib",
+        "okdmr.dmrlib.coding",
     ],
     zip_safe=True,
     scripts=[],
