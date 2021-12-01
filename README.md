@@ -8,6 +8,7 @@
 
 This package provides way to parse and assemble various DMR ETSI protocols and functions
 
-This contains, for example, these:
+Library contains, for example, these:
 
-  - Encoding and decoding Trellis 3/4
+  - Encoding and decoding Trellis 3/4 (class `Trellis34`)
+  - Encoding and decoding Golay 20,8,7 (class `Golay2087`)

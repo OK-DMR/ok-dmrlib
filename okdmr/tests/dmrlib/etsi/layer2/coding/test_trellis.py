@@ -3,7 +3,7 @@ from typing import Dict, Any
 
 from bitarray import bitarray
 
-from okdmr.dmrlib.coding.trellis import Trellis34
+from okdmr.dmrlib.etsi.layer2.coding.trellis import Trellis34
 
 # trellis bits as string => decoded bytes
 TRELLIS_TEST_DATA: Dict[str, str] = {
