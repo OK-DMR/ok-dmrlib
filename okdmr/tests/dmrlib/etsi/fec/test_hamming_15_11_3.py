@@ -9,11 +9,11 @@ HAMMING_15_11_3_VALID_WORDS: list = [
 ]
 
 
-def test_hamming1393_check():
+def test_hamming15113_check():
     for valid in HAMMING_15_11_3_VALID_WORDS:
         assert Hamming15113.check(bitarray(valid)) is True
 
 
-def test_hamming1393_generate():
+def test_hamming15113_generate():
     for valid in HAMMING_15_11_3_VALID_WORDS:
         assert numpy.array_equal(Hamming15113.generate(bitarray(valid)[:11]), valid)
