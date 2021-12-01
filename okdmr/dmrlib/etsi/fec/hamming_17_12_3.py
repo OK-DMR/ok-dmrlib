@@ -9,22 +9,23 @@ from okdmr.dmrlib.etsi.fec.fec_utils import (
 
 class Hamming16114:
     """
-    ETSI TS 102 361-1 V2.5.1 (2017-10) - B.3.4  Hamming (13,9,3), Hamming (15,11,3), and Hamming (16,11,4)
+    ETSI TS 102 361-1 V2.5.1 (2017-10) - B.3.3  Hamming (17,12,3)
     """
 
     GENERATOR_MATRIX: numpy.ndarray = numpy.array(
         [
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1],
-            [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0],
-            [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
-            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0],
-            [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1],
-            [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1],
-            [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1],
+            [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
+            [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1],
+            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1],
+            [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+            [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1],
         ]
     )
 
@@ -42,8 +43,8 @@ class Hamming16114:
         :return: check result
         """
         assert (
-            len(bits) == 16
-        ), f"Hamming (15,11,3) expects exactly 16 bits, got {len(bits)}"
+            len(bits) == 17
+        ), f"Hamming (17,12,3) expects exactly 17 bits, got {len(bits)}"
         return numpy.array_equal(
             get_syndrome_for_word(
                 numpy.array(bits.tolist()), Hamming16114.PARITY_CHECK_MATRIX
@@ -59,8 +60,8 @@ class Hamming16114:
         :return: 16 bits (11 data bits + 5 FEC bits)
         """
         assert (
-            len(bits) == 11
-        ), f"Hamming (15,11,3) expects 9 bits of data to add 5 bits of parity, got {len(bits)}"
+            len(bits) == 12
+        ), f"Hamming (17,12,3) expects 12 bits of data to add 5 bits of parity, got {len(bits)}"
         return divmod(
             numpy.dot(Hamming16114.GENERATOR_MATRIX.T, numpy.array(bits.tolist())), 2
         )[1]
