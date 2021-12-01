@@ -38,7 +38,7 @@ class Golay2087:
         :param bits:
         :return: check result
         """
-        assert len(bits) == 20, "Golay20,8,7 expects exactly 20 bits"
+        assert len(bits) == 20, "Golay (20,8,7) expects exactly 20 bits"
         return numpy.array_equal(
             get_syndrome_for_word(
                 numpy.array(bits.tolist()), Golay2087.PARITY_CHECK_MATRIX
@@ -55,7 +55,7 @@ class Golay2087:
         """
         assert (
             len(bits) == 8
-        ), "Golay20,8,7 expects 8 bits of data to add 12 bits of parity"
+        ), "Golay (20,8,7) expects 8 bits of data to add 12 bits of parity"
         return divmod(
             numpy.dot(Golay2087.GENERATOR_MATRIX.T, numpy.array(bits.tolist())), 2
         )[1]
