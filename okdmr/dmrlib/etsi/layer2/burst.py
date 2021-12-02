@@ -10,5 +10,5 @@ class Burst:
         self.full_bytes: bytes = full_burst
         self.full_bits: bitarray = bytes_to_bits(self.full_bytes)
         self.sync_or_embedded: SyncPattern = SyncPattern.resolve_bytes(
-            bits_to_bytes(self.full_bits[108 : 108 + 48])
+            bits_to_bytes(self.full_bits[108:156])
         )

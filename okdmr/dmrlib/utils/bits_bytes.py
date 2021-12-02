@@ -2,7 +2,7 @@ from bitarray import bitarray
 
 
 def bytes_to_bits(payload: bytes) -> bitarray:
-    out: bitarray = bitarray(endian="big")
+    out: bitarray = bitarray()
     out.frombytes(payload)
     return out
 

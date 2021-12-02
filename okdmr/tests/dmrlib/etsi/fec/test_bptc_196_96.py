@@ -1,6 +1,14 @@
+from typing import List
+
 from numpy import array_equal
+from okdmr.kaitai.etsi.dmr_csbk import DmrCsbk
+from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 
 from okdmr.dmrlib.etsi.fec.bptc_196_96 import BPTC19696
+from okdmr.dmrlib.etsi.layer2.elements.data_types import DataTypes
+from okdmr.dmrlib.etsi.layer2.general_data_burst import GeneralDataBurst
+from okdmr.dmrlib.etsi.layer2.sync_patterns import SyncPattern
+from okdmr.tests.dmrlib.tests_utils import prettyprint
 
 
 def test_bptc19696_maps():
@@ -50,6 +58,19 @@ def test_bptc1969_decode_map_against_dmr_utils3():
         73, 58, 43, 28, 13, 194, 179, 164, 149, 134, 119, 104, 89, 74, 59, 44, 29, 14,
         195, 180, 165, 150, 135, 120, 105, 90, 75, 60, 45, 30, 15
     )
-    deinterleave_map_indexes = (*list(BPTC19696.FULL_DEINTERLEAVING_MAP.keys()), )
+    deinterleave_map_indexes = (*list(BPTC19696.FULL_DEINTERLEAVING_MAP.keys()),)
     assert index_181 == deinterleave_map_indexes
     # fmt:on
+
+
+def test_decode_mmdvm2020_csbks():
+    packets: List[str] = [
+        "444d52440223383b2338630006690f632e40c70153df0a83b7a8282c2509625014fdff57d75df5dcadde429028c87ae3341e24191c003c"
+    ]
+    for packet in packets:
+        mmdvm: Mmdvm2020 = Mmdvm2020.from_bytes(bytes.fromhex(packet))
+        assert isinstance(mmdvm.command_data, Mmdvm2020.TypeDmrData)
+        burst: GeneralDataBurst = GeneralDataBurst(mmdvm.command_data.dmr_data)
+        assert burst.sync_or_embedded == SyncPattern.BsSourcedData
+        assert burst.slot_type.data_type == DataTypes.CSBK.value
+        prettyprint(DmrCsbk.from_bytes(burst.info_bits.tobytes()))

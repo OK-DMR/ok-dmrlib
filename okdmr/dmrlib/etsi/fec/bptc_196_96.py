@@ -1,5 +1,7 @@
 from typing import Dict, Tuple
 
+from bitarray import bitarray
+
 
 class BPTC19696:
     """
@@ -260,8 +262,19 @@ class BPTC19696:
             dict(
                 (k, v[0])
                 for k, v in INTERLEAVING_INDICES.items()
-                if not v[3] and not v[4]
+                if not v[3] and not v[4]  # not reserved or hamming bits
             ).values()
         )
     )
     """Extract only (interleave index -> index) where it's not reserved or hamming bit"""
+
+    @staticmethod
+    def decode(bits: bitarray):
+        assert len(bits) >= 96, "BPTC 196,16 decode requires at least 96 bits"
+        mapping = BPTC19696.DEINTERLEAVE_INFO_BITS_ONLY_MAP
+
+        out = bitarray([0] * len(mapping.keys()), endian="big")
+        for i, n in mapping.items():
+            out[i] = bits[n]
+
+        return out
