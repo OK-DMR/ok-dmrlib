@@ -12,17 +12,18 @@ This package provides way to parse and assemble various DMR ETSI protocols and f
 
 ### FEC (Forward Error Correction)
 
-| Algorithm                         |  Encoding  |  Decoding / Verification  |
-|-----------------------------------|:----------:|:-------------------------:|
-| Hamming (7,4,3)                   |     ✅      |             ✅             |
-| Hamming (13,9,3)                  |     ✅      |             ✅             |
-| Hamming (15,11,3)                 |     ✅      |             ✅             |
-| Hamming (16,11,3)                 |     ✅      |             ✅             |
-| Golay (20,8,7)                    |     ✅      |             ✅             |
+| Algorithm                  | Encoding | Decoding / Verification |
+|----------------------------|:--------:|:-----------------------:|
+| Hamming (7,4,3)            |    ✅     |            ✅            |
+| Hamming (13,9,3)           |    ✅     |            ✅            |
+| Hamming (15,11,3)          |    ✅     |            ✅            |
+| Hamming (16,11,3)          |    ✅     |            ✅            |
+| Golay (20,8,7)             |    ✅     |            ✅            |
+| Quadratic Residue (16,7,6) |    ✅     |            ✅            |
 
 ### Coding
 
-| Coding                            | Encoding | Decoding |
-|-----------------------------------|----------|----------|
-| Rate 3/4 Trellis                  | ✅        | ✅        |
-| Block Product Turbo Code (196,96) | ✅        | ✅        |
+| Coding                            |  Encoding  |  Decoding  |
+|-----------------------------------|:----------:|:----------:|
+| Rate 3/4 Trellis                  |     ✅      |     ✅      |
+| Block Product Turbo Code (196,96) |     ✅      |     ✅      |
