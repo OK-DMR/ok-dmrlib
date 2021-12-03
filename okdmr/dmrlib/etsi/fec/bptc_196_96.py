@@ -1,6 +1,10 @@
 from typing import Dict, Tuple
 
+import numpy
 from bitarray import bitarray
+
+from okdmr.dmrlib.etsi.fec.hamming_13_9_3 import Hamming1393
+from okdmr.dmrlib.etsi.fec.hamming_15_11_3 import Hamming15113
 
 
 class BPTC19696:
@@ -12,7 +16,7 @@ class BPTC19696:
     # fmt: off
     # @formatter:off
     INTERLEAVING_INDICES: Dict[int, Tuple[int, int, int, bool, bool]] = {
-        # interleave, row, column, is reserved, is hamming
+        # (key) index => (value) interleave index, row, column, is reserved, is hamming
         # rows are numbered from 1 to match the documentation/specification
         0: (0,    0, 0,  True,  False),  # R(3) is padding not assigned place in encoding/decoding table
 
@@ -267,14 +271,112 @@ class BPTC19696:
         )
     )
     """Extract only (interleave index -> index) where it's not reserved or hamming bit"""
+    INTERLEAVE_INFO_BITS_ONLY_MAP: Dict[int, int] = dict(
+        (i, l)
+        for i, l in enumerate(
+            dict(
+                (v[0], k)
+                for k, v in INTERLEAVING_INDICES.items()
+                if not v[3] and not v[4]  # not reserved or hamming bits
+            ).values()
+        )
+    )
+    """Extract only (index -> interleave index) where it's not reserved or hamming bit"""
 
     @staticmethod
-    def decode(bits: bitarray):
-        assert len(bits) >= 96, "BPTC 196,16 decode requires at least 96 bits"
+    def deinterleave_all_bits(bits: bitarray) -> bitarray:
+        """
+        Will take BPTC interleaved (and FEC protected) bits and return 196 bits of deinterleaved bits
+        :param bits:
+        :return:
+        """
+        assert (
+            len(bits) == 196
+        ), f"BPTC 196,96 deinterleave_all_bits requires 196 bits, got {len(bits)}"
+        mapping = BPTC19696.FULL_DEINTERLEAVING_MAP
+
+        out = bitarray([0] * len(mapping), endian="big")
+        for i, n in mapping.items():
+            out[i] = bits[n]
+
+        return out
+
+    @staticmethod
+    def deinterleave_data_bits(bits: bitarray) -> bitarray:
+        """
+        Will take BPTC interleaved (and FEC protected) bits and return 96 bits of data
+        :param bits: 196 bits of on-air payload
+        :return: 96 bits of data (info bits)
+        """
+        assert (
+            len(bits) == 196
+        ), f"BPTC 196,16 decode requires 196 bits, got {len(bits)}"
         mapping = BPTC19696.DEINTERLEAVE_INFO_BITS_ONLY_MAP
 
         out = bitarray([0] * len(mapping.keys()), endian="big")
         for i, n in mapping.items():
             out[i] = bits[n]
+
+        return out
+
+    @staticmethod
+    def make_encoding_table() -> numpy.ndarray:
+        # create table 13 rows, 15 columns, for FEC encoding
+        table: numpy.ndarray = numpy.ndarray(shape=(13, 15), dtype=int)
+        table.fill(0)
+
+        return table
+
+    @staticmethod
+    def fill_encoding_table(
+        table: numpy.ndarray, bits_deinterleaved: bitarray
+    ) -> numpy.ndarray:
+        assert (
+            len(bits_deinterleaved) == 96 or len(bits_deinterleaved) == 196
+        ), f"Can fill encoding table only with data bits (len 96) or full bits (len 196), got {len(bits_deinterleaved)}"
+
+        # make bitarray of size 196, fill with provided bits
+        mapping = (
+            BPTC19696.DEINTERLEAVE_INFO_BITS_ONLY_MAP
+            if len(bits_deinterleaved) == 96
+            else BPTC19696.FULL_DEINTERLEAVING_MAP
+        )
+        bits_interleaved: bitarray = bitarray([0] * 196, endian="big")
+
+        len_bits_deinterleaved: int = len(bits_deinterleaved)
+        for index, interleave_index in mapping.items():
+            if len_bits_deinterleaved <= index:
+                continue
+            bits_interleaved[interleave_index] = bits_deinterleaved[index]
+
+        for data_index, info_tuple in BPTC19696.INTERLEAVING_INDICES.items():
+            # info_tuple structure: interleave index, row (numbered from 1), column (numbered from 0), is reserved, is hamming
+            table[info_tuple[1] - 1][info_tuple[2]] = bits_interleaved[info_tuple[0]]
+
+        return table
+
+    @staticmethod
+    def encode(bits_deinterleaved: bitarray) -> bitarray:
+        """
+        Takes 96 bits of data (info bits) and return interleaved and FEC protected 196 bits
+        :param bits_deinterleaved:
+        :return:
+        """
+        table: numpy.ndarray = BPTC19696.make_encoding_table()
+        table = BPTC19696.fill_encoding_table(
+            table=table, bits_deinterleaved=bits_deinterleaved
+        )
+
+        # fill rows with hamming
+        for row in range(0, 13):
+            table[row] = Hamming15113.generate(table[row][0:11])
+
+        # fill columns with hamming
+        for column in range(0, 15):
+            table[:, column] = Hamming1393.generate(table[:, column][0:9])
+
+        out: bitarray = bitarray([0] * 196)
+        for index, info_tuple in BPTC19696.INTERLEAVING_INDICES.items():
+            out[info_tuple[0]] = table[info_tuple[1] - 1][info_tuple[2]]
 
         return out

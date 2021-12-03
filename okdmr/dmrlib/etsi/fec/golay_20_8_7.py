@@ -47,7 +47,7 @@ class Golay2087:
         )
 
     @staticmethod
-    def generate(bits: bitarray) -> bitarray:
+    def generate(bits: bitarray) -> numpy.ndarray:
         """
         Returns 8 bits (input) with 12 bits of Golay FEC
         :param bits:

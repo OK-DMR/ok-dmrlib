@@ -53,7 +53,7 @@ class Hamming16114:
         )
 
     @staticmethod
-    def generate(bits: bitarray) -> bitarray:
+    def generate(bits: bitarray) -> numpy.ndarray:
         """
         Returns 11 bits (input) with 5 bits of Hamming FEC
         :param bits:

@@ -52,7 +52,7 @@ class Hamming15113:
         )
 
     @staticmethod
-    def generate(bits: bitarray) -> bitarray:
+    def generate(bits: bitarray) -> numpy.ndarray:
         """
         Returns 11 bits (input) with 4 bits of Hamming FEC
         :param bits:
@@ -60,7 +60,7 @@ class Hamming15113:
         """
         assert (
             len(bits) == 11
-        ), f"Hamming (15,11,3) expects 9 bits of data to add 4 bits of parity, got {len(bits)}"
+        ), f"Hamming (15,11,3) expects 11 bits of data to add 4 bits of parity, got {len(bits)}"
         return divmod(
             numpy.dot(Hamming15113.GENERATOR_MATRIX.T, numpy.array(bits.tolist())), 2
         )[1]

@@ -18,11 +18,11 @@ class GeneralDataBurst(Burst):
         self.slot_type: SlotType = SlotType.from_bits(
             self.full_bits[98:108] + self.full_bits[156:166]
         )
-        self.info_bits_interleaved: bitarray = (
+        self.info_bits_original: bitarray = (
             self.full_bits[:98] + self.full_bits[166:272]
         )
-        self.info_bits: bitarray = GeneralDataBurst.deinterleave(
-            bits=self.info_bits_interleaved,
+        self.info_bits_deinterleaved: bitarray = GeneralDataBurst.deinterleave(
+            bits=self.info_bits_original,
             data_type=DataTypes(self.slot_type.data_type),
         )
 
@@ -30,9 +30,15 @@ class GeneralDataBurst(Burst):
     def deinterleave(bits: bitarray, data_type: DataTypes) -> bitarray:
         if data_type == DataTypes.Rate34Data:
             return Trellis34.decode(bits)
-        elif data_type == DataTypes.Rate1Data or data_type == DataTypes.Rate12Data:
+        elif data_type == DataTypes.Rate1Data:
             return bits
         elif data_type == DataTypes.Reserved:
             raise ValueError(f"Unknown data type {data_type}")
         else:
-            return BPTC19696.decode(bits)
+            # here expected are: rate 1/2, PI header, voice headeader/terminator, csbk, data header, idle message,
+            # response header/data blocks, mbc header/continuation/last block, udt header/continuation/last block
+            # unified single block data and more
+            return BPTC19696.deinterleave_data_bits(bits)
+
+    def __repr__(self) -> str:
+        return f"[{self.__class__.__name__}] {self.slot_type}"

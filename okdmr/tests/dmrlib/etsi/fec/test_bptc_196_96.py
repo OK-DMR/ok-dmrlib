@@ -1,5 +1,7 @@
-from typing import Any, Dict
+from typing import Any, Dict, List
 
+import numpy
+from bitarray import bitarray
 from numpy import array_equal
 from okdmr.kaitai.etsi.dmr_csbk import DmrCsbk
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
@@ -77,7 +79,30 @@ def test_decode_mmdvm2020_csbks():
         assert isinstance(mmdvm.command_data, Mmdvm2020.TypeDmrData)
         burst: GeneralDataBurst = GeneralDataBurst(mmdvm.command_data.dmr_data)
         assert burst.sync_or_embedded == SyncPattern.BsSourcedData
-        assert burst.slot_type.data_type == DataTypes.CSBK.value
-        csbk: DmrCsbk = DmrCsbk.from_bytes(burst.info_bits.tobytes())
+        assert burst.slot_type.data_type == DataTypes.CSBK
+        csbk: DmrCsbk = DmrCsbk.from_bytes(burst.info_bits_deinterleaved.tobytes())
         for propname, value in testdata.items():
             assert getattr(csbk, propname) == value
+
+
+def test_decode_encode():
+    hex_bursts: List[str] = [
+        "53df0a83b7a8282c2509625014fdff57d75df5dcadde429028c87ae3341e24191c"
+    ]
+    for hex_burst in hex_bursts:
+        burst: GeneralDataBurst = GeneralDataBurst(bytes.fromhex(hex_burst))
+
+        # data that can be spliced later to make parts of burst (196 bits)
+        original_info_bits: bitarray = burst.info_bits_original
+
+        # deinterleaved data (96 bits)
+        original_data_bits_deinterleaved: bitarray = BPTC19696.deinterleave_data_bits(
+            bits=original_info_bits
+        )
+
+        # 96 bits with added Hamming FEC
+        encoded: bitarray = BPTC19696.encode(
+            bits_deinterleaved=original_data_bits_deinterleaved
+        )
+
+        assert encoded == original_info_bits

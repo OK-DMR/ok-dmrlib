@@ -12,6 +12,7 @@ def test_sync_patterns():
         int.from_bytes(sync_data_bytes, byteorder="big")
     )
 
+    # byte sequence other than documented sync patterns should yield "embedded signalling" SyncPattern
     assert (
         SyncPattern.resolve_bytes(b"\x00\x00\x00\x00\x00\x00")
         == SyncPattern.EmbeddedSignalling
