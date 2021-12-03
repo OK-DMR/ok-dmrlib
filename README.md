@@ -6,9 +6,23 @@
 ![Last released version](https://img.shields.io/pypi/v/ok-dmrlib?style=flat-square)
 ![PyPI downloads](https://img.shields.io/pypi/v/ok-dmrlib?style=flat-square)
 
-This package provides way to parse and assemble various DMR ETSI protocols and functions
+This package provides way to parse and assemble various DMR ETSI protocols and functions, in pure Python implementation
 
-Library contains, for example, these:
+## Supported features
 
-  - Encoding and decoding Trellis 3/4 (class `Trellis34`)
-  - Encoding and decoding Golay 20,8,7 (class `Golay2087`)
+### FEC (Forward Error Correction)
+
+| Algorithm                         |  Encoding  |  Decoding / Verification  |
+|-----------------------------------|:----------:|:-------------------------:|
+| Hamming (7,4,3)                   |     ✅      |             ✅             |
+| Hamming (13,9,3)                  |     ✅      |             ✅             |
+| Hamming (15,11,3)                 |     ✅      |             ✅             |
+| Hamming (16,11,3)                 |     ✅      |             ✅             |
+| Golay (20,8,7)                    |     ✅      |             ✅             |
+
+### Coding
+
+| Coding                            | Encoding | Decoding |
+|-----------------------------------|----------|----------|
+| Rate 3/4 Trellis                  | ✅        | ✅        |
+| Block Product Turbo Code (196,96) | ✅        | ✅        |
