@@ -27,3 +27,9 @@ This package provides way to parse and assemble various DMR ETSI protocols and f
 |-----------------------------------|:----------:|:----------:|
 | Rate 3/4 Trellis                  |     ✅      |     ✅      |
 | Block Product Turbo Code (196,96) |     ✅      |     ✅      |
+
+### CRC (Cyclic Redundancy Check) and Checksums
+
+| Name           | Supported |
+|----------------|:---------:|
+| 5-bit checksum |     ✅     | 

@@ -34,3 +34,8 @@ def _prettyprint(data: KaitaiStruct) -> dict:
         )
         for (key, value) in acceptable_items.items()
     }
+
+
+class PrintEscapeBytes(bytes):
+    def __str__(self):
+        return "b'{}'".format("".join("\\x{:02x}".format(b) for b in self))
