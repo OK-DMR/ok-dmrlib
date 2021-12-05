@@ -18,6 +18,7 @@ This package provides way to parse and assemble various DMR ETSI protocols and f
 | Hamming (13,9,3)           |    ✅     |            ✅            |
 | Hamming (15,11,3)          |    ✅     |            ✅            |
 | Hamming (16,11,3)          |    ✅     |            ✅            |
+| Hamming (17,12,3)          |    ✅     |            ✅            |
 | Golay (20,8,7)             |    ✅     |            ✅            |
 | Quadratic Residue (16,7,6) |    ✅     |            ✅            |
 
@@ -30,6 +31,6 @@ This package provides way to parse and assemble various DMR ETSI protocols and f
 
 ### CRC (Cyclic Redundancy Check) and Checksums
 
-| Name           | Supported |
-|----------------|:---------:|
-| 5-bit checksum |     ✅     | 
+| Name           | Generate | Verify |
+|----------------|:--------:|:------:|
+| 5-bit checksum |    ✅     |   ✅    |
