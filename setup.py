@@ -20,6 +20,7 @@ setup(
     version="0.1",
     packages=[
         "okdmr.dmrlib",
+        "okdmr.dmrlib.transmission",
         "okdmr.dmrlib.utils",
         "okdmr.dmrlib.etsi",
         "okdmr.dmrlib.etsi.crc",

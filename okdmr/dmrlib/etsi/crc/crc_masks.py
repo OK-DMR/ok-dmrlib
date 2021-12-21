@@ -2,6 +2,10 @@ from enum import Enum
 
 
 class CrcMasks(Enum):
+    """
+    ETSI TS 102 361-1 V2.5.1 (2017-10) - B.3.12 Data Type CRC Mask
+    """
+
     PiHeader = 0x6969
     VoiceLCHeader = 0x969696
     TerminatorWithLC = 0x999999

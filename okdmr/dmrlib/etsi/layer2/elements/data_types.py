@@ -14,7 +14,12 @@ class DataTypes(Enum):
     Idle = 9
     Rate1Data = 10
     UnifiedSingleBlockData = 11
+
+    # ETSI Reserved values, first one (int:12) is used as fallback for unknown bursts/data
     Reserved = 12
+    Reserved13 = 13
+    Reserved14 = 14
+    Reserved15 = 15
 
     def __missing__(self, key):
         return DataTypes.Reserved

@@ -1,13 +1,14 @@
 from bitarray import bitarray
 
 
-def bytes_to_bits(payload: bytes) -> bitarray:
+def bytes_to_bits(payload: bytes, endian: str = "big") -> bitarray:
     """
     Convert from bytes to bitarray
     :param payload:
+    :param endian:
     :return:
     """
-    out: bitarray = bitarray()
+    out: bitarray = bitarray(endian=endian)
     out.frombytes(payload)
     return out
 
