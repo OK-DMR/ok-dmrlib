@@ -1,5 +1,8 @@
 from typing import Tuple, List, Union
 
+from bitarray.util import int2ba
+
+from okdmr.dmrlib.etsi.crc.crc import BitCrcCalculator, Crc9
 from okdmr.dmrlib.etsi.crc.crc9 import CRC9
 from okdmr.dmrlib.etsi.crc.crc_masks import CrcMasks
 
@@ -8,8 +11,6 @@ def test_crc9_non_last_block():
     # fmt:off
     # data, serial number, expected crc9, appropriate mask
     data: List[Tuple[str, int, int, CrcMasks, Union[None, str]]] = [
-        # last 3/4 block confirmed
-        # ("000000010136410000000000a5ac0080", 0, 476, CrcMasks.Rate34DataContinuation, "a5ac0080")
         # 3/4 blocks confirmed (single continuous transmission from hytera ms)
         ("47004d00500054002e004a0047004100", 17, 459, CrcMasks.Rate34DataContinuation, None,),
         ("2e00570047005400500044002e004a00", 16, 138, CrcMasks.Rate34DataContinuation, None,),
@@ -33,13 +34,23 @@ def test_crc9_non_last_block():
     # fmt:on
 
     for testtuple in data:
-        print(
-            "::",
-            CRC9.check(
-                data=bytes.fromhex(testtuple[0]),
-                serial_number=testtuple[1],
-                crc9=testtuple[2],
-                mask=testtuple[3].value,
-                crc32=bytes.fromhex(testtuple[4]) if testtuple[4] else None,
-            ),
+        assert CRC9.check(
+            data=bytes.fromhex(testtuple[0]),
+            serial_number=testtuple[1],
+            crc9=testtuple[2],
+            crc32=bytes.fromhex(testtuple[4]) if testtuple[4] else None,
+        ), f"CRC9 does not match in ${testtuple}"
+
+
+def test_crc9_table():
+    no_table: BitCrcCalculator = BitCrcCalculator(
+        table_based=False, configuration=Crc9.ETSI_DMR
+    )
+    with_table: BitCrcCalculator = BitCrcCalculator(
+        table_based=True, configuration=Crc9.ETSI_DMR
+    )
+    for idx in range(0, 1 << 12):
+        test_data = int2ba(idx)
+        assert no_table.calculate_checksum(test_data) == with_table.calculate_checksum(
+            test_data
         )
