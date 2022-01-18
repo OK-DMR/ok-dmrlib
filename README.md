@@ -34,3 +34,4 @@ This package provides way to parse and assemble various DMR ETSI protocols and f
 | Name           | Generate | Verify |
 |----------------|:--------:|:------:|
 | 5-bit checksum |    ✅     |   ✅    |
+| CRC-9          |    ✅     |   ✅    |

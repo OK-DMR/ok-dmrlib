@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-# Strong-typed bit-based CRC util
-# Copyright (c) 2022, Marek Sebera
-# All rights reserved.
+# Strong-typed bitarray-based CRC
+# Based on Nicola Coretti work here: https://github.com/Nicoretti/crc/blob/eb27ca85cae760f7727fedcb3644209fa5386116/crc.py
 
 import abc
 import enum
