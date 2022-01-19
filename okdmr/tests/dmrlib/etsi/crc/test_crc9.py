@@ -31,7 +31,10 @@ def test_crc9():
         ("4a00470044002e00540047004a002e00", 1, 65, CrcMasks.Rate34DataContinuation, None,),
         ("0100000101004d004d00470054002e00", 0, 409, CrcMasks.Rate34DataContinuation, None,),
         # 3/4 last data blocks
-        ("0001410048004f004a000000", 0, 447, CrcMasks.Rate34DataContinuation, "a197ccb4")
+        # bcd sms
+        ("0001410048004f004a000000", 0, 447, CrcMasks.Rate34DataContinuation, "a197ccb4"),
+        # anytone hytera-format long sms
+        ("000000000000000000000000", 2, 312, CrcMasks.Rate34DataContinuation, "f486aed8")
     ]
     # fmt:on
 

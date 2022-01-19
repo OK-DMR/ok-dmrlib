@@ -1,3 +1,5 @@
 dmr-kaitai>=0.7
 bitarray>=2.3.4
 numpy>=1.21.4
+# required only to run test_crc (comparing crc and bit-crc implementations)
+crc>=1.1.2

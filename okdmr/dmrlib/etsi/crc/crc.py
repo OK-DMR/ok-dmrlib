@@ -163,7 +163,10 @@ class BitCrcRegisterBase(AbstractBitCrcRegister):
         """
         See AbstractCrcRegister.digest
         """
-        self.register.bytereverse()
+        # in place for some reason does not work
+        rev = self.register.copy()
+        rev.reverse()
+        self.register = rev
         return self.register
 
     def _is_division_possible(self):
