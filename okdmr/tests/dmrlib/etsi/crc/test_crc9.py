@@ -54,8 +54,8 @@ def test_crc9_table():
     with_table: BitCrcCalculator = BitCrcCalculator(
         table_based=True, configuration=Crc9.ETSI_DMR
     )
-    for idx in range(0, 1 << 12):
-        test_data = int2ba(idx)
+    for idx in range(0, 1 << 9):
+        test_data = int2ba(idx, length=9)
         assert no_table.calculate_checksum(test_data) == with_table.calculate_checksum(
             test_data
         )

@@ -131,10 +131,6 @@ class BitCrcRegisterBase(AbstractBitCrcRegister):
         if self._config.reverse_input_bytes:
             bits.bytereverse()
 
-        diff = len(bits) % self._config.width_bits
-        if diff > 0:
-            bits = bitarray([0] * (self._config.width_bits - diff)) + bits
-
         for start_bit in range(0, len(bits), self._config.width_bits):
             self._process_bits(bits[start_bit : start_bit + self._config.width_bits])
 
@@ -192,7 +188,12 @@ class BitCrcRegister(BitCrcRegisterBase):
         """
         See BitCrcRegisterBase._process_bits
         """
-        self.register ^= bits
+        if len(bits) < 1:
+            return self.register
+
+        self.register = int2ba(
+            ba2int(bits) ^ ba2int(self.register), length=self._config.width_bits
+        )
         polynomial: bitarray = int2ba(
             self._config.polynomial, length=self._config.width_bits
         )
@@ -224,19 +225,19 @@ class TableBasedBitCrcRegister(BitCrcRegisterBase):
                     fact that some lookup tables need to be calculated/initialized .
         """
         super().__init__(configuration)
-        if isinstance(configuration, enum.Enum):
-            configuration = configuration.value
-        assert isinstance(
-            configuration, BitCrcConfiguration
-        ), f"Expected BitCrcConfiguration got ${type(configuration)}"
-        self._lookup_table = create_lookup_table(
-            configuration.width_bits, configuration.polynomial
+        self._lookup_table = bits_create_lookup_table(
+            self._config.width_bits, self._config.polynomial
         )
 
     def _process_bits(self, bits: bitarray):
         """
         See BitCrcRegisterBase._process_bits
         """
+        if len(bits) != len(self.register):
+            print("correct", bits, ba2int(bits))
+            bits = int2ba(ba2int(bits), length=len(self.register))
+            print("correct", bits, ba2int(bits))
+
         self.register = self._lookup_table[ba2int(bits ^ self.register)] ^ (
             self.register << self._config.width_bits
         )
@@ -244,7 +245,7 @@ class TableBasedBitCrcRegister(BitCrcRegisterBase):
 
 
 @functools.lru_cache()
-def create_lookup_table(width_bits: int, polynomial: int):
+def bits_create_lookup_table(width_bits: int, polynomial: int):
     """
     Creates a crc lookup table.
 
