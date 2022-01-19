@@ -7,7 +7,7 @@ from okdmr.dmrlib.etsi.crc.crc9 import CRC9
 from okdmr.dmrlib.etsi.crc.crc_masks import CrcMasks
 
 
-def test_crc9_non_last_block():
+def test_crc9():
     # fmt:off
     # data, serial number, expected crc9, appropriate mask
     data: List[Tuple[str, int, int, CrcMasks, Union[None, str]]] = [
@@ -30,6 +30,8 @@ def test_crc9_non_last_block():
         ("4100470054002e00410047002e005400", 2, 2, CrcMasks.Rate34DataContinuation, None,),
         ("4a00470044002e00540047004a002e00", 1, 65, CrcMasks.Rate34DataContinuation, None,),
         ("0100000101004d004d00470054002e00", 0, 409, CrcMasks.Rate34DataContinuation, None,),
+        # 3/4 last data blocks
+        ("0001410048004f004a000000", 0, 447, CrcMasks.Rate34DataContinuation, "a197ccb4")
     ]
     # fmt:on
 

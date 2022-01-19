@@ -8,7 +8,7 @@ from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits
 class CRC9:
 
     CALC: BitCrcCalculator = BitCrcCalculator(
-        table_based=False, configuration=Crc9.ETSI_DMR
+        table_based=True, configuration=Crc9.ETSI_DMR
     )
 
     @staticmethod
