@@ -7,9 +7,9 @@ from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits
 
 
 def test_ccit_bitcrc_crc():
-    crc_ccit = CrcCalculator(table_based=False, configuration=Crc16.CCITT)
+    crc_ccit = CrcCalculator(table_based=True, configuration=Crc16.CCITT)
     bit_crc_ccit = BitCrcCalculator(
-        table_based=False,
+        table_based=True,
         configuration=BitCrcConfiguration(
             width_bits=16,
             polynomial=0x1021,
@@ -20,7 +20,7 @@ def test_ccit_bitcrc_crc():
         ),
     )
 
-    data_bytes: bytes = b"\xFF\xEE\xAA\x88\x44\x00"
+    data_bytes: bytes = b"\xFF\xEE\xAA\x88\x44"
     data_bits: bitarray = bytes_to_bits(data_bytes)
 
     assert crc_ccit.calculate_checksum(data_bytes) == ba2int(
@@ -29,9 +29,9 @@ def test_ccit_bitcrc_crc():
 
 
 def test_crc32_bitcrc_crc():
-    crc32 = CrcCalculator(table_based=False, configuration=Crc32.CRC32)
+    crc32 = CrcCalculator(table_based=True, configuration=Crc32.CRC32)
     bit_crc32 = BitCrcCalculator(
-        table_based=False,
+        table_based=True,
         configuration=BitCrcConfiguration(
             width_bits=32,
             polynomial=0x04C11DB7,
@@ -42,7 +42,7 @@ def test_crc32_bitcrc_crc():
         ),
     )
 
-    data_bytes: bytes = b"\xAA\x88\x44\x00\x00\x00"
+    data_bytes: bytes = b"\xAA\x88\x44\x00\x00"
     data_bits: bitarray = bytes_to_bits(data_bytes)
 
     assert crc32.calculate_checksum(data_bytes) == ba2int(

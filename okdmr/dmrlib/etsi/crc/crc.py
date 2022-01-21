@@ -69,6 +69,17 @@ class BitCrcConfiguration:
     reverse_input_bytes: bool = False
     reverse_output_bytes: bool = False
 
+    @property
+    def feed_width_bits(self) -> int:
+        if self.width_bits % 8 == 0:
+            return 8
+
+        for candidate in reversed(range(1, 16)):
+            if self.width_bits % candidate == 0:
+                return candidate
+
+        return 1
+
 
 class BitCrcRegisterBase(AbstractBitCrcRegister):
     """
@@ -131,8 +142,10 @@ class BitCrcRegisterBase(AbstractBitCrcRegister):
         if self._config.reverse_input_bytes:
             bits.bytereverse()
 
-        for start_bit in range(0, len(bits), self._config.width_bits):
-            self._process_bits(bits[start_bit : start_bit + self._config.width_bits])
+        feed_width = self._config.feed_width_bits
+
+        for start_bit in range(0, len(bits), feed_width):
+            self._process_bits(bits[start_bit : start_bit + feed_width])
 
         return self.register
 
@@ -166,7 +179,7 @@ class BitCrcRegisterBase(AbstractBitCrcRegister):
         return self.register
 
     def _is_division_possible(self):
-        return ba2int(self.register & self._topbit) > 0
+        return self.register >= self._topbit
 
     @property
     def register(self) -> bitarray:
@@ -191,8 +204,9 @@ class BitCrcRegister(BitCrcRegisterBase):
         if len(bits) < 1:
             return self.register
 
-        self.register = int2ba(
-            ba2int(bits) ^ ba2int(self.register), length=self._config.width_bits
+        self.register ^= int2ba(
+            ba2int(bits) << (self._config.width_bits - self._config.feed_width_bits),
+            length=self._config.width_bits,
         )
         polynomial: bitarray = int2ba(
             self._config.polynomial, length=self._config.width_bits
@@ -205,7 +219,7 @@ class BitCrcRegister(BitCrcRegisterBase):
         return self.register
 
 
-class TableBasedBitCrcRegister(BitCrcRegisterBase):
+class TableBasedBitCrcRegister(BitCrcRegister):
     """
     Lookup table based crc register.
 
@@ -222,7 +236,7 @@ class TableBasedBitCrcRegister(BitCrcRegisterBase):
         :param configuration: used for the crc algorithm.
 
         :attention: creating a table based register initially might take some extra time, due to the
-                    fact that some lookup tables need to be calculated/initialized .
+                    fact that lookup table needs to be calculated/initialized .
         """
         super().__init__(configuration)
         self._lookup_table = bits_create_lookup_table(
@@ -233,14 +247,16 @@ class TableBasedBitCrcRegister(BitCrcRegisterBase):
         """
         See BitCrcRegisterBase._process_bits
         """
-        if len(bits) != len(self.register):
-            print("correct", bits, ba2int(bits))
-            bits = int2ba(ba2int(bits), length=len(self.register))
-            print("correct", bits, ba2int(bits))
-
-        self.register = self._lookup_table[ba2int(bits ^ self.register)] ^ (
-            self.register << self._config.width_bits
-        )
+        feed_width = self._config.feed_width_bits
+        if len(bits) == feed_width:
+            table_index: int = ba2int(bits) ^ (
+                ba2int(self.register) >> (self._config.width_bits - feed_width)
+            )
+            self.register = self._lookup_table[table_index] ^ (
+                self.register << feed_width
+            )
+        else:
+            super()._process_bits(bits)
         return self.register
 
 
@@ -254,11 +270,12 @@ def bits_create_lookup_table(width_bits: int, polynomial: int):
     :parma int polynomial: which is used for the crc calculation.
     """
     config = BitCrcConfiguration(width_bits=width_bits, polynomial=polynomial)
+    feed_width = config.feed_width_bits
     crc_register = BitCrcRegister(config)
     lookup_table = []
-    for index in range(0, 1 << width_bits):
+    for index in range(0, 1 << feed_width):
         crc_register.init()
-        data = int2ba(index, length=width_bits)
+        data = int2ba(index, length=feed_width)
         crc_register.update(data)
         lookup_table.append(crc_register.digest())
     return lookup_table
