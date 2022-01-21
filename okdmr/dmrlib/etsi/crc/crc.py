@@ -62,15 +62,20 @@ class BitCrcConfiguration:
     implementation of a specific crc algorithm/register.
     """
 
-    width_bits: int
     polynomial: int
+    width_bits: int
+    feed_width_bits: int = 0
     init_value: int = 0
     final_xor_value: int = 0
     reverse_input_bytes: bool = False
     reverse_output_bytes: bool = False
 
+    def __post_init__(self):
+        if self.feed_width_bits < 1:
+            object.__setattr__(self, "feed_width_bits", self.calc_feed_width_bits)
+
     @property
-    def feed_width_bits(self) -> int:
+    def calc_feed_width_bits(self) -> int:
         if self.width_bits % 8 == 0:
             return 8
 
@@ -142,10 +147,10 @@ class BitCrcRegisterBase(AbstractBitCrcRegister):
         if self._config.reverse_input_bytes:
             bits.bytereverse()
 
-        feed_width = self._config.feed_width_bits
-
-        for start_bit in range(0, len(bits), feed_width):
-            self._process_bits(bits[start_bit : start_bit + feed_width])
+        for start_bit in range(0, len(bits), self._config.feed_width_bits):
+            self._process_bits(
+                bits[start_bit : start_bit + self._config.feed_width_bits]
+            )
 
         return self.register
 
@@ -247,13 +252,13 @@ class TableBasedBitCrcRegister(BitCrcRegister):
         """
         See BitCrcRegisterBase._process_bits
         """
-        feed_width = self._config.feed_width_bits
-        if len(bits) == feed_width:
+        if len(bits) == self._config.feed_width_bits:
             table_index: int = ba2int(bits) ^ (
-                ba2int(self.register) >> (self._config.width_bits - feed_width)
+                ba2int(self.register)
+                >> (self._config.width_bits - self._config.feed_width_bits)
             )
             self.register = self._lookup_table[table_index] ^ (
-                self.register << feed_width
+                self.register << self._config.feed_width_bits
             )
         else:
             super()._process_bits(bits)
@@ -270,12 +275,11 @@ def bits_create_lookup_table(width_bits: int, polynomial: int):
     :parma int polynomial: which is used for the crc calculation.
     """
     config = BitCrcConfiguration(width_bits=width_bits, polynomial=polynomial)
-    feed_width = config.feed_width_bits
     crc_register = BitCrcRegister(config)
     lookup_table = []
-    for index in range(0, 1 << feed_width):
+    for index in range(0, 1 << config.feed_width_bits):
         crc_register.init()
-        data = int2ba(index, length=feed_width)
+        data = int2ba(index, length=config.feed_width_bits)
         crc_register.update(data)
         lookup_table.append(crc_register.digest())
     return lookup_table
