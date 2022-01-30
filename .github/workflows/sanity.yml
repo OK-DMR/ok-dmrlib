@@ -20,4 +20,4 @@ jobs:
           python -m pip install pytest
       - name: Test with pytest
         run: |
-          env PYTHONPATH=. pytest -vrpP
+          make test
