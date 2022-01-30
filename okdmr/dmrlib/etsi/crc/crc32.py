@@ -26,7 +26,7 @@ class CRC32:
             0x00000000 <= crc32 <= 0xFFFFFFFF
         ), f"CRC32 is expected in range (exclusive) 0-4294967295, got ${crc32}"
 
-        return CRC32.CALC.verify_checksum(bytes_to_bits(byteswap_bytes(data)), crc32)
+        return CRC32.calculate(data) == crc32
 
     @staticmethod
     def calculate(data: bytes) -> int:

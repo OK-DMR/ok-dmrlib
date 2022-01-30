@@ -1,7 +1,6 @@
 from typing import Tuple, List
 
 from okdmr.dmrlib.etsi.crc.crc16 import CRC16
-from okdmr.dmrlib.etsi.crc.crc32 import CRC32
 from okdmr.dmrlib.etsi.crc.crc_masks import CrcMasks
 
 

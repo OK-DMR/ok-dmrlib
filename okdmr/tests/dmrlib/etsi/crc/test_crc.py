@@ -1,6 +1,6 @@
 from bitarray import bitarray
 from bitarray.util import ba2int
-from crc import CrcCalculator, Crc16, Crc32, Configuration
+from crc import CrcCalculator, Crc16, Crc32
 
 from okdmr.dmrlib.etsi.crc.crc import BitCrcCalculator, BitCrcConfiguration
 from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits
