@@ -327,6 +327,18 @@ class Crc9(enum.Enum):
 
 
 @enum.unique
+class Crc16(enum.Enum):
+    ETSI_DMR = BitCrcConfiguration(
+        width_bits=16,
+        polynomial=0x1021,
+        init_value=0x0000,
+        final_xor_value=0x0000,
+        reverse_input_bytes=False,
+        reverse_output_bytes=False,
+    )
+
+
+@enum.unique
 class Crc32(enum.Enum):
     ETSI_DMR = BitCrcConfiguration(
         width_bits=32,
