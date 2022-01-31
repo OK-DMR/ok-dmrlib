@@ -34,7 +34,7 @@ setup(
     scripts=[],
     keywords="dmr etsi ham mmdvm homebrew radio hytera motorola",
     python_requires="~=3.7",
-    install_requires=["dmr-kaitai>=0.7", "bitarray>=2.3.4", "numpy>=1.21.4"],
+    install_requires=["dmr-kaitai>=0.7", "bitarray>=2.3.5", "numpy>=1.21.4"],
     classifiers=[
         "Development Status :: 3 - Alpha",
         "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",

@@ -21,6 +21,7 @@ This package provides way to parse and assemble various DMR ETSI protocols and f
 | Hamming (17,12,3)          |    ✅     |            ✅            |
 | Golay (20,8,7)             |    ✅     |            ✅            |
 | Quadratic Residue (16,7,6) |    ✅     |            ✅            |
+| Reed-Solomon (12,9,4)      |    ✅     |            ✅            |
 
 ### Coding
 
