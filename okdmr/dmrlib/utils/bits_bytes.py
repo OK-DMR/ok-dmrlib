@@ -42,7 +42,7 @@ def byteswap_bytearray(data: bytearray) -> bytes:
     """
     trim = len(data)
     last: bytes = bytes()
-    # add padding, that will get removed, to have odd number of bytes
+    # add padding, that will get removed, to not have odd number of bytes
     if len(data) % 2 != 0:
         last = bytes([data[-1]])
         data = data[0:-1]

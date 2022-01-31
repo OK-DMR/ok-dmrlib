@@ -15,9 +15,9 @@ def test_crc16():
     # fmt:on
     # @formatter:on
 
-    for testtuple in data:
+    for (databytes, crc32, crc_mask) in data:
         assert CRC16.check(
-            data=bytes.fromhex(testtuple[0]),
-            crc16=int.from_bytes(bytes.fromhex(testtuple[1]), byteorder="big"),
-            mask=testtuple[2],
-        ), f"CRC16 does not match in ${testtuple}"
+            data=bytes.fromhex(databytes),
+            crc16=int.from_bytes(bytes.fromhex(crc32), byteorder="big"),
+            mask=crc_mask,
+        ), f"CRC16 does not match in ${(databytes, crc32, crc_mask)}"

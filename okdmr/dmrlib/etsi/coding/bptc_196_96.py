@@ -343,10 +343,7 @@ class BPTC19696:
         )
         bits_interleaved: bitarray = bitarray([0] * 196, endian="big")
 
-        len_bits_deinterleaved: int = len(bits_deinterleaved)
         for index, interleave_index in mapping.items():
-            if len_bits_deinterleaved <= index:
-                continue
             bits_interleaved[interleave_index] = bits_deinterleaved[index]
 
         for data_index, info_tuple in BPTC19696.INTERLEAVING_INDICES.items():

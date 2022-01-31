@@ -99,9 +99,13 @@ def test_decode_encode():
             bits=original_info_bits
         )
 
-        # 96 bits with added Hamming FEC
+        # 96 bits with added Hamming FEC, total of 196 bits
         encoded: bitarray = BPTC19696.encode(
             bits_deinterleaved=original_data_bits_deinterleaved
         )
-
         assert encoded == original_info_bits
+
+        encoded_full: bitarray = BPTC19696.encode(
+            bits_deinterleaved=BPTC19696.deinterleave_all_bits(burst.info_bits_original)
+        )
+        assert encoded_full == original_info_bits

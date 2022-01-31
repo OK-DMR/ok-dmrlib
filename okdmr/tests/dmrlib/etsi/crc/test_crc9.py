@@ -38,13 +38,13 @@ def test_crc9():
     ]
     # fmt:on
 
-    for testtuple in data:
+    for (databytes, serialno, expected_crc9, mask, crc32) in data:
         assert CRC9.check(
-            data=bytes.fromhex(testtuple[0]),
-            serial_number=testtuple[1],
-            crc9=testtuple[2],
-            crc32=bytes.fromhex(testtuple[4]) if testtuple[4] else None,
-        ), f"CRC9 does not match in ${testtuple}"
+            data=bytes.fromhex(databytes),
+            serial_number=serialno,
+            crc9=expected_crc9,
+            crc32=bytes.fromhex(crc32) if crc32 else None,
+        ), f"CRC9 does not match in ${(databytes, serialno, expected_crc9, mask, crc32)}"
 
 
 def test_crc9_table():
