@@ -5,6 +5,8 @@
 ![License](https://img.shields.io/github/license/OK-DMR/ok-dmrlib?style=flat-square)
 ![Last released version](https://img.shields.io/pypi/v/ok-dmrlib?style=flat-square)
 ![PyPI downloads](https://img.shields.io/pypi/dd/ok-dmrlib?style=flat-square)
+![Python versions](https://img.shields.io/pypi/pyversions/ok-dmrlib?style=flat-square)
+![Wheel](https://img.shields.io/pypi/wheel/ok-dmrlib?style=flat-square)
 
 This package provides way to parse and assemble various DMR ETSI protocols and functions, in pure Python implementation
 
