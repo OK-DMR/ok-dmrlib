@@ -107,7 +107,7 @@ class BitCrcRegisterBase(AbstractBitCrcRegister):
             [0] * (configuration.width_bits - 1)
         )
         # bitarray(123) creates bitarray of length 123 where those bits are UN-INITIALIZED, meaning, random data from memory
-        self._bitmask: bitarray = int2ba(2 ** configuration.width_bits - 1)
+        self._bitmask: bitarray = int2ba(2**configuration.width_bits - 1)
         self._config: BitCrcConfiguration = configuration
         self._register: bitarray = (
             int2ba(configuration.init_value, length=configuration.width_bits)
