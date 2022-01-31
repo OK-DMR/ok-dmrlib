@@ -1,7 +1,8 @@
-from enum import Enum
+import enum
 
 
-class VoiceBursts(Enum):
+@enum.unique
+class VoiceBursts(enum.Enum):
     Unknown = (1,)
 
     VoiceBurstA = (100,)
@@ -11,5 +12,6 @@ class VoiceBursts(Enum):
     VoiceBurstE = (104,)
     VoiceBurstF = 105
 
-    def __missing__(self, key):
+    @classmethod
+    def _missing_(cls, key: object):
         return VoiceBursts.Unknown

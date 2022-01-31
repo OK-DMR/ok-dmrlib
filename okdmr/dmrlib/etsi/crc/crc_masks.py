@@ -1,7 +1,8 @@
-from enum import Enum
+import enum
 
 
-class CrcMasks(Enum):
+@enum.unique
+class CrcMasks(enum.Enum):
     """
     ETSI TS 102 361-1 V2.5.1 (2017-10) - B.3.12 Data Type CRC Mask
     """

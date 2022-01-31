@@ -1,7 +1,8 @@
-from enum import Enum
+import enum
 
 
-class TransmissionTypes(Enum):
+@enum.unique
+class TransmissionTypes(enum.Enum):
     Idle = 0
     VoiceTransmission = 1
     DataTransmission = 2

@@ -1,7 +1,8 @@
-from enum import Enum
+import enum
 
 
-class DataTypes(Enum):
+@enum.unique
+class DataTypes(enum.Enum):
     PIHeader = 0
     VoiceLCHeader = 1
     TerminatorWithLC = 2
@@ -21,5 +22,6 @@ class DataTypes(Enum):
     Reserved14 = 14
     Reserved15 = 15
 
-    def __missing__(self, key):
+    @classmethod
+    def _missing_(cls, value: object):
         return DataTypes.Reserved

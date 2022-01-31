@@ -1,8 +1,8 @@
-from enum import Enum, unique
+import enum
 
 
-@unique
-class SyncPattern(Enum):
+@enum.unique
+class SyncPattern(enum.Enum):
     BsSourcedVoice = 0x755FD7DF75F7
     BsSourcedData = 0xDFF57D75DF5D
     MsSourcedVoice = 0x7F7D5DD57DFD
