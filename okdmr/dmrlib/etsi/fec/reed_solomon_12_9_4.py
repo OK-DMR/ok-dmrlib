@@ -89,15 +89,13 @@ class ReedSolomon1294:
         return generated == data
 
     @staticmethod
-    def generate(data: bytes, mask=None) -> bytes:
+    def generate(data: bytes, mask: bytes = b"\x00\x00\x00") -> bytes:
         """
         Returns 9 bytes (72 bits) of input data + 3 bytes (24 bits) of RS1294 CRC
         :param data:
         :param mask:
         :return: 16 bits (7 data bits + 9 crc bits)
         """
-        if mask is None:
-            mask = [0x00, 0x00, 0x00]
         assert (
             len(data) == 9
         ), f"Reed-Solomon (12,9,4) expects 9 bytes of data to add 3 bytes of parity, got {len(data)}"

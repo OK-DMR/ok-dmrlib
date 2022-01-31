@@ -14,3 +14,7 @@ class SyncTypes(enum.Enum):
     Tdma2Data = 0xD7557F5FF7F5
     Reserved = 0xDD7FF5D757DD
     EmbeddedData = -1
+
+    @classmethod
+    def _missing_(cls, value: object):
+        return SyncTypes.EmbeddedData
