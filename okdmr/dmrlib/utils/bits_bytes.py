@@ -1,3 +1,6 @@
+from typing import Union
+
+import numpy
 from bitarray import bitarray
 
 
@@ -45,3 +48,7 @@ def byteswap_bytearray(data: bytearray) -> bytes:
         data = data[0:-1]
     data[0::2], data[1::2] = data[1::2], data[0::2]
     return bytes(data[:trim]) + last
+
+
+def numpy_array_to_int(data: Union[numpy.array, numpy.ndarray]) -> int:
+    return int(data.dot(2 ** numpy.arange(data.size)[::-1]))
