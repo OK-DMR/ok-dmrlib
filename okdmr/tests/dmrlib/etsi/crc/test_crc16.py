@@ -20,4 +20,4 @@ def test_crc16():
             data=bytes.fromhex(databytes),
             crc16=int.from_bytes(bytes.fromhex(crc32), byteorder="big"),
             mask=crc_mask,
-        ), f"CRC16 does not match in ${(databytes, crc32, crc_mask)}"
+        ), f"CRC16 does not match in {(databytes, crc32, crc_mask)}"

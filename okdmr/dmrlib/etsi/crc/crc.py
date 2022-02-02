@@ -102,7 +102,7 @@ class BitCrcRegisterBase(AbstractBitCrcRegister):
             configuration = configuration.value
         assert isinstance(
             configuration, BitCrcConfiguration
-        ), f"BitCrcConfiguration not provided, got ${type(configuration)} instead"
+        ), f"BitCrcConfiguration not provided, got {type(configuration)} instead"
         self._topbit: bitarray = bitarray([1]) + bitarray(
             [0] * (configuration.width_bits - 1)
         )

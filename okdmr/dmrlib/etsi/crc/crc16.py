@@ -26,7 +26,7 @@ class CRC16:
         """
         assert (
             0x0000 <= crc16 <= 0xFFFF
-        ), f"CRC16 is expected in range (exclusive) 0-${0xFFFF}, got ${crc16}"
+        ), f"CRC16 is expected in range (exclusive) 0-{0xFFFF}, got {crc16}"
 
         return CRC16.calculate(data, mask) == crc16
 

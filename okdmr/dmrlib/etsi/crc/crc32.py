@@ -24,7 +24,7 @@ class CRC32:
         """
         assert (
             0x00000000 <= crc32 <= 0xFFFFFFFF
-        ), f"CRC32 is expected in range (exclusive) 0-4294967295, got ${crc32}"
+        ), f"CRC32 is expected in range (exclusive) 0-{0xFFFFFFFF}, got {crc32}"
 
         return CRC32.calculate(data) == crc32
 

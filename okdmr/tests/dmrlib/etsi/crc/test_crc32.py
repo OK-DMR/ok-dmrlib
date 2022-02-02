@@ -18,4 +18,4 @@ def test_crc32():
         assert CRC32.check(
             data=bytes.fromhex(databytes),
             crc32=int.from_bytes(bytes.fromhex(expected_crc32), byteorder="little"),
-        ), f"CRC32 does not match in ${(databytes, expected_crc32)}"
+        ), f"CRC32 does not match in {(databytes, expected_crc32)}"

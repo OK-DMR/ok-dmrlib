@@ -44,7 +44,7 @@ def test_crc9():
             serial_number=serialno,
             crc9=expected_crc9,
             crc32=bytes.fromhex(crc32) if crc32 else None,
-        ), f"CRC9 does not match in ${(databytes, serialno, expected_crc9, mask, crc32)}"
+        ), f"CRC9 does not match in {(databytes, serialno, expected_crc9, mask, crc32)}"
 
 
 def test_crc9_table():
