@@ -31,23 +31,27 @@ class SlotType:
         self.data_type: DataTypes = (
             DataTypes(data_type) if isinstance(data_type, int) else data_type
         )
-        self.parity: int = parity
-        # generate parity if not provided
-        if parity < 1:
-            self.parity = numpy_array_to_int(Golay2087.generate(self.as_bits()[:8])[8:])
 
-    def check_parity(self) -> bool:
-        return Golay2087.check(self.as_bits())
+        self.fec_parity: int = parity
+
+        if parity < 1:
+            # generate parity if not provided
+            self.fec_parity = numpy_array_to_int(
+                Golay2087.generate(self.as_bits()[:8])[8:]
+            )
+
+        # check parity
+        self.fec_parity_ok: bool = Golay2087.check(self.as_bits())
 
     def as_bits(self) -> bitarray:
         return (
             int2ba(self.colour_code, length=4)
             + int2ba(self.data_type.value, length=4)
-            + int2ba(self.parity, length=12)
+            + int2ba(self.fec_parity, length=12)
         )
 
     def __repr__(self) -> str:
-        return f"[{self.data_type}] [CC: {self.colour_code}] [Slot FEC: {'VALID' if self.check_parity() else 'INVALID'}]"
+        return f"[{self.data_type}] [CC: {self.colour_code}] [SLOT FEC: {'VALID' if self.fec_parity_ok else 'INVALID'}]"
 
     @staticmethod
     def from_bits(bits: bitarray) -> "SlotType":

@@ -3,6 +3,10 @@ import enum
 
 @enum.unique
 class DataTypes(enum.Enum):
+    """
+    ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.6 Data Type
+    """
+
     PIHeader = 0
     VoiceLCHeader = 1
     TerminatorWithLC = 2

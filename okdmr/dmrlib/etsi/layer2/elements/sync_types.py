@@ -3,6 +3,10 @@ import enum
 
 @enum.unique
 class SyncTypes(enum.Enum):
+    """
+    ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.1 Synchronization (SYNC) PDU - Table 9.2: SYNC patterns
+    """
+
     BsSourcedVoice = 0x755FD7DF75F7
     BsSourcedData = 0xDFF57D75DF5D
     MsSourcedVoice = 0x7F7D5DD57DFD
