@@ -22,7 +22,7 @@ def test_hamming17123_generate():
         assert numpy.array_equal(Hamming17123.generate(bitarray(valid)[:12]), valid)
 
 
-def test_hamming1393_repair():
+def test_hamming17123_repair():
     for valid in HAMMING_17_12_3_VALID_WORDS:
         invalid = bitarray(valid)
         # flip single bit
