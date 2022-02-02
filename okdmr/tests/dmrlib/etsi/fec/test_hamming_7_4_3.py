@@ -1,3 +1,5 @@
+from random import randint
+
 import numpy
 from bitarray import bitarray
 
@@ -19,3 +21,13 @@ def test_hamming743_check():
 def test_hamming743_generate():
     for valid in HAMMING_7_4_3_VALID_WORDS:
         assert numpy.array_equal(Hamming743.generate(bitarray(valid)[:4]), valid)
+
+
+def test_hamming1393_repair():
+    for valid in HAMMING_7_4_3_VALID_WORDS:
+        invalid = bitarray(valid)
+        # flip single bit
+        invalid.invert(randint(0, len(valid) - 1))
+        is_valid, corrected = Hamming743.check_and_correct(invalid)
+        assert not is_valid, "No bits was flipped for test purposes?"
+        assert bitarray(valid) == corrected

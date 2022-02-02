@@ -50,6 +50,24 @@ class Hamming1393:
         )
 
     @staticmethod
+    def check_and_correct(bits: bitarray) -> (bool, bitarray):
+        """
+        Will check if parity matches, if not, tries to correct one bit-error
+        :param bits:
+        :return: (parity matches, corrected message)
+        """
+        check = Hamming1393.check(bits)
+
+        if not check:
+            # if check does not pass, find index of flipped bit, and correct it
+            syndrome = get_syndrome_for_word(
+                numpy.array(bits.tolist()), Hamming1393.PARITY_CHECK_MATRIX
+            ).tolist()
+            bits.invert(Hamming1393.PARITY_CHECK_MATRIX.T.tolist().index(syndrome))
+
+        return check, bits
+
+    @staticmethod
     def generate(bits: bitarray) -> numpy.ndarray:
         """
         Returns 9 bits (input) with 4 bits of Hamming FEC

@@ -7,7 +7,7 @@ from okdmr.dmrlib.etsi.fec.fec_utils import (
 )
 
 
-class Hamming16114:
+class Hamming17123:
     """
     ETSI TS 102 361-1 V2.5.1 (2017-10) - B.3.3  Hamming (17,12,3)
     """
@@ -47,10 +47,28 @@ class Hamming16114:
         ), f"Hamming (17,12,3) expects exactly 17 bits, got {len(bits)}"
         return numpy.array_equal(
             get_syndrome_for_word(
-                numpy.array(bits.tolist()), Hamming16114.PARITY_CHECK_MATRIX
+                numpy.array(bits.tolist()), Hamming17123.PARITY_CHECK_MATRIX
             ),
-            Hamming16114.CORRECT_SYNDROME,
+            Hamming17123.CORRECT_SYNDROME,
         )
+
+    @staticmethod
+    def check_and_correct(bits: bitarray) -> (bool, bitarray):
+        """
+        Will check if parity matches, if not, tries to correct one bit-error
+        :param bits:
+        :return: (parity matches, corrected message)
+        """
+        check = Hamming17123.check(bits)
+
+        if not check:
+            # if check does not pass, find index of flipped bit, and correct it
+            syndrome = get_syndrome_for_word(
+                numpy.array(bits.tolist()), Hamming17123.PARITY_CHECK_MATRIX
+            ).tolist()
+            bits.invert(Hamming17123.PARITY_CHECK_MATRIX.T.tolist().index(syndrome))
+
+        return check, bits
 
     @staticmethod
     def generate(bits: bitarray) -> numpy.ndarray:
@@ -63,5 +81,5 @@ class Hamming16114:
             len(bits) == 12
         ), f"Hamming (17,12,3) expects 12 bits of data to add 5 bits of parity, got {len(bits)}"
         return divmod(
-            numpy.dot(Hamming16114.GENERATOR_MATRIX.T, numpy.array(bits.tolist())), 2
+            numpy.dot(Hamming17123.GENERATOR_MATRIX.T, numpy.array(bits.tolist())), 2
         )[1]
