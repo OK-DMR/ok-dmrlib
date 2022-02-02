@@ -5,7 +5,7 @@ from numpy import array_equal
 from okdmr.kaitai.etsi.dmr_csbk import DmrCsbk
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 
-from okdmr.dmrlib.etsi.coding.bptc_196_96 import BPTC19696
+from okdmr.dmrlib.etsi.fec.bptc_196_96 import BPTC19696
 from okdmr.dmrlib.etsi.layer2.elements.data_types import DataTypes
 from okdmr.dmrlib.etsi.layer2.general_data_burst import GeneralDataBurst
 from okdmr.dmrlib.etsi.layer2.sync_patterns import SyncPattern

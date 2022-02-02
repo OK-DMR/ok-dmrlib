@@ -1,8 +1,8 @@
 from bitarray import bitarray
 
-from okdmr.dmrlib.etsi.coding.bptc_196_96 import BPTC19696
+from okdmr.dmrlib.etsi.fec.bptc_196_96 import BPTC19696
 from okdmr.dmrlib.etsi.layer2.burst import Burst
-from okdmr.dmrlib.etsi.coding.trellis import Trellis34
+from okdmr.dmrlib.etsi.fec.trellis import Trellis34
 from okdmr.dmrlib.etsi.layer2.elements.data_types import DataTypes
 from okdmr.dmrlib.etsi.layer2.pdu.slot_type import SlotType
 

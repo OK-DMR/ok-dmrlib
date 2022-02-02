@@ -10,8 +10,8 @@ from okdmr.kaitai.etsi.dmr_data_header import DmrDataHeader
 from okdmr.kaitai.etsi.dmr_ip_udp import DmrIpUdp
 from okdmr.kaitai.etsi.link_control import LinkControl
 
-from okdmr.dmrlib.etsi.coding.bptc_196_96 import BPTC19696
-from okdmr.dmrlib.etsi.coding.trellis import Trellis34
+from okdmr.dmrlib.etsi.fec.bptc_196_96 import BPTC19696
+from okdmr.dmrlib.etsi.fec.trellis import Trellis34
 from okdmr.dmrlib.etsi.layer2.elements.data_types import DataTypes
 from okdmr.dmrlib.etsi.layer2.elements.voice_bursts import VoiceBursts
 from okdmr.dmrlib.transmission.burst_info import BurstInfo
