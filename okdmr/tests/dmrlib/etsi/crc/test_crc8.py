@@ -21,3 +21,6 @@ def test_crc8():
         assert CRC8.check(
             data=bits[:28], crc8=ba2int(bits[28:36])
         ), f"CRC8 does not match in {bits}"
+        assert CRC8.CALC.verify_checksum(
+            data=bits[:28], expected_checksum=ba2int(bits[28:36])
+        )

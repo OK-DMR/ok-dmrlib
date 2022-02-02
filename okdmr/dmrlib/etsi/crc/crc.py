@@ -117,26 +117,6 @@ class BitCrcRegisterBase(AbstractBitCrcRegister):
             self._config.polynomial, length=self._config.width_bits
         )
 
-    def __len__(self):
-        """
-        Returns the length (width) of the register.
-
-        :return: the register size/width in bits.
-        """
-        return self._config.width_bits
-
-    def __getitem__(self, index) -> bitarray:
-        """
-        Gets a single chunk of the register.
-
-        :param index: index of first bit
-        :return: number of bits (per configuration width)
-        :raises IndexError: if the index is out of bounce.
-        """
-        if index >= self.register or index < 0:
-            raise IndexError
-        return self.register[index : index + self._config.width_bits]
-
     def init(self):
         """
         See AbstractCrcRegister.init
@@ -206,14 +186,14 @@ class BitCrcRegister(BitCrcRegisterBase):
         """
         See BitCrcRegisterBase._process_bits
         """
-        if len(bits) < 1:
-            return self.register
 
-        for _ in bits:
-            op = (self.register ^ self._topbit) if _ else self.register
-            self.register <<= 1
-            if op >= self._topbit:
-                self.register ^= self._polynomial
+        if len(bits) > 0:
+            for _ in bits:
+                op = (self.register ^ self._topbit) if _ else self.register
+                self.register <<= 1
+                if op >= self._topbit:
+                    self.register ^= self._polynomial
+
         return self.register
 
 
