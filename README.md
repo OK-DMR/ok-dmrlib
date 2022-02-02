@@ -32,6 +32,7 @@ This package provides way to parse and assemble various DMR ETSI protocols and f
 | Name                  | Generate | Verify |
 |-----------------------|:--------:|:------:|
 | 5-bit checksum        |    ✅     |   ✅    |
+| CRC-8 (8-bit CRC)     |    ✅     |   ✅    |
 | CRC-9                 |    ✅     |   ✅    |
 | CRC-CCIT (CRC16-CCIT) |    ✅     |   ✅    |
 | CRC-32 (32-bit CRC)   |    ✅     |   ✅    |

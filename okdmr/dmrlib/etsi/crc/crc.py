@@ -113,6 +113,9 @@ class BitCrcRegisterBase(AbstractBitCrcRegister):
             int2ba(configuration.init_value, length=configuration.width_bits)
             & self._bitmask
         )
+        self._polynomial: bitarray = int2ba(
+            self._config.polynomial, length=self._config.width_bits
+        )
 
     def __len__(self):
         """
@@ -183,9 +186,6 @@ class BitCrcRegisterBase(AbstractBitCrcRegister):
         self.register = rev
         return self.register
 
-    def _is_division_possible(self):
-        return self.register >= self._topbit
-
     @property
     def register(self) -> bitarray:
         return self._register & self._bitmask
@@ -209,18 +209,11 @@ class BitCrcRegister(BitCrcRegisterBase):
         if len(bits) < 1:
             return self.register
 
-        self.register ^= int2ba(
-            ba2int(bits) << (self._config.width_bits - self._config.feed_width_bits),
-            length=self._config.width_bits,
-        )
-        polynomial: bitarray = int2ba(
-            self._config.polynomial, length=self._config.width_bits
-        )
         for _ in bits:
-            if self._is_division_possible():
-                self.register = (self.register << 1) ^ polynomial
-            else:
-                self.register <<= 1
+            op = (self.register ^ self._topbit) if _ else self.register
+            self.register <<= 1
+            if op >= self._topbit:
+                self.register ^= self._polynomial
         return self.register
 
 

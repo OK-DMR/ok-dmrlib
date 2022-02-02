@@ -36,5 +36,4 @@ class CRC8:
         :param data: bytes object of data to be checksumed
         :return: int crc8
         """
-        print(CRC8.CALC.calculate_checksum(data))
         return ba2int(CRC8.CALC.calculate_checksum(data))
