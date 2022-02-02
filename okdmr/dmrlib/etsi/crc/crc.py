@@ -315,6 +315,18 @@ class BitCrcCalculator:
 
 
 @enum.unique
+class Crc8(enum.Enum):
+    ETSI_DMR = BitCrcConfiguration(
+        width_bits=8,
+        polynomial=0x7,
+        init_value=0x00,
+        final_xor_value=0x00,
+        reverse_input_bytes=False,
+        reverse_output_bytes=False,
+    )
+
+
+@enum.unique
 class Crc9(enum.Enum):
     ETSI_DMR = BitCrcConfiguration(
         width_bits=9,
