@@ -25,7 +25,6 @@ setup(
         "okdmr.dmrlib.etsi",
         "okdmr.dmrlib.etsi.crc",
         "okdmr.dmrlib.etsi.fec",
-        "okdmr.dmrlib.etsi.coding",
         "okdmr.dmrlib.etsi.layer2",
         "okdmr.dmrlib.etsi.layer2.elements",
         "okdmr.dmrlib.etsi.layer2.pdu",
