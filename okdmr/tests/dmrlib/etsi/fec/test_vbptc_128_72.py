@@ -40,9 +40,10 @@ def test_encode_decode_vbptc():
     assert hasattr(lc, "cs5_checksum")
     assert lc.cs5_checksum == cs5_calculated
 
-    encoded_data_bits = VBPTC12873.encode(deinterleaved_data_bits[:72])
+    encoded_data_bits = VBPTC12873.encode(deinterleaved_data_bits)
     encoded_all_bits = VBPTC12873.encode(deinterleaved_all_bits)
     assert encoded_data_bits == embedded_bits
+    assert encoded_all_bits == embedded_bits
 
 
 def test_extract_embedded_signalling():

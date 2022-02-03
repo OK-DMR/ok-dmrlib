@@ -334,13 +334,36 @@ class VBPTC12873:
         :param bits_deinterleaved:
         :return:
         """
+        if len(bits_deinterleaved) == 77:
+            # cut out cs5
+            bits_deinterleaved = bits_deinterleaved[:72]
+        elif len(bits_deinterleaved) == 128:
+            # full deinterleaved data including cs5, hamming and parity
+            # interleave again and deinterleave only data bits
+            interleaved: bitarray = bitarray([0] * 128)
+            for data_index, (
+                interleave_index,
+                _,
+                _,
+                _,
+                _,
+            ) in VBPTC12873.INTERLEAVING_INDICES.items():
+                interleaved[data_index] = bits_deinterleaved[interleave_index]
+            bits_deinterleaved = VBPTC12873.deinterleave_data_bits(
+                interleaved, include_cs5=False
+            )
+
+        assert (
+            len(bits_deinterleaved) == 72
+        ), f"Unexpected number of bits fed to VBPTC12872.encode, expected 72, 77 or 128, got {len(bits_deinterleaved)}"
+
         table: numpy.ndarray = VBPTC12873.make_encoding_table()
         table = VBPTC12873.fill_encoding_table(
             table=table, bits_deinterleaved=bits_deinterleaved
         )
 
         # calculate 5-bit checksum and put bits in correct table positions
-        cs5 = FiveBitChecksum.calculate(bits_deinterleaved[:72].tobytes())
+        cs5 = FiveBitChecksum.calculate(bits_deinterleaved.tobytes())
         cs5_bits = int2ba(cs5, length=5)
         table[2][10] = cs5_bits[4]
         table[3][10] = cs5_bits[3]
