@@ -3,7 +3,7 @@ from typing import List
 
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 
-from okdmr.dmrlib.etsi.layer2.elements.sync_types import SyncTypes
+from okdmr.dmrlib.etsi.layer2.elements.sync_patterns import SyncPatterns
 from okdmr.dmrlib.transmission.burst_info import BurstInfo
 
 
@@ -26,7 +26,7 @@ def test_burst_info(capsys):
         burst_info: BurstInfo = BurstInfo(mmdvm.command_data.dmr_data)
         if burst_info.has_emb:
             assert burst_info.emb.emb_parity
-            assert burst_info.sync_type == SyncTypes.EmbeddedData
+            assert burst_info.sync_type == SyncPatterns.EmbeddedSignalling
         elif burst_info.has_slot_type:
             assert burst_info.slot_type.fec_parity_ok
 

@@ -5,7 +5,7 @@ from bitarray import bitarray
 from bitarray.util import ba2int
 
 from okdmr.dmrlib.etsi.layer2.elements.data_types import DataTypes
-from okdmr.dmrlib.etsi.layer2.elements.sync_types import SyncTypes
+from okdmr.dmrlib.etsi.layer2.elements.sync_patterns import SyncPatterns
 from okdmr.dmrlib.etsi.layer2.elements.voice_bursts import VoiceBursts
 from okdmr.dmrlib.etsi.layer2.pdu.embedded_signalling import EmbeddedSignalling
 from okdmr.dmrlib.etsi.layer2.pdu.slot_type import SlotType
@@ -19,7 +19,7 @@ class BurstInfo:
         self.info_bits: bitarray = self.data_bits[:98] + self.data_bits[166:]
         self.sync_or_emb: bitarray = self.data_bits[108:156]
         self.embedded_signalling_bits: bitarray = self.data_bits[116:148]
-        self.sync_type: SyncTypes = SyncTypes.Reserved
+        self.sync_type: SyncPatterns = SyncPatterns.Reserved
 
         self.has_emb: bool = False
         self.emb: Optional[EmbeddedSignalling] = None
@@ -49,24 +49,24 @@ class BurstInfo:
         return self
 
     def detect_sync_type(self):
-        self.sync_type = SyncTypes(ba2int(self.sync_or_emb))
+        self.sync_type = SyncPatterns(ba2int(self.sync_or_emb))
 
         self.is_voice_superframe_start = self.sync_type in [
-            SyncTypes.Tdma2Voice,
-            SyncTypes.Tdma1Voice,
-            SyncTypes.MsSourcedVoice,
-            SyncTypes.BsSourcedVoice,
+            SyncPatterns.Tdma2Voice,
+            SyncPatterns.Tdma1Voice,
+            SyncPatterns.MsSourcedVoice,
+            SyncPatterns.BsSourcedVoice,
         ]
         self.is_data_or_control = self.sync_type in [
-            SyncTypes.Tdma1Data,
-            SyncTypes.Tdma2Data,
-            SyncTypes.BsSourcedData,
-            SyncTypes.MsSourcedData,
+            SyncPatterns.Tdma1Data,
+            SyncPatterns.Tdma2Data,
+            SyncPatterns.BsSourcedData,
+            SyncPatterns.MsSourcedData,
         ]
 
         self.has_slot_type = self.is_data_or_control
         self.has_emb = (
-            self.sync_type == SyncTypes.EmbeddedData
+            self.sync_type == SyncPatterns.EmbeddedSignalling
             and not self.is_voice_superframe_start
         )
 

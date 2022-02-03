@@ -8,7 +8,7 @@ from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 from okdmr.dmrlib.etsi.fec.bptc_196_96 import BPTC19696
 from okdmr.dmrlib.etsi.layer2.elements.data_types import DataTypes
 from okdmr.dmrlib.etsi.layer2.general_data_burst import GeneralDataBurst
-from okdmr.dmrlib.etsi.layer2.sync_patterns import SyncPattern
+from okdmr.dmrlib.etsi.layer2.elements.sync_patterns import SyncPatterns
 
 
 def test_bptc19696_maps():
@@ -77,7 +77,7 @@ def test_decode_mmdvm2020_csbks():
         mmdvm: Mmdvm2020 = Mmdvm2020.from_bytes(bytes.fromhex(packet))
         assert isinstance(mmdvm.command_data, Mmdvm2020.TypeDmrData)
         burst: GeneralDataBurst = GeneralDataBurst(mmdvm.command_data.dmr_data)
-        assert burst.sync_or_embedded == SyncPattern.BsSourcedData
+        assert burst.sync_or_embedded == SyncPatterns.BsSourcedData
         assert burst.slot_type.data_type == DataTypes.CSBK
         csbk: DmrCsbk = DmrCsbk.from_bytes(burst.info_bits_deinterleaved.tobytes())
         for propname, value in testdata.items():

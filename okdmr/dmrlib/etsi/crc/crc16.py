@@ -1,7 +1,7 @@
 from bitarray.util import ba2int
 
 from okdmr.dmrlib.etsi.crc.crc import BitCrcCalculator, Crc16
-from okdmr.dmrlib.etsi.crc.crc_masks import CrcMasks
+from okdmr.dmrlib.etsi.layer2.elements.crc_masks import CrcMasks
 from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits
 
 

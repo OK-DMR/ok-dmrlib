@@ -3,6 +3,10 @@ import enum
 
 @enum.unique
 class VoiceBursts(enum.Enum):
+    """
+    Utility class, not standardized in ETSI DMR TierII specs
+    """
+
     Unknown = (1,)
 
     VoiceBurstA = (100,)

@@ -1,7 +1,7 @@
 from typing import Tuple, List
 
 from okdmr.dmrlib.etsi.crc.crc16 import CRC16
-from okdmr.dmrlib.etsi.crc.crc_masks import CrcMasks
+from okdmr.dmrlib.etsi.layer2.elements.crc_masks import CrcMasks
 
 
 def test_crc16():

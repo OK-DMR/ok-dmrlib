@@ -7,6 +7,10 @@ from bitarray.util import ba2int
 
 
 class Trellis34:
+    """
+    ETSI TS 102 361-1 V2.5.1 (2017-10) - B.2.4  Rate ¾ Trellis code
+    """
+
     # disable black formatting for following scalar arrays, see https://github.com/psf/black/issues/1281
     # fmt: off
     TRELLIS34_INTERLEAVE_MATRIX: List[int] = [

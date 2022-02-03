@@ -2,8 +2,6 @@ from bitarray import bitarray
 from bitarray.util import ba2int
 
 from okdmr.dmrlib.etsi.crc.crc import BitCrcCalculator, Crc8
-from okdmr.dmrlib.etsi.crc.crc_masks import CrcMasks
-from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits
 
 
 class CRC8:

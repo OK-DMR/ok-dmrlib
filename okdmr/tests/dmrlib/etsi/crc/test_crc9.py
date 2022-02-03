@@ -4,7 +4,7 @@ from bitarray.util import int2ba
 
 from okdmr.dmrlib.etsi.crc.crc import BitCrcCalculator, Crc9
 from okdmr.dmrlib.etsi.crc.crc9 import CRC9
-from okdmr.dmrlib.etsi.crc.crc_masks import CrcMasks
+from okdmr.dmrlib.etsi.layer2.elements.crc_masks import CrcMasks
 
 
 def test_crc9():

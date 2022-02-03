@@ -6,6 +6,9 @@ from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits
 
 
 class CRC9:
+    """
+    ETSI TS 102 361-1 V2.5.1 (2017-10) - B.3.10 CRC-9 calculation
+    """
 
     CALC: BitCrcCalculator = BitCrcCalculator(
         table_based=True, configuration=Crc9.ETSI_DMR
