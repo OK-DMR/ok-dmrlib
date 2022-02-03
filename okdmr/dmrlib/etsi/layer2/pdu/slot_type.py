@@ -6,9 +6,10 @@ from bitarray.util import ba2int, int2ba
 from okdmr.dmrlib.etsi.fec.golay_20_8_7 import Golay2087
 from okdmr.dmrlib.etsi.layer2.elements.data_types import DataTypes
 from okdmr.dmrlib.utils.bits_bytes import numpy_array_to_int
+from okdmr.dmrlib.utils.bits_interface import BitsInterface
 
 
-class SlotType:
+class SlotType(BitsInterface):
     """
     ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.3 Slot Type (SLOT) PDU
     """

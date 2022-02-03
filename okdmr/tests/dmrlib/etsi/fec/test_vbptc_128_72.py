@@ -7,7 +7,7 @@ from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 
 from okdmr.dmrlib.etsi.fec.five_bit_checksum import FiveBitChecksum
 from okdmr.dmrlib.etsi.fec.vbptc_128_72 import VBPTC12873
-from okdmr.dmrlib.transmission.burst_info import BurstInfo
+from okdmr.dmrlib.etsi.layer2.burst import Burst
 
 
 def test_vbptc_sanity():
@@ -57,5 +57,5 @@ def test_extract_embedded_signalling():
     for burst in bursts:
         mmdvm: Mmdvm2020 = Mmdvm2020.from_bytes(bytes.fromhex(burst))
         assert isinstance(mmdvm.command_data, Mmdvm2020.TypeDmrData)
-        burst_info: BurstInfo = BurstInfo(mmdvm.command_data.dmr_data)
+        burst_info: Burst = Burst.from_mmdvm(mmdvm=mmdvm.command_data)
         assert burst_info.has_emb

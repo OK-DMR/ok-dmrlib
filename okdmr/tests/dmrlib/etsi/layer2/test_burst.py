@@ -3,8 +3,10 @@ from typing import List
 
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 
+from okdmr.dmrlib.etsi.layer2.burst import Burst
+from okdmr.dmrlib.etsi.layer2.elements.burst_type import BurstType
+from okdmr.dmrlib.etsi.layer2.elements.data_types import DataTypes
 from okdmr.dmrlib.etsi.layer2.elements.sync_patterns import SyncPatterns
-from okdmr.dmrlib.transmission.burst_info import BurstInfo
 
 
 def test_burst_info(capsys):
@@ -23,23 +25,25 @@ def test_burst_info(capsys):
     for burst_hex in bursts:
         mmdvm: Mmdvm2020 = Mmdvm2020.from_bytes(bytes.fromhex(burst_hex))
         assert isinstance(mmdvm.command_data, Mmdvm2020.TypeDmrData)
-        burst_info: BurstInfo = BurstInfo(mmdvm.command_data.dmr_data)
-        if burst_info.has_emb:
-            assert burst_info.emb.emb_parity
-            assert burst_info.sync_type == SyncPatterns.EmbeddedSignalling
-        elif burst_info.has_slot_type:
-            assert burst_info.slot_type.fec_parity_ok
+        burst: Burst = Burst.from_mmdvm(mmdvm=mmdvm.command_data)
+        if burst.has_emb:
+            assert burst.emb.emb_parity
+            assert burst.sync_or_embedded_signalling == SyncPatterns.EmbeddedSignalling
+            assert burst.data_type == DataTypes.Reserved
+        elif burst.has_slot_type:
+            assert burst.slot_type.fec_parity_ok
+            assert isinstance(burst.data_type, DataTypes)
 
-        burst_info.set_sequence_no(128)
-        assert burst_info.sequence_no == 128
+        burst.set_sequence_no(128)
+        assert burst.sequence_no == 128
 
-        burst_info.set_stream_no(b"\xFF\xAA")
-        assert burst_info.stream_no == b"\xFF\xAA"
+        burst.set_stream_no(b"\xFF\xAA")
+        assert burst.stream_no == b"\xFF\xAA"
 
-        noprintdebug: str = burst_info.debug(printout=False)
+        noprintdebug: str = repr(burst)
         assert len(noprintdebug) > 0
 
-        printdebug: str = burst_info.debug(printout=True)
+        printdebug: str = burst.debug(printout=True)
         assert len(printdebug) > 0
         out, err = capsys.readouterr()
         assert len(out) > 0
@@ -49,5 +53,5 @@ def test_burst_info(capsys):
 if __name__ == "__main__":
     ks_mmdvm: Mmdvm2020 = Mmdvm2020.from_bytes(bytes.fromhex(sys.argv[1]))
     assert isinstance(ks_mmdvm.command_data, Mmdvm2020.TypeDmrData)
-    m_burst_info: BurstInfo = BurstInfo(ks_mmdvm.command_data.dmr_data)
+    m_burst_info: Burst = Burst.from_mmdvm(mmdvm=ks_mmdvm.command_data)
     m_burst_info.debug(printout=True)

@@ -8,13 +8,13 @@ from okdmr.kaitai.etsi.dmr_csbk import DmrCsbk
 from okdmr.kaitai.etsi.dmr_data import DmrData
 from okdmr.kaitai.etsi.dmr_data_header import DmrDataHeader
 from okdmr.kaitai.etsi.dmr_ip_udp import DmrIpUdp
-from okdmr.kaitai.etsi.link_control import LinkControl
+from okdmr.kaitai.etsi.full_link_control import FullLinkControl
 
 from okdmr.dmrlib.etsi.fec.bptc_196_96 import BPTC19696
 from okdmr.dmrlib.etsi.fec.trellis import Trellis34
+from okdmr.dmrlib.etsi.layer2.burst import Burst
 from okdmr.dmrlib.etsi.layer2.elements.data_types import DataTypes
 from okdmr.dmrlib.etsi.layer2.elements.voice_bursts import VoiceBursts
-from okdmr.dmrlib.transmission.burst_info import BurstInfo
 from okdmr.dmrlib.transmission.transmission_observer_interface import (
     TransmissionObserverInterface,
 )
@@ -57,7 +57,7 @@ class Transmission(LoggingTrait):
         self.header = None
         self.stream_no = secrets.token_bytes(4)
 
-    def process_voice_header(self, voice_header: LinkControl):
+    def process_voice_header(self, voice_header: FullLinkControl):
         self.new_transmission(TransmissionTypes.VoiceTransmission)
         self.header = voice_header
 
@@ -199,7 +199,7 @@ class Transmission(LoggingTrait):
         if self.finished or self.type == TransmissionTypes.Idle:
             return
         self.log_info(f"[VOICE CALL END]")
-        if isinstance(self.header, LinkControl):
+        if isinstance(self.header, FullLinkControl):
 
             for observer in self.observers:
                 # noinspection PyBroadException
@@ -208,13 +208,15 @@ class Transmission(LoggingTrait):
                 except:
                     traceback.print_exc()
 
-            if isinstance(self.header.specific_data, LinkControl.GroupVoiceChannelUser):
+            if isinstance(
+                self.header.specific_data, FullLinkControl.GroupVoiceChannelUser
+            ):
                 self.log_info(
                     f"[GROUP] [{self.header.specific_data.source_address} -> "
                     f"{self.header.specific_data.group_address}]"
                 )
             elif isinstance(
-                self.header.specific_data, LinkControl.UnitToUnitVoiceChannelUser
+                self.header.specific_data, FullLinkControl.UnitToUnitVoiceChannelUser
             ):
                 self.log_info(
                     f"[PRIVATE] [{self.header.specific_data.source_address} ->"
@@ -303,7 +305,7 @@ class Transmission(LoggingTrait):
 
         self.new_transmission(TransmissionTypes.Idle)
 
-    def fix_voice_burst_type(self, burst: BurstInfo) -> BurstInfo:
+    def fix_voice_burst_type(self, burst: Burst) -> Burst:
         if not self.type == TransmissionTypes.VoiceTransmission:
             self.last_burst_data_type = burst.data_type
             return burst
@@ -327,15 +329,15 @@ class Transmission(LoggingTrait):
 
         return burst
 
-    def process_packet(self, burst: BurstInfo) -> BurstInfo:
+    def process_packet(self, burst: Burst) -> Burst:
         burst = self.fix_voice_burst_type(burst)
 
         lc_info_bits = BPTC19696.deinterleave_data_bits(
-            burst.data_bits[:98] + burst.data_bits[166:]
+            burst.full_bits[:98] + burst.full_bits[166:]
         )
         if burst.data_type == DataTypes.VoiceLCHeader:
             self.log_info("voice header %s" % lc_info_bits.tobytes().hex())
-            self.process_voice_header(LinkControl.from_bytes(lc_info_bits))
+            self.process_voice_header(FullLinkControl.from_bytes(lc_info_bits))
         elif burst.data_type == DataTypes.DataHeader:
             self.process_data_header(DmrDataHeader.from_bytes(lc_info_bits))
         elif burst.data_type == DataTypes.CSBK:

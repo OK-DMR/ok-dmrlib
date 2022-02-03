@@ -63,7 +63,7 @@ class ReedSolomon1294:
     # fmt:on
 
     @staticmethod
-    def log_multiply(a: int, b: int):
+    def log_multiply(a: int, b: int) -> int:
         if a == 0 or b == 0:
             return 0
         return ReedSolomon1294.EXPONENTIAL_TABLE[
@@ -71,7 +71,7 @@ class ReedSolomon1294:
         ]
 
     @staticmethod
-    def xor_bytes(data: bytes, mask: bytes):
+    def xor_bytes(data: bytes, mask: bytes) -> bytes:
         return bytes(a ^ b for a, b in zip(data, mask))
 
     @staticmethod

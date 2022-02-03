@@ -6,9 +6,11 @@ from okdmr.kaitai.etsi.dmr_csbk import DmrCsbk
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 
 from okdmr.dmrlib.etsi.fec.bptc_196_96 import BPTC19696
+from okdmr.dmrlib.etsi.layer2.burst import Burst
+from okdmr.dmrlib.etsi.layer2.elements.burst_type import BurstType
 from okdmr.dmrlib.etsi.layer2.elements.data_types import DataTypes
-from okdmr.dmrlib.etsi.layer2.general_data_burst import GeneralDataBurst
 from okdmr.dmrlib.etsi.layer2.elements.sync_patterns import SyncPatterns
+from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits
 
 
 def test_bptc19696_maps():
@@ -76,8 +78,11 @@ def test_decode_mmdvm2020_csbks():
     for packet, testdata in packets.items():
         mmdvm: Mmdvm2020 = Mmdvm2020.from_bytes(bytes.fromhex(packet))
         assert isinstance(mmdvm.command_data, Mmdvm2020.TypeDmrData)
-        burst: GeneralDataBurst = GeneralDataBurst(mmdvm.command_data.dmr_data)
-        assert burst.sync_or_embedded == SyncPatterns.BsSourcedData
+        burst: Burst = Burst.from_bits(
+            bits=bytes_to_bits(mmdvm.command_data.dmr_data),
+            burst_type=BurstType.DataAndControl,
+        )
+        assert burst.sync_or_embedded_signalling == SyncPatterns.BsSourcedData
         assert burst.slot_type.data_type == DataTypes.CSBK
         csbk: DmrCsbk = DmrCsbk.from_bytes(burst.info_bits_deinterleaved.tobytes())
         for propname, value in testdata.items():
@@ -89,7 +94,9 @@ def test_decode_encode():
         "53df0a83b7a8282c2509625014fdff57d75df5dcadde429028c87ae3341e24191c"
     ]
     for hex_burst in hex_bursts:
-        burst: GeneralDataBurst = GeneralDataBurst(bytes.fromhex(hex_burst))
+        burst: Burst = Burst.from_bytes(
+            bytes.fromhex(hex_burst), burst_type=BurstType.DataAndControl
+        )
 
         # data that can be spliced later to make parts of burst (196 bits)
         original_info_bits: bitarray = burst.info_bits_original

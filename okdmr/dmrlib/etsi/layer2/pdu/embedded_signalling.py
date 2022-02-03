@@ -8,9 +8,10 @@ from okdmr.dmrlib.etsi.layer2.elements.lcss import LCSS
 from okdmr.dmrlib.etsi.layer2.elements.preemption_power_indicator import (
     PreemptionPowerIndicator,
 )
+from okdmr.dmrlib.utils.bits_interface import BitsInterface
 
 
-class EmbeddedSignalling:
+class EmbeddedSignalling(BitsInterface):
     """
     ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.2 Embedded signalling (EMB) PDU
     """

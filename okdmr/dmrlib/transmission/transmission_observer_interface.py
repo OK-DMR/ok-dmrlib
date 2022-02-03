@@ -2,7 +2,7 @@ from typing import List
 
 from kaitaistruct import KaitaiStruct
 from okdmr.kaitai.etsi.dmr_data_header import DmrDataHeader
-from okdmr.kaitai.etsi.link_control import LinkControl
+from okdmr.kaitai.etsi.full_link_control import FullLinkControl
 
 from okdmr.dmrlib.transmission.transmission_types import TransmissionTypes
 
@@ -31,7 +31,7 @@ class TransmissionObserverInterface:
         pass
 
     def voice_transmission_ended(
-        self, voice_header: LinkControl, blocks: List[KaitaiStruct]
+        self, voice_header: FullLinkControl, blocks: List[KaitaiStruct]
     ):
         """
         Get notified about ended voice transmission

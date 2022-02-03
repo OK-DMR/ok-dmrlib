@@ -4,9 +4,9 @@ from typing import List
 
 from kaitaistruct import KaitaiStruct
 from okdmr.kaitai.etsi.dmr_data_header import DmrDataHeader
-from okdmr.kaitai.etsi.link_control import LinkControl
+from okdmr.kaitai.etsi.full_link_control import FullLinkControl
 
-from okdmr.dmrlib.transmission.burst_info import BurstInfo
+from okdmr.dmrlib.etsi.layer2.burst import Burst
 from okdmr.dmrlib.transmission.transmission import Transmission
 from okdmr.dmrlib.transmission.transmission_observer_interface import (
     TransmissionObserverInterface,
@@ -20,10 +20,10 @@ class Timeslot(TransmissionObserverInterface):
         self.rx_sequence: int = 0
         self.reset_rx_sequence: bool = False
         self.transmission: Transmission = Transmission(self)
-        self.color_code: int = 1
+        self.color_code: int = 0
 
     def voice_transmission_ended(
-        self, voice_header: LinkControl, blocks: List[KaitaiStruct]
+        self, voice_header: FullLinkControl, blocks: List[KaitaiStruct]
     ):
         self.reset_rx_sequence = True
 
@@ -37,12 +37,11 @@ class Timeslot(TransmissionObserverInterface):
             self.rx_sequence = (self.rx_sequence + 1) & 255
         return self.rx_sequence
 
-    def process_burst(self, dmrdata: BurstInfo) -> BurstInfo:
+    def process_burst(self, dmrdata: Burst) -> Burst:
         self.last_packet_received = time()
-        if dmrdata.color_code != 0:
-            self.color_code = dmrdata.color_code
+        self.color_code = dmrdata.colour_code
 
-        out: BurstInfo = (
+        out: Burst = (
             self.transmission.process_packet(dmrdata)
             .set_sequence_no(self.get_rx_sequence())
             .set_stream_no(self.transmission.stream_no)
