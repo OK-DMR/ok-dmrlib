@@ -310,7 +310,7 @@ class BPTC19696:
         """
         assert (
             len(bits) == 196
-        ), f"BPTC 196,16 decode requires 196 bits, got {len(bits)}"
+        ), f"BPTC 196,96 decode requires 196 bits, got {len(bits)}"
         mapping = BPTC19696.DEINTERLEAVE_INFO_BITS_ONLY_MAP
 
         out = bitarray([0] * len(mapping.keys()), endian="big")

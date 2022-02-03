@@ -18,6 +18,7 @@ class BurstInfo:
         self.payload_bits: bitarray = self.data_bits[:108] + self.data_bits[156:]
         self.info_bits: bitarray = self.data_bits[:98] + self.data_bits[166:]
         self.sync_or_emb: bitarray = self.data_bits[108:156]
+        self.embedded_signalling_bits: bitarray = self.data_bits[116:148]
         self.sync_type: SyncTypes = SyncTypes.Reserved
 
         self.has_emb: bool = False

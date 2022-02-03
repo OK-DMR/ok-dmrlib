@@ -1,3 +1,4 @@
+import sys
 from typing import List
 
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
@@ -43,3 +44,10 @@ def test_burst_info(capsys):
         out, err = capsys.readouterr()
         assert len(out) > 0
         assert len(err) < 1
+
+
+if __name__ == "__main__":
+    ks_mmdvm: Mmdvm2020 = Mmdvm2020.from_bytes(bytes.fromhex(sys.argv[1]))
+    assert isinstance(ks_mmdvm.command_data, Mmdvm2020.TypeDmrData)
+    m_burst_info: BurstInfo = BurstInfo(ks_mmdvm.command_data.dmr_data)
+    m_burst_info.debug(printout=True)
