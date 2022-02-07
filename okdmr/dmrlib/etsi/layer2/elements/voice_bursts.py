@@ -14,8 +14,12 @@ class VoiceBursts(enum.Enum):
     VoiceBurstC = (102,)
     VoiceBurstD = (103,)
     VoiceBurstE = (104,)
-    VoiceBurstF = 105
+    VoiceBurstF = (105,)
 
     @classmethod
-    def _missing_(cls, key: object):
+    def _missing_(cls, value: int):
+        assert (
+            100 <= value <= 105
+        ) or value == 1, f"Unknown VoiceBurst value, got {value}"
+
         return VoiceBursts.Unknown

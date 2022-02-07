@@ -6,7 +6,7 @@ from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 
 from okdmr.dmrlib.etsi.fec.bptc_196_96 import BPTC19696
 from okdmr.dmrlib.etsi.fec.trellis import Trellis34
-from okdmr.dmrlib.etsi.layer2.elements.burst_type import BurstType
+from okdmr.dmrlib.etsi.layer2.elements.burst_types import BurstTypes
 from okdmr.dmrlib.etsi.layer2.elements.data_types import DataTypes
 from okdmr.dmrlib.etsi.layer2.elements.sync_patterns import SyncPatterns
 from okdmr.dmrlib.etsi.layer2.pdu.embedded_signalling import EmbeddedSignalling
@@ -21,7 +21,7 @@ class Burst:
     """
 
     def __init__(
-        self, full_bits: bitarray, burst_type: BurstType = BurstType.Undefined
+        self, full_bits: bitarray, burst_type: BurstTypes = BurstTypes.Undefined
     ):
         assert (
             len(full_bits) == 264
@@ -41,7 +41,7 @@ class Burst:
             SyncPatterns.BsSourcedVoice,
         ]
         self.is_data_or_control = (
-            burst_type == BurstType.DataAndControl
+            burst_type == BurstTypes.DataAndControl
             or self.sync_or_embedded_signalling
             in [
                 SyncPatterns.Tdma1Data,
@@ -72,7 +72,7 @@ class Burst:
 
         self.info_bits_deinterleaved: Optional[bitarray] = (
             None
-            if not burst_type == BurstType.DataAndControl
+            if not burst_type == BurstTypes.DataAndControl
             else Burst.deinterleave(
                 bits=self.info_bits_original, data_type=self.data_type
             )
@@ -124,11 +124,11 @@ class Burst:
         return self.full_bits
 
     @staticmethod
-    def from_bits(bits: bitarray, burst_type: BurstType) -> "Burst":
+    def from_bits(bits: bitarray, burst_type: BurstTypes) -> "Burst":
         return Burst(full_bits=bits, burst_type=burst_type)
 
     @staticmethod
-    def from_bytes(data: bytes, burst_type: BurstType) -> "Burst":
+    def from_bytes(data: bytes, burst_type: BurstTypes) -> "Burst":
         return Burst(full_bits=bytes_to_bits(data), burst_type=burst_type)
 
     @staticmethod
@@ -136,7 +136,9 @@ class Burst:
         b = Burst(
             full_bits=bytes_to_bits(mmdvm.dmr_data),
             burst_type=(
-                BurstType.DataAndControl if mmdvm.frame_type == 2 else BurstType.Vocoder
+                BurstTypes.DataAndControl
+                if mmdvm.frame_type == 2
+                else BurstTypes.Vocoder
             ),
         )
         b.set_stream_no(mmdvm.stream_id)

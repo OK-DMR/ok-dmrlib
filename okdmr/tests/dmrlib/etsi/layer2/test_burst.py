@@ -4,7 +4,6 @@ from typing import List
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 
 from okdmr.dmrlib.etsi.layer2.burst import Burst
-from okdmr.dmrlib.etsi.layer2.elements.burst_type import BurstType
 from okdmr.dmrlib.etsi.layer2.elements.data_types import DataTypes
 from okdmr.dmrlib.etsi.layer2.elements.sync_patterns import SyncPatterns
 

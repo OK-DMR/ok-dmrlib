@@ -22,10 +22,14 @@ class DataTypes(enum.Enum):
 
     # ETSI Reserved values, first one (int:12) is used as fallback for unknown bursts/data
     Reserved = 12
-    Reserved13 = 13
-    Reserved14 = 14
-    Reserved15 = 15
 
     @classmethod
-    def _missing_(cls, value: object):
-        return DataTypes.Reserved
+    def _missing_(cls, value: int):
+        assert (
+            0b0000 <= value <= 0b1111
+        ), f"DT (Data Type) value out of range, got {value}"
+
+        if 0b1100 <= value <= 0b1111:
+            return DataTypes.Reserved
+
+        raise ValueError(f"DT (Data Type) value {value} is unknown")

@@ -7,7 +7,7 @@ from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 
 from okdmr.dmrlib.etsi.fec.bptc_196_96 import BPTC19696
 from okdmr.dmrlib.etsi.layer2.burst import Burst
-from okdmr.dmrlib.etsi.layer2.elements.burst_type import BurstType
+from okdmr.dmrlib.etsi.layer2.elements.burst_types import BurstTypes
 from okdmr.dmrlib.etsi.layer2.elements.data_types import DataTypes
 from okdmr.dmrlib.etsi.layer2.elements.sync_patterns import SyncPatterns
 from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits
@@ -80,7 +80,7 @@ def test_decode_mmdvm2020_csbks():
         assert isinstance(mmdvm.command_data, Mmdvm2020.TypeDmrData)
         burst: Burst = Burst.from_bits(
             bits=bytes_to_bits(mmdvm.command_data.dmr_data),
-            burst_type=BurstType.DataAndControl,
+            burst_type=BurstTypes.DataAndControl,
         )
         assert burst.sync_or_embedded_signalling == SyncPatterns.BsSourcedData
         assert burst.slot_type.data_type == DataTypes.CSBK
@@ -95,7 +95,7 @@ def test_decode_encode():
     ]
     for hex_burst in hex_bursts:
         burst: Burst = Burst.from_bytes(
-            bytes.fromhex(hex_burst), burst_type=BurstType.DataAndControl
+            bytes.fromhex(hex_burst), burst_type=BurstTypes.DataAndControl
         )
 
         # data that can be spliced later to make parts of burst (196 bits)

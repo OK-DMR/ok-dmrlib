@@ -1,7 +1,7 @@
 from typing import Dict
 
-from okdmr.dmrlib.etsi.layer2.elements.crc_masks import CrcMasks
 from okdmr.dmrlib.etsi.fec.reed_solomon_12_9_4 import ReedSolomon1294
+from okdmr.dmrlib.etsi.layer2.elements.crc_masks import CrcMasks
 
 
 def test_rs1294():
