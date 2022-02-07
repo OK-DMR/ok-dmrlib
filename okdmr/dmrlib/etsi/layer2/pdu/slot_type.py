@@ -17,6 +17,12 @@ class SlotType(BitsInterface):
     def __init__(
         self, colour_code: int, data_type: Union[int, DataTypes], parity: int = 0
     ):
+        """
+
+        :param colour_code: value 0-15
+        :param data_type: DataTypes or value 0-15
+        :param parity: value 0-4095
+        """
         assert (
             0b0 <= colour_code <= 0b1111
         ), f"Colour Code must be in range 0-15, got {colour_code}"

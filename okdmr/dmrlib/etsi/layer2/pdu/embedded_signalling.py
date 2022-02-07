@@ -23,6 +23,13 @@ class EmbeddedSignalling(BitsInterface):
         link_control_start_stop: Union[LCSS, int],
         emb_parity: int = 0,
     ):
+        """
+
+        :param colour_code: value 0-15
+        :param preemption_and_power_control_indicator: value 0/1
+        :param link_control_start_stop:
+        :param emb_parity: value 0-511
+        """
         assert (
             0b0 <= colour_code <= 0b1111
         ), f"CC (Colour Code) value must be in range 0-15, got {colour_code}"

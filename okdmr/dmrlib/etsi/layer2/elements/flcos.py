@@ -10,9 +10,6 @@ class FLCOs(enum.Enum):
     """
 
     GroupVoiceChannelUser = 0b000000
-    """
-    koment pod
-    """
     UnitToUnitVoiceChannelUser = 0b000011
     TalkerAliasHeader = 0b000100
     TalkerAliasBlock1 = 0b000101
