@@ -31,5 +31,3 @@ class DataTypes(enum.Enum):
 
         if 0b1100 <= value <= 0b1111:
             return DataTypes.Reserved
-
-        raise ValueError(f"DT (Data Type) value {value} is unknown")
