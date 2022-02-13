@@ -59,7 +59,10 @@ class EmbeddedSignalling(BitsInterface):
         self.emb_parity_ok: bool = QuadraticResidue1676.check(self.as_bits())
 
     def __repr__(self) -> str:
-        return f"[LCSS: {self.link_control_start_stop}] [PI: {self.preemption_and_power_control_indicator}] [CC: {self.colour_code}] [EMB FEC: {'VALID' if self.emb_parity_ok else 'INVALID'}]"
+        return (
+            f"[LCSS: {self.link_control_start_stop}] [PI: {self.preemption_and_power_control_indicator}] "
+            f"[CC: {self.colour_code}] [EMB FEC: {'VALID' if self.emb_parity_ok else 'INVALID'}]"
+        )
 
     def as_bits(self) -> bitarray:
         return (

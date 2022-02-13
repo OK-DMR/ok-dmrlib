@@ -293,6 +293,8 @@ class CSBK(BitsInterface):
                 source_dynamic_identifier=DynamicIdentifier.from_bits(bits[77:79]),
             )
 
+        raise ValueError(f"Not-implemented CSBKO {csbko}")
+
     def __repr__(self) -> str:
         description = f"[{self.csbko}] [LB: {int(self.last_block)}] [PF: {int(self.protect_flag)}] [{self.feature_set}] "
         if self.csbko == CsbkOpcodes.BSOutboundActivation:
