@@ -3,7 +3,7 @@ from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 from okdmr.dmrlib.etsi.layer2.burst import Burst
 from okdmr.dmrlib.etsi.layer2.elements.csbk_opcodes import CsbkOpcodes
 from okdmr.dmrlib.etsi.layer2.elements.feature_set_ids import FeatureSetIDs
-from okdmr.dmrlib.etsi.layer3.pdu.csbk import CSBK
+from okdmr.dmrlib.etsi.layer2.pdu.csbk import CSBK
 
 
 def test_csbk():
@@ -20,4 +20,5 @@ def test_csbk():
     assert csbk.feature_set == FeatureSetIDs.StandardizedFID
     assert csbk.target_address == 2301
     assert csbk.source_address == 2308155
-    # todo: add test for crc-ccit and to_bits
+    assert csbk.as_bits() == burst.info_bits_deinterleaved
+    # assert csbk.calculate_crc_ccit().as_bits()[-16:] == burst.info_bits_deinterleaved[-16:]

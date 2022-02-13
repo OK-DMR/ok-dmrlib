@@ -1,8 +1,10 @@
 from typing import Union, Optional
 
 from bitarray import bitarray
-from bitarray.util import ba2int
+from bitarray.util import ba2int, int2ba
 
+from okdmr.dmrlib.etsi.crc.crc16 import CRC16
+from okdmr.dmrlib.etsi.layer2.elements.crc_masks import CrcMasks
 from okdmr.dmrlib.etsi.layer2.elements.csbk_opcodes import CsbkOpcodes
 from okdmr.dmrlib.etsi.layer2.elements.feature_set_ids import FeatureSetIDs
 from okdmr.dmrlib.etsi.layer3.elements.additional_information_field import (
@@ -28,7 +30,8 @@ class CSBK(BitsInterface):
         protect_flag: Union[bool, int],
         csbko: CsbkOpcodes,
         manufacturers_feature_set_id: FeatureSetIDs,
-        crc: int,
+        # default value for crc indicates, it must be recalculated on construct
+        crc: int = -1,
         # bs outbound activation fields
         bs_address: int = 0,
         source_address: int = 0,
@@ -132,6 +135,77 @@ class CSBK(BitsInterface):
             else DynamicIdentifier(source_dynamic_identifier)
         )
 
+        if self.crc < 0:
+            self.calculate_crc_ccit()
+
+    def calculate_crc_ccit(self) -> "CSBK":
+        self.crc = CRC16.calculate(self.as_bits()[16:80].tobytes(), CrcMasks.CSBK)
+        return self
+
+    def as_bits(self) -> bitarray:
+        pdu: bitarray = (
+            bitarray([self.last_block, self.protect_flag])
+            + self.csbko.as_bits()
+            + self.feature_set.as_bits()
+        )
+        if self.csbko == CsbkOpcodes.BSOutboundActivation:
+            pdu += (
+                int2ba(0, length=16)
+                + int2ba(self.bs_address, length=24)
+                + int2ba(self.source_address, length=24)
+            )
+        elif self.csbko == CsbkOpcodes.UnitToUnitVoiceServiceRequest:
+            pdu += (
+                self.service_options.as_bits()
+                + int2ba(0, length=8)
+                + int2ba(self.target_address, length=24)
+                + int2ba(self.source_address, length=24)
+            )
+        elif self.csbko == CsbkOpcodes.UnitToUnitVoiceServiceAnswerResponse:
+            pdu += (
+                self.service_options.as_bits()
+                + self.answer_response.as_bits()
+                + int2ba(self.target_address, length=24)
+                + int2ba(self.source_address, length=24)
+            )
+        elif self.csbko == CsbkOpcodes.NegativeAcknowledgementResponse:
+            pdu += (
+                bitarray([1, self.source_type == SourceType.MSSourced])
+                + self.service_type.as_bits()
+                + self.reason_code.as_bits()
+                + int2ba(self.source_address, length=24)
+                + int2ba(self.target_address, length=24)
+            )
+        elif self.csbko == CsbkOpcodes.PreambleCSBK:
+            pdu += (
+                bitarray(
+                    [
+                        not self.csbk_content_follows_preambles,
+                        self.target_address_is_individual,
+                    ]
+                )
+                + int2ba(0, length=6)
+                + int2ba(self.blocks_to_follow, length=8)
+                + int2ba(self.target_address, length=24)
+                + int2ba(self.source_address, length=24)
+            )
+        elif self.csbko == ChannelTimingOpcode:
+            cto = self.channel_timing_opcode.as_bits()
+            pdu += (
+                int2ba(self.sync_age, length=11)
+                + int2ba(self.generation, length=5)
+                + int2ba(self.leader_identifier, length=20)
+                + int2ba(self.new_leader, length=1)
+                + self.leader_dynamic_identifier.as_bits()
+                + cto[0:1]
+                + int2ba(self.source_identifier, length=20)
+                + bitarray([0])
+                + self.source_dynamic_identifier.as_bits()
+                + cto[1:2]
+            )
+
+        return pdu + int2ba(self.crc, length=16)
+
     @staticmethod
     def from_bits(bits: bitarray) -> "CSBK":
         assert (
@@ -141,7 +215,7 @@ class CSBK(BitsInterface):
         pf: int = bits[1]
         csbko: CsbkOpcodes = CsbkOpcodes(ba2int(bits[2:8]))
         fid: FeatureSetIDs = FeatureSetIDs(ba2int(bits[8:16]))
-        crc_ccit: int = bits[80:96]
+        crc_ccit: int = ba2int(bits[80:96])
         if csbko == CsbkOpcodes.BSOutboundActivation:
             return CSBK(
                 last_block=lb,

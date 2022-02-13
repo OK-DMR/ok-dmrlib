@@ -1,9 +1,14 @@
 import enum
 from typing import Any
 
+from bitarray import bitarray
+from bitarray.util import ba2int, int2ba
+
+from okdmr.dmrlib.utils.bits_interface import BitsInterface
+
 
 @enum.unique
-class FeatureSetIDs(enum.Enum):
+class FeatureSetIDs(BitsInterface, enum.Enum):
     """
     ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.5  Feature set ID (FID)
     """
@@ -33,3 +38,10 @@ class FeatureSetIDs(enum.Enum):
         elif FeatureSetIDs.ReservedForFutureMFID.value <= value:
             return FeatureSetIDs.ReservedForFutureMFID
         raise ValueError(f"FID (Feature Set ID) value unknown, got {value}")
+
+    @staticmethod
+    def from_bits(bits: bitarray) -> "FeatureSetIDs":
+        return FeatureSetIDs(ba2int(bits[0:8]))
+
+    def as_bits(self) -> bitarray:
+        return int2ba(self.value, length=8)

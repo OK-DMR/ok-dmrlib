@@ -42,6 +42,7 @@ def test_crc9():
         assert CRC9.check(
             data=bytes.fromhex(databytes),
             serial_number=serialno,
+            mask=mask,
             crc9=expected_crc9,
             crc32=bytes.fromhex(crc32) if crc32 else None,
         ), f"CRC9 does not match in {(databytes, serialno, expected_crc9, mask, crc32)}"

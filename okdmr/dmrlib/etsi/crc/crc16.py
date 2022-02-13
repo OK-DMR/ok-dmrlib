@@ -38,4 +38,4 @@ class CRC16:
         :param mask: crc mask to be applied
         :return: int crc16
         """
-        return ba2int(CRC16.CALC.calculate_checksum(bytes_to_bits(data))) & mask.value
+        return ba2int(~CRC16.CALC.calculate_checksum(bytes_to_bits(data))) ^ mask.value
