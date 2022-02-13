@@ -135,11 +135,11 @@ class CSBK(BitsInterface):
             else DynamicIdentifier(source_dynamic_identifier)
         )
 
-        if self.crc < 0:
+        if self.crc < 1:
             self.calculate_crc_ccit()
 
     def calculate_crc_ccit(self) -> "CSBK":
-        self.crc = CRC16.calculate(self.as_bits()[16:80].tobytes(), CrcMasks.CSBK)
+        self.crc = CRC16.calculate(self.as_bits()[0:80].tobytes(), CrcMasks.CSBK)
         return self
 
     def as_bits(self) -> bitarray:
@@ -292,3 +292,32 @@ class CSBK(BitsInterface):
                 source_identifier=ba2int(bits[56:76]),
                 source_dynamic_identifier=DynamicIdentifier.from_bits(bits[77:79]),
             )
+
+    def __repr__(self) -> str:
+        description = f"[{self.csbko}] [LB: {int(self.last_block)}] [PF: {int(self.protect_flag)}] [{self.feature_set}] "
+        if self.csbko == CsbkOpcodes.BSOutboundActivation:
+            description += (
+                f"[BS ADDR: {self.bs_address}] [SRC ADDR: {self.source_address}]"
+            )
+        elif self.csbko == CsbkOpcodes.UnitToUnitVoiceServiceRequest:
+            description += f"[{self.service_options}] [DST ADDR: {self.target_address}] [SRC ADDR: {self.source_address}]"
+        elif self.csbko == CsbkOpcodes.UnitToUnitVoiceServiceAnswerResponse:
+            description += f"[{self.service_options}] [{self.answer_response}] [DST ADDR: {self.target_address}] [SRC ADDR: {self.source_address}]"
+        elif self.csbko == CsbkOpcodes.NegativeAcknowledgementResponse:
+            description += f"[{self.source_type}] [{self.service_type}] [{self.reason_code}] [SRC ADDR: {self.source_address}] [DST ADDR: {self.target_address}]"
+        elif self.csbko == CsbkOpcodes.PreambleCSBK:
+            description += (
+                f"[TARGET IS {'INDIVIDUAL' if self.target_address_is_individual else 'GROUP'}] "
+                f"[FOLLOWED BY {'CSBK' if self.csbk_content_follows_preambles else 'DATA'}] "
+                f"[BTF: {self.blocks_to_follow}] [DST ADDR: {self.target_address}] [SRC ADDR: {self.source_address}]"
+            )
+        elif self.csbko == ChannelTimingOpcode:
+            description += (
+                f"[AGE: {500*self.sync_age}ms] [GENERATION: {self.generation}] "
+                f"[LEADER IDENTIFIER: {self.leader_identifier}] [NEW LEADER: {self.new_leader}] "
+                f"[LEADER DYN IDENTIFIER: {self.leader_dynamic_identifier}] "
+                f"[SOURCE IDENTIFIER: {self.source_identifier}] "
+                f"[SOURCE DYN IDENTIFIER: {self.source_dynamic_identifier}] "
+                f"[CTO: {self.channel_timing_opcode}]"
+            )
+        return description
