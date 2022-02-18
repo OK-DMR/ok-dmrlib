@@ -68,11 +68,14 @@ def test_bptc1969_decode_map_against_dmr_utils3():
 def test_decode_mmdvm2020_csbks():
     packets: Dict[str, Dict[str, Any]] = {
         "444d52440223383b2338630006690f632e40c70153df0a83b7a8282c2509625014fdff57d75df5dcadde429028c87ae3341e24191c003c": {
-            "preamble_csbk_blocks_to_follow": 29,
-            "preamble_data_or_csbk": DmrCsbk.CsbkDataOrCsbk.data_content_follows_preambles,
-            "preamble_source_address": 2308155,
-            "preamble_target_address": 2308195,
+            "csbk_data": {
+                "preamble_csbk_blocks_to_follow": 29,
+                "preamble_data_or_csbk": DmrCsbk.CsbkDataOrCsbk.data_content_follows_preambles,
+                "source_address": 2308155,
+                "target_address": 2308195,
+            },
             "feature_set_id": 0,
+            "csbk_opcode": DmrCsbk.CsbkoTypes.preamble,
         }
     }
     for packet, testdata in packets.items():
@@ -86,7 +89,12 @@ def test_decode_mmdvm2020_csbks():
         assert burst.slot_type.data_type == DataTypes.CSBK
         csbk: DmrCsbk = DmrCsbk.from_bytes(burst.info_bits_deinterleaved.tobytes())
         for propname, value in testdata.items():
-            assert getattr(csbk, propname) == value
+            if isinstance(value, dict):
+                target = getattr(csbk, propname)
+                for subpropname, subvalue in value.items():
+                    assert getattr(target, subpropname) == subvalue
+            else:
+                assert getattr(csbk, propname) == value
 
 
 def test_decode_encode():

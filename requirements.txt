@@ -1,4 +1,4 @@
-dmr-kaitai>=0.8
+dmr-kaitai>=0.9
 bitarray>=2.3.6
 numpy>=1.21.4
 # for testing
