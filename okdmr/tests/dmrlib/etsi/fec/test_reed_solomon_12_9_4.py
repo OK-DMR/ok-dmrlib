@@ -15,3 +15,9 @@ def test_rs1294():
         assert ReedSolomon1294.check(
             bytes.fromhex(hex_payload), mask.value.to_bytes(3, byteorder="big")
         )
+
+
+def test_rs1294_multiply():
+    assert 0 == ReedSolomon1294.log_multiply(0, 0)
+    assert 0 == ReedSolomon1294.log_multiply(0, 1)
+    assert 0 == ReedSolomon1294.log_multiply(1, 0)

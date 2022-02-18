@@ -1,10 +1,12 @@
 dmr-kaitai>=0.8
-bitarray>=2.3.5
+bitarray>=2.3.6
 numpy>=1.21.4
 # for testing
-pytest
-pytest-cov==3.0.0
+pytest>=7.0.1
+pytest-cov>=3.0.0
 # required only to run test_crc (comparing crc and bit-crc implementations)
 crc>=1.1.2
+# required for test tools working with pcap/pcapng
+scapy>=2.4.5
 # for repo contributors
 pre-commit

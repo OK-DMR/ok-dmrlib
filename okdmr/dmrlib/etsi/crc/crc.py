@@ -79,7 +79,7 @@ class BitCrcConfiguration:
         if self.width_bits % 8 == 0:
             return 8
 
-        for candidate in reversed(range(1, 16)):
+        for candidate in reversed(range(2, 16)):
             if self.width_bits % candidate == 0:
                 return candidate
 

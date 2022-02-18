@@ -48,3 +48,9 @@ def test_crc32_bitcrc_crc():
     assert crc32.calculate_checksum(data_bytes) == ba2int(
         bit_crc32.calculate_checksum(data_bits)
     )
+
+
+def test_feed_width():
+    assert 9 == BitCrcConfiguration(polynomial=0x0, width_bits=9).feed_width_bits
+    assert 1 == BitCrcConfiguration(polynomial=0x0, width_bits=1).feed_width_bits
+    assert 8 == BitCrcConfiguration(polynomial=0x0, width_bits=16).feed_width_bits

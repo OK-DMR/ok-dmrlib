@@ -1,8 +1,8 @@
-from datetime import datetime
 from typing import Optional
 
 from bitarray import bitarray
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
+from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
 
 from okdmr.dmrlib.etsi.fec.bptc_196_96 import BPTC19696
 from okdmr.dmrlib.etsi.fec.trellis import Trellis34
@@ -11,8 +11,9 @@ from okdmr.dmrlib.etsi.layer2.elements.data_types import DataTypes
 from okdmr.dmrlib.etsi.layer2.elements.sync_patterns import SyncPatterns
 from okdmr.dmrlib.etsi.layer2.pdu.embedded_signalling import EmbeddedSignalling
 from okdmr.dmrlib.etsi.layer2.pdu.slot_type import SlotType
+from okdmr.dmrlib.hytera.hytera_constants import IPSC_KAITAI_VOICE_SLOTS
 from okdmr.dmrlib.transmission.transmission_types import TransmissionTypes
-from okdmr.dmrlib.utils.bits_bytes import bits_to_bytes, bytes_to_bits
+from okdmr.dmrlib.utils.bits_bytes import bits_to_bytes, bytes_to_bits, byteswap_bytes
 
 
 class Burst:
@@ -72,8 +73,8 @@ class Burst:
 
         self.info_bits_deinterleaved: Optional[bitarray] = (
             None
-            if not burst_type == BurstTypes.DataAndControl
-            else Burst.deinterleave(
+            if not self.is_data_or_control
+            else self.__class__.deinterleave(
                 bits=self.info_bits_original, data_type=self.data_type
             )
         )
@@ -107,13 +108,11 @@ class Burst:
         if self.has_emb:
             return self.emb.colour_code
         elif self.has_slot_type:
-            return self.colour_code
+            return self.slot_type.colour_code
         raise AssertionError("Cannot get colour code, no emb and no slot_type")
 
     def __repr__(self) -> str:
-        status: str = (
-            f"{str(datetime.now())} [{self.sync_or_embedded_signalling.name}] "
-        )
+        status: str = f"[{self.sync_or_embedded_signalling.name}] "
         if self.has_emb:
             status += repr(self.emb)
         elif self.has_slot_type:
@@ -132,7 +131,7 @@ class Burst:
         return Burst(full_bits=bytes_to_bits(data), burst_type=burst_type)
 
     @staticmethod
-    def from_mmdvm(mmdvm: Mmdvm2020.TypeDmrData):
+    def from_mmdvm(mmdvm: Mmdvm2020.TypeDmrData) -> "Burst":
         b = Burst(
             full_bits=bytes_to_bits(mmdvm.dmr_data),
             burst_type=(
@@ -143,6 +142,35 @@ class Burst:
         )
         b.set_stream_no(mmdvm.stream_id)
         b.set_sequence_no(mmdvm.sequence_no)
+        return b
+
+    @staticmethod
+    def from_hytera_ipsc(ipsc: IpSiteConnectProtocol) -> "Burst":
+
+        fullbytes: bytes = byteswap_bytes(ipsc.ipsc_payload)[:-1]
+        fullbits: bitarray = bytes_to_bits(fullbytes)
+
+        # special cases for IPSC Sync / Wakeup
+        if ipsc.slot_type == IpSiteConnectProtocol.SlotTypes.slot_type_sync:
+            # prevent circular dependency
+            from okdmr.dmrlib.hytera.hytera_ipsc_sync import HyteraIPSCSync
+
+            return HyteraIPSCSync(full_bits=fullbits)
+        elif ipsc.slot_type == IpSiteConnectProtocol.SlotTypes.slot_type_wakeup_request:
+            # prevent circular dependency
+            from okdmr.dmrlib.hytera.hytera_ipsc_wakeup import HyteraIPSCWakeup
+
+            return HyteraIPSCWakeup(full_bits=fullbits)
+
+        b = Burst(
+            full_bits=fullbits,
+            burst_type=(
+                BurstTypes.Vocoder
+                if ipsc.slot_type in IPSC_KAITAI_VOICE_SLOTS
+                else BurstTypes.DataAndControl
+            ),
+        )
+        b.set_sequence_no(ipsc.sequence_number)
         return b
 
     @staticmethod
