@@ -17,7 +17,7 @@ setup(
     author="Marek Sebera",
     author_email="marek.sebera@gmail.com",
     license="AGPL-3.0",
-    version="0.2",
+    version="0.3",
     packages=[
         "okdmr.dmrlib",
         "okdmr.dmrlib.transmission",
