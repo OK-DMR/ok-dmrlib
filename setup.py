@@ -17,11 +17,12 @@ setup(
     author="Marek Sebera",
     author_email="marek.sebera@gmail.com",
     license="AGPL-3.0",
-    version="0.3",
+    version="0.4",
     packages=[
         "okdmr.dmrlib",
         "okdmr.dmrlib.transmission",
         "okdmr.dmrlib.utils",
+        "okdmr.dmrlib.tools",
         "okdmr.dmrlib.etsi",
         "okdmr.dmrlib.etsi.crc",
         "okdmr.dmrlib.etsi.fec",
@@ -33,7 +34,11 @@ setup(
         "okdmr.dmrlib.etsi.layer3.pdu",
     ],
     zip_safe=True,
-    scripts=[],
+    entry_points={
+        "console_scripts": [
+            "dmrlib-pcap-tool=okdmr.dmrlib.tools.pcap_tool:PcapTool.main"
+        ],
+    },
     keywords="dmr etsi ham mmdvm homebrew radio hytera motorola",
     python_requires="~=3.7",
     install_requires=["dmr-kaitai>=0.7", "bitarray>=2.3.5", "numpy>=1.21.4"],

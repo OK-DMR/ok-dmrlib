@@ -111,7 +111,7 @@ class CsbkOpcodes(BitsInterface, enum.Enum):
 
     @classmethod
     def _missing_(cls, value: object) -> Any:
-        raise ValueError(f"CSBKO value {value} is undefined")
+        raise ValueError(f"CsbkOpcodes value {value} is undefined")
 
     def as_bits(self) -> bitarray:
         return int2ba(self.value)

@@ -58,7 +58,7 @@ class SlotType(BitsInterface):
         )
 
     def __repr__(self) -> str:
-        return f"[{self.data_type}] [CC: {self.colour_code}] [SLOT FEC: {'VALID' if self.fec_parity_ok else 'INVALID'}]"
+        return f"[{self.data_type}] [CC: {self.colour_code}]{'' if self.fec_parity_ok else ' [SLOT FEC: INVALID]'}"
 
     @staticmethod
     def from_bits(bits: bitarray) -> "SlotType":

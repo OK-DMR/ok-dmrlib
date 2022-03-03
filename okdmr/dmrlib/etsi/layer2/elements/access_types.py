@@ -9,3 +9,7 @@ class AccessTypes(enum.Enum):
 
     InboundChannelIdle = 0
     InboundChannelBusy = 1
+
+    @classmethod
+    def _missing_(cls, value: object) -> "AccessTypes":
+        raise ValueError(f"AccessTypes value {value} is undefined")

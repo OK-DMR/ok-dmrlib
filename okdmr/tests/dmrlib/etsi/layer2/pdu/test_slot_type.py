@@ -7,7 +7,7 @@ from okdmr.dmrlib.etsi.layer2.pdu.slot_type import SlotType
 
 def test_encode_decode():
     hex_slottypes: List[Tuple[str, str]] = [
-        ("01010011111100101011", "[DataTypes.CSBK] [CC: 5] [SLOT FEC: VALID]")
+        ("01010011111100101011", "[DataTypes.CSBK] [CC: 5]")
     ]
     for (hex_slottype, str_repr) in hex_slottypes:
         original_bits: bitarray = bitarray(hex_slottype)

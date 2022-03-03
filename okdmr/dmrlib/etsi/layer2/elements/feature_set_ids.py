@@ -37,7 +37,6 @@ class FeatureSetIDs(BitsInterface, enum.Enum):
             return FeatureSetIDs.ManufacturerFID
         elif FeatureSetIDs.ReservedForFutureMFID.value <= value:
             return FeatureSetIDs.ReservedForFutureMFID
-        raise ValueError(f"FID (Feature Set ID) value unknown, got {value}")
 
     @staticmethod
     def from_bits(bits: bitarray) -> "FeatureSetIDs":

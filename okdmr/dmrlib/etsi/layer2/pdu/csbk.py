@@ -181,7 +181,7 @@ class CSBK(BitsInterface):
                 bitarray(
                     [
                         not self.csbk_content_follows_preambles,
-                        self.target_address_is_individual,
+                        not self.target_address_is_individual,
                     ]
                 )
                 + int2ba(0, length=6)
@@ -270,8 +270,8 @@ class CSBK(BitsInterface):
                 manufacturers_feature_set_id=fid,
                 crc=crc_ccit,
                 csbko=csbko,
-                csbk_content_follows_preambles=bits[17],
-                target_address_is_individual=bits[18],
+                csbk_content_follows_preambles=not bits[16],
+                target_address_is_individual=not bits[17],
                 blocks_to_follow=ba2int(bits[24:32]),
                 target_address=ba2int(bits[32:56]),
                 source_address=ba2int(bits[56:80]),

@@ -60,8 +60,8 @@ class EmbeddedSignalling(BitsInterface):
 
     def __repr__(self) -> str:
         return (
-            f"[LCSS: {self.link_control_start_stop}] [PI: {self.preemption_and_power_control_indicator}] "
-            f"[CC: {self.colour_code}] [EMB FEC: {'VALID' if self.emb_parity_ok else 'INVALID'}]"
+            f"[{self.link_control_start_stop}] [{self.preemption_and_power_control_indicator}] "
+            f"[CC: {self.colour_code}]{'' if self.emb_parity_ok else ' [EMB FEC: INVALID]'}"
         )
 
     def as_bits(self) -> bitarray:
