@@ -348,19 +348,17 @@ class PcapTool:
             arguments = sys.argv[1:]
 
         args = PcapTool._arguments().parse_args(arguments)
-        return (
-            PcapTool.print_pcap(
-                files=args.files,
-                ports_whitelist=args.whitelist_ports,
-                ports_blacklist=args.blacklist_ports,
-                print_statistics=not args.no_statistics,
-                callback=EmbeddedExtractor().process_packet
-                if args.extract_embedded_lc
-                else PcapTool.debug_packet,
-            )
-            if return_stats
-            else None
+        stats = PcapTool.print_pcap(
+            files=args.files,
+            ports_whitelist=args.whitelist_ports,
+            ports_blacklist=args.blacklist_ports,
+            print_statistics=not args.no_statistics,
+            callback=EmbeddedExtractor().process_packet
+            if args.extract_embedded_lc
+            else PcapTool.debug_packet,
         )
+        if return_stats:
+            return stats
 
 
 if __name__ == "__main__":
