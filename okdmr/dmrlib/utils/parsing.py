@@ -47,9 +47,12 @@ def parse_hytera_data(bytedata: bytes) -> KaitaiStruct:
 
 
 def try_parse_packet(udpdata: bytes) -> Optional[KaitaiStruct]:
-    # Try Hytera packets first
+
+    # Try MMDVM/Homebrew packets
     try:
-        return parse_hytera_data(udpdata)
+        mmdvm = Mmdvm2020.from_bytes(udpdata)
+        if hasattr(mmdvm, "command_data"):
+            return mmdvm
     except BaseException as e:
         if (
             not isinstance(e, EOFError)
@@ -58,10 +61,9 @@ def try_parse_packet(udpdata: bytes) -> Optional[KaitaiStruct]:
         ):
             traceback.print_exc()
 
-    # Try MMDVM/Homebrew packets
+    # Try Hytera proprietary packets
     try:
-        mmdvm = Mmdvm2020.from_bytes(udpdata)
-        return mmdvm if hasattr(mmdvm, "command_data") else None
+        return parse_hytera_data(udpdata)
     except BaseException as e:
         if (
             not isinstance(e, EOFError)
