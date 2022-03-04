@@ -13,6 +13,9 @@ def test_service_options_bits():
     )
     assert e.as_bits() == ServiceOptions.from_bits(e.as_bits()).as_bits()
 
+    descr: str = repr(e)
+    assert "EMERGENCY" in descr
+
 
 def test_reserved():
     # test that reserved bits are preserved if non-default value is provided

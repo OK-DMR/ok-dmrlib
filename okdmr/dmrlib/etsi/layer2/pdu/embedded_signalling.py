@@ -21,7 +21,7 @@ class EmbeddedSignalling(BitsInterface):
         colour_code: int,
         preemption_and_power_control_indicator: int,
         link_control_start_stop: Union[LCSS, int],
-        emb_parity: int = 0,
+        emb_parity: Union[int, bool] = 0,
     ):
         """
 
@@ -49,7 +49,7 @@ class EmbeddedSignalling(BitsInterface):
             if isinstance(link_control_start_stop, int)
             else link_control_start_stop
         )
-        self.emb_parity: int = emb_parity
+        self.emb_parity: int = emb_parity if isinstance(emb_parity, int) else -1
 
         if self.emb_parity < 0:
             # generate parity if not provided

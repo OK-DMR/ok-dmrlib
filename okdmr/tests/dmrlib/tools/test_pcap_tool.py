@@ -1,10 +1,13 @@
 import os
 import tempfile
 from argparse import ArgumentParser
+from typing import Tuple, List, Optional
 
 from _pytest.capture import CaptureFixture
-
-from okdmr.dmrlib.tools.pcap_tool import PcapTool
+from okdmr.dmrlib.etsi.layer2.elements.flcos import FLCOs
+from okdmr.dmrlib.etsi.layer2.pdu.full_link_control import FullLinkControl
+from okdmr.dmrlib.tools.pcap_tool import PcapTool, EmbeddedExtractor
+from scapy.layers.inet import IP
 
 
 class PcapCounterHelper:
@@ -97,6 +100,19 @@ def test_pcap_tool(capsys: CaptureFixture):
         )
         # only two packets should be now whitelisted
         assert helper.counter == 2
+
+        stats = PcapTool.main(["-q", "-e", tmpfile.name], return_stats=True)
+        assert len(stats) == 4
+
+        # this will test that providing no arguments, will gather arguments from sys.argv and fail
+        try:
+            PcapTool.main()
+        except BaseException as e:
+            assert isinstance(e, SystemExit)
+            # clear captured
+            captured = capsys.readouterr()
+            assert len(captured.err)
+            assert not len(captured.out)
     finally:
         tmpfile.close()
         os.unlink(tmpfile.name)
@@ -104,3 +120,37 @@ def test_pcap_tool(capsys: CaptureFixture):
 
 def test_pcap_tool_main():
     assert isinstance(PcapTool._arguments(), ArgumentParser)
+
+
+def test_embedded_extractor(capsys: CaptureFixture):
+    # fmt:off
+    # @formatter:off
+    # expect FullLinkControl returned (and printed to stdout as well), dmr packet byte data as hex, ip packet byte data as hex
+    testdata: List[Tuple[bool, str, str]] = [
+        (False, "444d5244632807220000090028072281f9d3565bfd956f6e8bb53d09817a4e6b26d1347030900914b4e255cceadac1b1d881e71ceb0339", "45000053530140003b11509e5e107bfdc0a80145d2f2b8b0003ffdd0444d5244632807220000090028072281f9d3565bfd956f6e8bb53d09817a4e6b26d1347030900914b4e255cceadac1b1d881e71ceb0339"),
+        (False, "444d5244642807220000090028072282f9d3565bd1d67d01757969c64857b2f2620170309410074435ed05f7c85e8a7770ce40a44f0339", "45000053530d40003b1150925e107bfdc0a80145d2f2b8b0003fd323444d5244642807220000090028072282f9d3565bd1d67d01757969c64857b2f2620170309410074435ed05f7c85e8a7770ce40a44f0339"),
+        (False, "444d5244652807220000090028072283f9d3565b439c06c8a6fc011d59bd9970611170a051e4e7440306a7d3c578a37c9c8dec2ced0239", "45000053531540003b11508a5e107bfdc0a80145d2f2b8b0003f7e28444d5244652807220000090028072283f9d3565b439c06c8a6fc011d59bd9970611170a051e4e7440306a7d3c578a37c9c8dec2ced0239"),
+        (True, "444d5244662807220000090028072284f9d3565b5a2fabb90dad361a16ff298e6a91547181117079c68d87f72340d8c1bdaafa96200139", "45000053531d40003b1150825e107bfdc0a80145d2f2b8b0003f99a5444d5244662807220000090028072284f9d3565b5a2fabb90dad361a16ff298e6a91547181117079c68d87f72340d8c1bdaafa96200139"),
+    ]
+    # fmt:on
+    # @formatter:on
+
+    ee: EmbeddedExtractor = EmbeddedExtractor()
+    full_lc: Optional[FullLinkControl] = None
+    for (expect_full_lc, pkt_data, ip_data) in testdata:
+        full_lc = ee.process_packet(
+            data=bytes.fromhex(pkt_data), packet=IP(bytes.fromhex(ip_data))
+        )
+        if not expect_full_lc:
+            assert not len(capsys.readouterr().out)
+        else:
+            captured = capsys.readouterr()
+            assert not len(captured.err)
+            assert len(captured.out)
+            assert "PRIVACY" in captured.out
+            assert "PRIORITY:0" in captured.out
+
+    assert isinstance(full_lc, FullLinkControl)
+    assert full_lc.group_address == 9
+    assert full_lc.source_address == 2623266
+    assert full_lc.full_link_control_opcode == FLCOs.GroupVoiceChannelUser

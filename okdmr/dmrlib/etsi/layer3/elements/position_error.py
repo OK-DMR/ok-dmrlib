@@ -31,7 +31,4 @@ class PositionError(BitsInterface, enum.Enum):
 
     @classmethod
     def _missing_(cls, value: int) -> Any:
-        assert (
-            0b000 <= value <= 0b111
-        ), f"Value for PositionError out of range, got {value}"
-        return PositionError.PositionErrorNotKnown
+        raise ValueError(f"Value for PositionError out of range, got {value}")

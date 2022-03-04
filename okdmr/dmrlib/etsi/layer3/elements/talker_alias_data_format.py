@@ -27,6 +27,5 @@ class TalkerAliasDataFormat(BitsInterface, enum.Enum):
 
     @classmethod
     def _missing_(cls, value: int) -> Any:
-        assert (
-            0b00 <= value <= 0b11
-        ), f"TalkerAliasDataFormat value out of range, got {value}"
+        if not (0b00 <= value <= 0b11):
+            raise ValueError(f"TalkerAliasDataFormat value out of range, got {value}")

@@ -10,6 +10,7 @@ from okdmr.dmrlib.etsi.layer3.elements.service_options import ServiceOptions
 from okdmr.dmrlib.etsi.layer3.elements.talker_alias_data_format import (
     TalkerAliasDataFormat,
 )
+from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits
 from okdmr.dmrlib.utils.bits_interface import BitsInterface
 
 
@@ -33,8 +34,8 @@ class FullLinkControl(BitsInterface):
         target_address: int = 0,
         # Table 7.3: GPS Info PDU content
         position_error: Optional[PositionError] = None,
-        longitude: int = 0,
-        latitude: int = 0,
+        longitude: float = 0,
+        latitude: float = 0,
         # Table 7.4: Talker Alias header Info PDU content
         talker_alias_data_format: Optional[TalkerAliasDataFormat] = None,
         talker_alias_data_length: int = 0,
@@ -53,8 +54,8 @@ class FullLinkControl(BitsInterface):
         self.source_address: int = source_address
         self.target_address: int = target_address
         self.position_error: Optional[PositionError] = position_error
-        self.longitude: int = longitude
-        self.latitude: int = latitude
+        self.longitude: float = longitude
+        self.latitude: float = latitude
         self.talker_alias_data_format: Optional[
             TalkerAliasDataFormat
         ] = talker_alias_data_format
@@ -74,6 +75,22 @@ class FullLinkControl(BitsInterface):
         elif self.full_link_control_opcode == FLCOs.GroupVoiceChannelUser:
             return descr + (
                 f"[SOURCE: {self.source_address}] [GROUP: {self.group_address}] {repr(self.service_options)}"
+            )
+        elif self.full_link_control_opcode == FLCOs.GPSInfo:
+            return descr + (
+                f"[{self.position_error}] [LAT: {self.latitude}] [LON: {self.longitude}]"
+            )
+        elif self.full_link_control_opcode == FLCOs.TalkerAliasHeader:
+            return descr + (
+                f"[{self.talker_alias_data_format}] [Talker Alias Data Length: {self.talker_alias_data_length}] [{self.talker_alias_data.decode('ascii')}]"
+            )
+        elif self.full_link_control_opcode in (
+            FLCOs.TalkerAliasBlock1,
+            FLCOs.TalkerAliasBlock2,
+            FLCOs.TalkerAliasBlock3,
+        ):
+            return descr + (
+                f"[{self.talker_alias_data.hex()}] [utf16le: {self.talker_alias_data.decode('ascii')}]"
             )
 
         raise KeyError(f"FullLinkControl.__repr__ does not support " + descr)
@@ -108,6 +125,39 @@ class FullLinkControl(BitsInterface):
                 group_address=ba2int(bits[24:48]),
                 source_address=ba2int(bits[48:72]),
             )
+        elif flco == FLCOs.GPSInfo:
+            return FullLinkControl(
+                protect_flag=pf,
+                fid=fid,
+                crc=crc,
+                flco=flco,
+                position_error=PositionError.from_bits(bits[20:23]),
+                longitude=(360 / 2**25) * ba2int(bits[23:48], signed=True),
+                latitude=(180 / 2**24) * ba2int(bits[48:72], signed=True),
+            )
+        elif flco == FLCOs.TalkerAliasHeader:
+            return FullLinkControl(
+                protect_flag=pf,
+                fid=fid,
+                crc=crc,
+                flco=flco,
+                talker_alias_data_format=TalkerAliasDataFormat.from_bits(bits[16:18]),
+                talker_alias_data_length=ba2int(bits[18:23]),
+                talker_alias_data_msb=bits[23],
+                talker_alias_data=bits[24:72].tobytes(),
+            )
+        elif flco in (
+            FLCOs.TalkerAliasBlock1,
+            FLCOs.TalkerAliasBlock2,
+            FLCOs.TalkerAliasBlock3,
+        ):
+            return FullLinkControl(
+                protect_flag=pf,
+                fid=fid,
+                crc=crc,
+                flco=flco,
+                talker_alias_data=bits[16:72].tobytes(),
+            )
 
         raise KeyError(f"Not-implemented FLCO {flco}")
 
@@ -130,6 +180,26 @@ class FullLinkControl(BitsInterface):
                 + int2ba(self.group_address, length=24)
                 + int2ba(self.source_address, length=24)
             )
+        elif self.full_link_control_opcode == FLCOs.GPSInfo:
+            common += (
+                bitarray([0] * 4)
+                + self.position_error.as_bits()
+                + int2ba(int(self.longitude / (360 / 2**25)), length=25, signed=True)
+                + int2ba(int(self.latitude / (180 / 2**24)), length=24, signed=True)
+            )
+        elif self.full_link_control_opcode == FLCOs.TalkerAliasHeader:
+            common += (
+                self.talker_alias_data_format.as_bits()
+                + int2ba(self.talker_alias_data_length, length=5)
+                + bitarray([self.talker_alias_data_msb])
+                + bytes_to_bits(self.talker_alias_data)
+            )
+        elif self.full_link_control_opcode in (
+            FLCOs.TalkerAliasBlock1,
+            FLCOs.TalkerAliasBlock2,
+            FLCOs.TalkerAliasBlock3,
+        ):
+            common += bytes_to_bits(self.talker_alias_data)
         else:
             raise KeyError(
                 f"as_bits unimplemented FLCO {self.full_link_control_opcode}"

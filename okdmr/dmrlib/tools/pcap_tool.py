@@ -2,23 +2,72 @@
 
 import sys
 from argparse import ArgumentParser
-from typing import Callable, List, Dict, Optional
+from typing import Callable, List, Dict, Optional, Tuple
 
+from bitarray import bitarray
+from okdmr.dmrlib.etsi.fec.vbptc_128_72 import VBPTC12873
+from okdmr.dmrlib.etsi.layer2.burst import Burst
+from okdmr.dmrlib.etsi.layer2.elements.lcss import LCSS
+from okdmr.dmrlib.etsi.layer2.elements.preemption_power_indicator import (
+    PreemptionPowerIndicator,
+)
+from okdmr.dmrlib.etsi.layer2.pdu.full_link_control import FullLinkControl
+from okdmr.dmrlib.utils.parsing import try_parse_packet
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
+from okdmr.kaitai.hytera.ip_site_connect_heartbeat import IpSiteConnectHeartbeat
 from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
 from scapy.data import UDP_SERVICES
-from scapy.layers.inet import UDP
+from scapy.layers.inet import UDP, IP
 from scapy.layers.l2 import Ether
 from scapy.utils import PcapReader
 
-from okdmr.dmrlib.etsi.layer2.burst import Burst
-from okdmr.dmrlib.etsi.layer2.elements.lcss import LCSS
-from okdmr.dmrlib.utils.parsing import try_parse_packet
+
+class EmbeddedExtractor:
+    """
+    Helper class, collects
+    """
+
+    def __init__(self):
+        self.data: Dict[str, Tuple[LCSS, bitarray]] = {}
+
+    def process_packet(self, data: bytes, packet: IP) -> Optional[FullLinkControl]:
+        burst: Optional[Burst] = PcapTool.debug_packet(
+            data=data, packet=packet, hide_unknown=True, silent=True
+        )
+        if (
+            not burst
+            or not burst.has_emb
+            or burst.emb.link_control_start_stop == LCSS.SingleFragmentLCorCSBK
+            or burst.emb.preemption_and_power_control_indicator
+            == PreemptionPowerIndicator.CarriesReverseChannelInformation
+        ):
+            return
+
+        full_lc: Optional[FullLinkControl] = None
+        key: str = f"{packet.src}:{packet.getlayer(UDP).sport}"
+        # print(f"{key} data: {data.hex()} packet: {bytes(packet).hex()}")
+        # print(f"{repr(burst)}")
+
+        (_lcss, _bits) = self.data.get(key, (LCSS.SingleFragmentLCorCSBK, bitarray()))
+        if burst.emb.link_control_start_stop == LCSS.FirstFragmentLC:
+            _bits = bitarray()
+
+        _bits += burst.embedded_signalling_bits
+        if (
+            len(_bits) == 128
+            and burst.emb.link_control_start_stop == LCSS.LastFragmentLCorCSBK
+        ):
+            _vbptc_bits = VBPTC12873.deinterleave_data_bits(
+                bits=_bits, include_cs5=True
+            )
+            full_lc = FullLinkControl.from_bits(_vbptc_bits)
+            print(repr(full_lc))
+
+        self.data[key] = (burst.emb.link_control_start_stop, _bits)
+        return full_lc
 
 
 # noinspection PyDefaultArgument
-
-
 class PcapTool:
     """
     Various static methods for working with PCAP/PCAPNG files containing DMR protocols
@@ -60,16 +109,30 @@ class PcapTool:
         return udp_services
 
     @staticmethod
-    def debug_packet(data: bytes, packet: UDP) -> Optional[Burst]:
+    def debug_packet(
+        data: bytes, packet: IP, hide_unknown: bool = False, silent: bool = False
+    ) -> Optional[Burst]:
         pkt = try_parse_packet(udpdata=data)
         burst: Optional[Burst] = None
+        ip_str: str = f"{packet.src}:{packet.getlayer(UDP).sport}\t-> {packet.dst}:{packet.getlayer(UDP).dport}\t"
         if isinstance(pkt, IpSiteConnectProtocol):
             burst: Burst = Burst.from_hytera_ipsc(pkt)
-        elif isinstance(pkt, Mmdvm2020) and isinstance(
-            pkt.command_data, Mmdvm2020.TypeDmrData
-        ):
-            burst: Burst = Burst.from_mmdvm(pkt.command_data)
-        else:
+            if not silent:
+                print(
+                    f"{ip_str} IPSC TS:{1 if pkt.timeslot_raw == IpSiteConnectProtocol.Timeslots.timeslot_1 else 2} "
+                    f"SEQ: {pkt.sequence_number} {repr(burst)}"
+                )
+        elif isinstance(pkt, Mmdvm2020):
+            if isinstance(pkt.command_data, Mmdvm2020.TypeDmrData):
+                burst: Burst = Burst.from_mmdvm(pkt.command_data)
+                if not silent:
+                    print(
+                        f"{ip_str} MMDVM TS:{1 if pkt.command_data.slot_no == Mmdvm2020.Timeslots.timeslot_1 else 2} "
+                        f"SEQ: {pkt.command_data.sequence_no} {repr(burst)}"
+                    )
+        elif isinstance(pkt, IpSiteConnectHeartbeat):
+            pass
+        elif not hide_unknown and not silent:
             print(
                 f"Not handled packet [UDP {packet.sport} => {packet.dport}]"
                 f" payload {data.hex()}"
@@ -82,29 +145,9 @@ class PcapTool:
 
         return burst
 
-    @staticmethod
-    def extract_embedded(data: bytes, packet: UDP) -> Optional[Burst]:
-        burst: Optional[Burst] = PcapTool.debug_packet(data, packet)
-
-        if (
-            burst
-            and burst.has_emb
-            and burst.emb.link_control_start_stop
-            in (
-                LCSS.FirstFragmentLC,
-                LCSS.ContinuationFragmentLCorCSBK,
-                LCSS.LastFragmentLCorCSBK,
-            )
-        ):
-            print(
-                f"{packet.sport}->{packet.dport} {burst.emb.link_control_start_stop} data {burst.embedded_signalling_bits.tobytes().hex()}"
-            )
-
-        return burst
-
     # noinspection PyUnusedLocal
     @staticmethod
-    def void_packet_callback(data, packet):
+    def void_packet_callback(data: bytes, packet: IP):
         pass
 
     @staticmethod
@@ -124,8 +167,11 @@ class PcapTool:
         for portnum in sorted(statistics):
             print(
                 f"| {portnum}\t\t| {statistics[portnum]}\t\t\t\t| {udp_services.get(portnum, 'Unknown')}"
-                + (f"\t- BLACKLIST" if portnum in ports_blacklist else "")
-                + (f"\t- WHITELIST" if portnum in ports_whitelist else "")
+                + (
+                    f"\t- BLACKLIST"
+                    if portnum in ports_blacklist
+                    else (f"\t- WHITELIST" if portnum in ports_whitelist else "")
+                )
             )
         print(
             "|------------------------------------------------------------------------------|"
@@ -192,6 +238,7 @@ class PcapTool:
             with PcapReader(file) as reader:
                 for pkt in reader:
                     if isinstance(pkt, Ether) and pkt.haslayer(UDP):
+                        ip_layer = pkt.getlayer(IP)
                         udp_layer = pkt.getlayer(UDP)
 
                         statistics[udp_layer.sport] = (
@@ -219,11 +266,11 @@ class PcapTool:
                                 # skip packets on blacklisted ports
                                 continue
 
-                        if not hasattr(udp_layer, "load"):
+                        if not ip_layer or not hasattr(udp_layer, "load"):
                             # skip udp packets without any payload
                             continue
 
-                        callback(data=udp_layer.load, packet=udp_layer)
+                        callback(data=udp_layer.load, packet=ip_layer)
 
         return statistics
 
@@ -251,30 +298,70 @@ class PcapTool:
             type=int,
             nargs="+",
             # default values in order
-            # bootp, bootp, dns, snmp, snmp traps, ntp, netbios-ns, netbios-dgm, mdns, llmnr
-            default=[67, 68, 53, 161, 162, 123, 137, 138, 5353, 5355],
+            # bootp, bootp, dns, snmp, snmp traps, ntp, netbios-ns, netbios-dgm, ssdp, mdns, llmnr, dstar dcs (30052,30061)
+            default=[
+                67,
+                68,
+                53,
+                161,
+                162,
+                123,
+                137,
+                138,
+                1900,
+                5353,
+                5355,
+                30052,
+                30061,
+            ],
             help="Blacklist UDP ports to exclude from inspection (source or destination or both)",
         )
         parser.add_argument(
             "--no-statistics",
             "-q",
             dest="no_statistics",
-            type=bool,
+            action="store_true",
+            default=False,
+        )
+        parser.add_argument(
+            "--extract-embedded-lc",
+            "-e",
+            dest="extract_embedded_lc",
+            action="store_true",
             default=False,
         )
         return parser
 
     @staticmethod
-    def main(arguments: List[str]):
+    def main(
+        arguments: List[str] = [], return_stats: bool = False
+    ) -> Optional[Dict[int, int]]:
+        """
+
+        :param return_stats: invoking from console_scripts would print stats dict if default was to return stats
+        :param arguments: list of cmdline or mock arguments
+        :return: packet statistics for all files processed
+        """
+        if not len(arguments):
+            # fallback for running from "python3 -m" or "console_scripts"
+            # routine argument necessary for api usage or unit-testing
+            arguments = sys.argv[1:]
+
         args = PcapTool._arguments().parse_args(arguments)
-        PcapTool.print_pcap(
-            files=args.files,
-            ports_whitelist=args.whitelist_ports,
-            ports_blacklist=args.blacklist_ports,
-            print_statistics=not args.no_statistics,
-            # callback=PcapTool.extract_embedded
+        return (
+            PcapTool.print_pcap(
+                files=args.files,
+                ports_whitelist=args.whitelist_ports,
+                ports_blacklist=args.blacklist_ports,
+                print_statistics=not args.no_statistics,
+                callback=EmbeddedExtractor().process_packet
+                if args.extract_embedded_lc
+                else PcapTool.debug_packet,
+            )
+            if return_stats
+            else None
         )
 
 
 if __name__ == "__main__":
-    PcapTool.main(sys.argv[1:])
+    PcapTool.main()
