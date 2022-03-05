@@ -234,7 +234,7 @@ class VBPTC12873:
     @staticmethod
     def deinterleave_all_bits(bits: bitarray) -> bitarray:
         """
-        Will take BPTC interleaved (and FEC protected) bits and return 196 bits of deinterleaved bits
+        Will take BPTC interleaved (and FEC protected) bits and return 128 bits of deinterleaved bits
         :param bits:
         :return:
         """
@@ -253,7 +253,7 @@ class VBPTC12873:
     def deinterleave_data_bits(bits: bitarray, include_cs5: bool = True) -> bitarray:
         """
         Will take BPTC interleaved (and FEC protected) bits and return 72 or 77 bits of data
-        :param bits: 196 bits of on-air payload
+        :param bits: 128 bits of on-air payload
         :param include_cs5:
         :return: 72 or 77 bits of data (info bits)
         """
@@ -275,7 +275,7 @@ class VBPTC12873:
     def deinterleave_cs5_bits(bits: bitarray) -> bitarray:
         """
         Will take BPTC interleaved (and FEC protected) bits and return 5 bits of checksum for 72-bits of data
-        :param bits: 196 bits of on-air payload
+        :param bits: 128 bits of on-air payload
         :return: 5 bits of data (5-bit checksum)
         """
         assert (
@@ -305,7 +305,7 @@ class VBPTC12873:
             len(bits_deinterleaved) == 72 or len(bits_deinterleaved) == 128
         ), f"Can fill encoding table only with data bits (len 72) or full bits (len 128), got {len(bits_deinterleaved)}"
 
-        # make bitarray of size 196, fill with provided bits
+        # make bitarray of size 128, fill with provided bits
         mapping = (
             VBPTC12873.DEINTERLEAVE_INFO_BITS_ONLY_MAP
             if len(bits_deinterleaved) == 72
@@ -373,7 +373,7 @@ class VBPTC12873:
 
         # fill rows 0 - 6 with hamming
         for row in range(0, 7):
-            table[row] = Hamming16114.generate(table[row][0:11])
+            table[row] = Hamming16114.generate(table[row][:11])
 
         # fill columns with parity bit
         for column in range(0, 16):
@@ -389,18 +389,7 @@ class VBPTC12873:
     def set_parity(column: numpy.array) -> numpy.array:
         assert len(column) in (7, 8)
         if len(column) == 7:
-            column = numpy.array(
-                (
-                    column[0],
-                    column[1],
-                    column[2],
-                    column[3],
-                    column[4],
-                    column[5],
-                    column[6],
-                    0,
-                )
-            )
+            column = numpy.append(column, [0])
         column[7] = (
             column[0]
             ^ column[1]

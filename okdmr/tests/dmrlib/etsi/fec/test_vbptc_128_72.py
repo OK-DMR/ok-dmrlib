@@ -2,7 +2,7 @@ from typing import List
 
 from bitarray import bitarray
 from bitarray.util import int2ba
-from okdmr.kaitai.etsi.full_link_control import FullLinkControl
+from okdmr.kaitai.etsi.full_link_control import FullLinkControl as KaitaiFullLinkControl
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 
 from okdmr.dmrlib.etsi.fec.five_bit_checksum import FiveBitChecksum
@@ -20,30 +20,35 @@ def test_vbptc_sanity():
 
 
 def test_encode_decode_vbptc():
-    embedded_bits = bitarray(
+    on_air_bits = bitarray(
         "00001010000000000000001100001010000101110000101000000110000001010000110000010001001000100000000000000101001000100011111100111010"
     )
-    deinterleaved_all_bits = VBPTC12873.deinterleave_all_bits(embedded_bits)
+    deinterleaved_all_bits = VBPTC12873.deinterleave_all_bits(on_air_bits)
     assert len(deinterleaved_all_bits) == 128
     deinterleaved_data_bits = VBPTC12873.deinterleave_data_bits(
-        embedded_bits, include_cs5=True
+        on_air_bits, include_cs5=True
     )
     assert len(deinterleaved_data_bits) == 77
     cs5_calculated: int = FiveBitChecksum.calculate(
         deinterleaved_data_bits.tobytes()[:9]
     )
-    cs5_extractd: bitarray = VBPTC12873.deinterleave_cs5_bits(embedded_bits)
+    cs5_extractd: bitarray = VBPTC12873.deinterleave_cs5_bits(on_air_bits)
     assert cs5_extractd == int2ba(cs5_calculated, length=5)
-    lc: FullLinkControl = FullLinkControl.from_bytes(deinterleaved_data_bits.tobytes())
-    assert lc.feature_set_id == FullLinkControl.FeatureSetIds.standardized_ts_102_361_2
+    lc: KaitaiFullLinkControl = KaitaiFullLinkControl.from_bytes(
+        deinterleaved_data_bits.tobytes()
+    )
+    assert (
+        lc.feature_set_id
+        == KaitaiFullLinkControl.FeatureSetIds.standardized_ts_102_361_2
+    )
     assert not hasattr(lc, "crc_checksum")
     assert hasattr(lc, "cs5_checksum")
     assert lc.cs5_checksum == cs5_calculated
 
     encoded_data_bits = VBPTC12873.encode(deinterleaved_data_bits)
     encoded_all_bits = VBPTC12873.encode(deinterleaved_all_bits)
-    assert encoded_data_bits == embedded_bits
-    assert encoded_all_bits == embedded_bits
+    assert encoded_data_bits == on_air_bits
+    assert encoded_all_bits == on_air_bits
 
 
 def test_extract_embedded_signalling():

@@ -1,9 +1,13 @@
 import enum
 from typing import Any
 
+from bitarray import bitarray
+from bitarray.util import int2ba, ba2int
+from okdmr.dmrlib.utils.bits_interface import BitsInterface
+
 
 @enum.unique
-class SLCOs(enum.Enum):
+class SLCOs(BitsInterface, enum.Enum):
     """
     ETSI TS 102 361-2 V2.4.1 (2017-10) - B.3    Short LC (Link Control) Opcode
     ETSI TS 102 361-4 V1.10.1 (2019-08) - B.2   Short Link Control Opcode List
@@ -27,3 +31,11 @@ class SLCOs(enum.Enum):
             return SLCOs.ManufacturerSelectable
 
         raise ValueError(f"SLCO value {value} is unknown")
+
+    def as_bits(self) -> bitarray:
+        return int2ba(self.value, length=4)
+
+    @staticmethod
+    def from_bits(bits: bitarray) -> "SLCOs":
+        assert len(bits) == 4, f"SLCO is exactly bits long, got {len(bits)} bits"
+        return SLCOs(ba2int(bits[:4]))
