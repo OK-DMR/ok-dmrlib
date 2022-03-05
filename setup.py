@@ -10,7 +10,7 @@ README = (HERE / "README.md").read_text()
 
 setup(
     name="ok-dmrlib",
-    description="Parse, assemble and handle DMR protocols",
+    description="Parse, assemble and handle DMR data",
     long_description=README,
     long_description_content_type="text/markdown",
     url="https://github.com/OK-DMR/ok-dmrlib",
@@ -41,7 +41,12 @@ setup(
     },
     keywords="dmr etsi ham mmdvm homebrew radio hytera motorola",
     python_requires="~=3.7",
-    install_requires=["dmr-kaitai>=0.7", "bitarray>=2.3.5", "numpy>=1.21.4"],
+    install_requires=[
+        "dmr-kaitai>=0.7",
+        "bitarray>=2.4.0",
+        "numpy>=1.21.4",
+        "scapy>=2.4.5",
+    ],
     classifiers=[
         "Development Status :: 3 - Alpha",
         "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",

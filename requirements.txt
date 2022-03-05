@@ -1,5 +1,5 @@
 dmr-kaitai>=0.9
-bitarray>=2.3.6
+bitarray>=2.4.0
 numpy>=1.21.4
 # for testing
 pytest>=7.0.1
