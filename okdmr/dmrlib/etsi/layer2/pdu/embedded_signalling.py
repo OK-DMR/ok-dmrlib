@@ -8,6 +8,7 @@ from okdmr.dmrlib.etsi.layer2.elements.lcss import LCSS
 from okdmr.dmrlib.etsi.layer2.elements.preemption_power_indicator import (
     PreemptionPowerIndicator,
 )
+from okdmr.dmrlib.utils.bits_bytes import numpy_array_to_int
 from okdmr.dmrlib.utils.bits_interface import BitsInterface
 
 
@@ -51,9 +52,11 @@ class EmbeddedSignalling(BitsInterface):
         )
         self.emb_parity: int = emb_parity if isinstance(emb_parity, int) else -1
 
-        if self.emb_parity < 0:
+        if self.emb_parity <= 0:
             # generate parity if not provided
-            self.emb_parity = QuadraticResidue1676.generate(self.as_bits())[7:16]
+            self.emb_parity = numpy_array_to_int(
+                QuadraticResidue1676.generate(self.as_bits()[:7])[7:16]
+            )
 
         # check parity
         self.emb_parity_ok: bool = QuadraticResidue1676.check(self.as_bits())
