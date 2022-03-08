@@ -1,12 +1,13 @@
 # OK-DMR Lib
 
-![.github/workflows/sanity.yml](https://img.shields.io/github/workflow/status/OK-DMR/ok-dmrlib/Sanity?style=flat-square)
-![Code Style: Python Black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)
-![License](https://img.shields.io/github/license/OK-DMR/ok-dmrlib?style=flat-square)
-![Last released version](https://img.shields.io/pypi/v/ok-dmrlib?style=flat-square)
-![PyPI downloads](https://img.shields.io/pypi/dd/ok-dmrlib?style=flat-square)
-![Python versions](https://img.shields.io/pypi/pyversions/ok-dmrlib?style=flat-square)
-![Wheel](https://img.shields.io/pypi/wheel/ok-dmrlib?style=flat-square)
+[![.github/workflows/sanity.yml](https://img.shields.io/github/workflow/status/OK-DMR/ok-dmrlib/Sanity?style=flat-square)](https://github.com/OK-DMR/ok-dmrlib/actions)
+[![Code Style: Python Black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)
+[![License](https://img.shields.io/github/license/OK-DMR/ok-dmrlib?style=flat-square)](https://github.com/OK-DMR/ok-dmrlib/blob/master/LICENSE)
+[![Last released version](https://img.shields.io/pypi/v/ok-dmrlib?style=flat-square)](https://pypi.org/project/ok-dmrlib/)
+[![PyPI downloads](https://img.shields.io/pypi/dd/ok-dmrlib?style=flat-square)](https://libraries.io/pypi/ok-dmrlib)
+[![Python versions](https://img.shields.io/pypi/pyversions/ok-dmrlib?style=flat-square)](https://pypi.org/project/ok-dmrlib/)
+[![Wheel](https://img.shields.io/pypi/wheel/ok-dmrlib?style=flat-square)](https://pypi.org/project/ok-dmrlib/#files)
+[![Codecov](https://img.shields.io/codecov/c/github/ok-dmr/ok-dmrlib?style=flat-square)](https://app.codecov.io/gh/OK-DMR/ok-dmrlib)
 
 This package provides way to parse and assemble various DMR ETSI protocols and functions, in pure Python implementation
 
