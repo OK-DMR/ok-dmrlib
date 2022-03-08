@@ -114,7 +114,7 @@ class CsbkOpcodes(BitsInterface, enum.Enum):
         raise ValueError(f"CsbkOpcodes value {value} is undefined")
 
     def as_bits(self) -> bitarray:
-        return int2ba(self.value)
+        return int2ba(self.value, length=6)
 
     @staticmethod
     def from_bits(bits: bitarray) -> "CsbkOpcodes":

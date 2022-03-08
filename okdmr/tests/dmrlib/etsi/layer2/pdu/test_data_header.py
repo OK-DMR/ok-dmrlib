@@ -34,13 +34,13 @@ def test_data_headers():
             "is_response_requested": True,
             "resynchronize_flag": ResynchronizeFlag.DoNotSync,
         },
-        "4da123386323383b05104566": {
+        "4da123386323383b05005757": {
             "data_packet_format": DataPacketFormats.ShortDataDefined,
             "defined_data_format": DefinedDataFormats.BCD,
             "sap_identifier": SAPIdentifier.ShortData,
             "sarq": SARQ.NotRequired,
             "full_message_flag": FullMessageFlag.FirstTryToCompletePacket,
-            "appended_blocks": 0,
+            "appended_blocks": 1,
         },
         "800500010627fce7001bacaf": {
             "udt_format": UDTFormat.LocationNMEA,
@@ -57,3 +57,8 @@ def test_data_headers():
             assert getattr(dh, key) == val
         # also tests for availability of __repr__ for given DPF
         assert len(repr(dh))
+
+        assert dh.as_bits() == _bits
+        nulled_crc = _bits.copy()
+        nulled_crc[80:] = 0
+        assert DataHeader.from_bits(nulled_crc).as_bits() == _bits

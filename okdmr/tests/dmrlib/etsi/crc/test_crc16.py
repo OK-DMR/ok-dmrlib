@@ -10,7 +10,8 @@ def test_crc16():
     # format: data to be verified, appropriate crc16
     data: List[Tuple[str, str, CrcMasks]] = [
         # short data defined header, llc from 2308155 to 2308155
-        # ("4da323383b23383b0560", "8040", CrcMasks.DataHeader),
+        ("4da323383b23383b0560", "8040", CrcMasks.DataHeader),
+        # csbk
         ("bd0080180008fd23383b", "b2ed", CrcMasks.CSBK),
     ]
     # fmt:on

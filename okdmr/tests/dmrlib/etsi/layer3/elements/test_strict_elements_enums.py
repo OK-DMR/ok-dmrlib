@@ -20,6 +20,7 @@ from okdmr.dmrlib.etsi.layer3.elements.source_type import SourceType
 from okdmr.dmrlib.etsi.layer3.elements.talker_alias_data_format import (
     TalkerAliasDataFormat,
 )
+from okdmr.dmrlib.etsi.layer3.elements.udt_option_flag import UDTOptionFlag
 
 
 class RaisingEnums(TestCase):
@@ -56,3 +57,5 @@ class RaisingEnums(TestCase):
             SLCOs(0b10000)
         with self.assertRaises(ValueError):
             SupplementaryFlag(0b10)
+        with self.assertRaises(ValueError):
+            UDTOptionFlag(0b10)
