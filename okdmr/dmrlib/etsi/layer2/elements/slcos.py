@@ -30,8 +30,6 @@ class SLCOs(BitsInterface, enum.Enum):
         elif 0b1100 <= value <= 0b1111:
             return SLCOs.ManufacturerSelectable
 
-        raise ValueError(f"SLCO value {value} is unknown")
-
     def as_bits(self) -> bitarray:
         return int2ba(self.value, length=4)
 

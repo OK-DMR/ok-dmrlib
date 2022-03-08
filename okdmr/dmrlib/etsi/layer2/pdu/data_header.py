@@ -3,12 +3,15 @@ from typing import Union, Optional
 from bitarray import bitarray
 from bitarray.util import ba2int
 
+from okdmr.dmrlib.etsi.layer2.elements.csbk_opcodes import CsbkOpcodes
 from okdmr.dmrlib.etsi.layer2.elements.data_packet_formats import DataPacketFormats
 from okdmr.dmrlib.etsi.layer2.elements.defined_data_formats import DefinedDataFormats
 from okdmr.dmrlib.etsi.layer2.elements.full_message_flag import FullMessageFlag
 from okdmr.dmrlib.etsi.layer2.elements.resynchronize_flag import ResynchronizeFlag
 from okdmr.dmrlib.etsi.layer2.elements.sap_identifier import SAPIdentifier
 from okdmr.dmrlib.etsi.layer2.elements.sarq import SARQ
+from okdmr.dmrlib.etsi.layer2.elements.supplementary_flag import SupplementaryFlag
+from okdmr.dmrlib.etsi.layer2.elements.udt_format import UDTFormat
 from okdmr.dmrlib.utils.bits_interface import BitsInterface
 
 
@@ -41,6 +44,10 @@ class DataHeader(BitsInterface):
         appended_blocks: int = 0,
         defined_data_format: Optional[DefinedDataFormats] = None,
         sarq: Optional[SARQ] = None,
+        # Unified Data Transport Header (UDT_HEAD) PDU
+        udt_format: Optional[UDTFormat] = None,
+        udt_opcode: Optional[CsbkOpcodes] = None,
+        supplementary_flag: Optional[SupplementaryFlag] = None,
     ):
         self.data_packet_format: DataPacketFormats = dpf
         # todo implement auto calculation from trimmed as_bits result
@@ -64,6 +71,10 @@ class DataHeader(BitsInterface):
         self.appended_blocks: int = appended_blocks
         self.defined_data_format: Optional[DefinedDataFormats] = defined_data_format
         self.sarq: Optional[SARQ] = sarq
+        # Unified Data Transport Header (UDT_HEAD) PDU
+        self.udt_format: Optional[UDTFormat] = udt_format
+        self.udt_opcode: Optional[CsbkOpcodes] = udt_opcode
+        self.supplementary_flag: Optional[SupplementaryFlag] = supplementary_flag
 
     def __repr__(self):
         descr: str = f"[{self.data_packet_format}] "
@@ -103,6 +114,13 @@ class DataHeader(BitsInterface):
                 + ("[RESPONSE REQUESTED] " if self.is_response_requested else "")
                 + f"[SOURCE: {self.llid_source}] [DESTINATION: {self.llid_destination}] [{self.full_message_flag}] "
                 + f"[APPENDED BLOCKS: {self.appended_blocks}] "
+            )
+        elif self.data_packet_format == DataPacketFormats.UnifiedDataTransport:
+            descr += (
+                f"[{self.sap_identifier}] [{self.udt_format}] [UDT Opcode: {self.udt_opcode}] "
+                + ("[GROUP] " if self.is_group else "[INDIVIDUAL] ")
+                + ("[RESPONSE REQUESTED] " if self.is_response_requested else "")
+                + f"[SOURCE: {self.llid_source}] [DESTINATION: {self.llid_destination}] [{self.supplementary_flag}] "
             )
         else:
             raise KeyError(f"__repr__ not implemented for {self.data_packet_format}")
@@ -169,6 +187,20 @@ class DataHeader(BitsInterface):
                 full_message_flag=FullMessageFlag(bits[64]),
                 blocks_to_follow=ba2int(bits[65:72]),
                 fragment_sequence_number=ba2int(bits[76:80]),
+            )
+        elif dpf == DataPacketFormats.UnifiedDataTransport:
+            return DataHeader(
+                dpf=dpf,
+                crc=bits[80:96],
+                is_group=bits[0],
+                is_response_requested=bits[1],
+                sap_identifier=SAPIdentifier.from_bits(bits[8:12]),
+                udt_format=UDTFormat.from_bits(bits[12:16]),
+                llid_destination=ba2int(bits[16:40]),
+                llid_source=ba2int(bits[40:64]),
+                appended_blocks=ba2int(bits[70:72]),
+                supplementary_flag=SupplementaryFlag(bits[72]),
+                udt_opcode=CsbkOpcodes.from_bits(bits[74:80]),
             )
         else:
             raise KeyError(f"from_bits not implemented for {dpf}")

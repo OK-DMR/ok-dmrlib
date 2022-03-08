@@ -2,12 +2,15 @@ from typing import Dict
 
 from bitarray import bitarray
 
+from okdmr.dmrlib.etsi.layer2.elements.csbk_opcodes import CsbkOpcodes
 from okdmr.dmrlib.etsi.layer2.elements.data_packet_formats import DataPacketFormats
 from okdmr.dmrlib.etsi.layer2.elements.defined_data_formats import DefinedDataFormats
 from okdmr.dmrlib.etsi.layer2.elements.full_message_flag import FullMessageFlag
 from okdmr.dmrlib.etsi.layer2.elements.resynchronize_flag import ResynchronizeFlag
 from okdmr.dmrlib.etsi.layer2.elements.sap_identifier import SAPIdentifier
 from okdmr.dmrlib.etsi.layer2.elements.sarq import SARQ
+from okdmr.dmrlib.etsi.layer2.elements.supplementary_flag import SupplementaryFlag
+from okdmr.dmrlib.etsi.layer2.elements.udt_format import UDTFormat
 from okdmr.dmrlib.etsi.layer2.pdu.data_header import DataHeader
 
 
@@ -38,6 +41,12 @@ def test_data_headers():
             "sarq": SARQ.NotRequired,
             "full_message_flag": FullMessageFlag.FirstTryToCompletePacket,
             "appended_blocks": 0,
+        },
+        "800500010627fce7001bacaf": {
+            "udt_format": UDTFormat.LocationNMEA,
+            "udt_opcode": CsbkOpcodes.UnifiedDataTransportInboundHeader,
+            "sap_identifier": SAPIdentifier.UDT,
+            "supplementary_flag": SupplementaryFlag.ShortData,
         },
     }
     for pduhex, validations in pdus.items():

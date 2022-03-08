@@ -1,3 +1,4 @@
+import sys
 from typing import Union, Optional
 
 from bitarray import bitarray
@@ -315,7 +316,7 @@ class CSBK(BitsInterface):
             )
         elif self.csbko == ChannelTimingOpcode:
             description += (
-                f"[AGE: {500*self.sync_age}ms] [GENERATION: {self.generation}] "
+                f"[AGE: {500 * self.sync_age}ms] [GENERATION: {self.generation}] "
                 f"[LEADER IDENTIFIER: {self.leader_identifier}] [NEW LEADER: {self.new_leader}] "
                 f"[LEADER DYN IDENTIFIER: {self.leader_dynamic_identifier}] "
                 f"[SOURCE IDENTIFIER: {self.source_identifier}] "

@@ -6,6 +6,7 @@ from okdmr.dmrlib.etsi.layer2.elements.full_message_flag import FullMessageFlag
 from okdmr.dmrlib.etsi.layer2.elements.resynchronize_flag import ResynchronizeFlag
 from okdmr.dmrlib.etsi.layer2.elements.sarq import SARQ
 from okdmr.dmrlib.etsi.layer2.elements.slcos import SLCOs
+from okdmr.dmrlib.etsi.layer2.elements.supplementary_flag import SupplementaryFlag
 from okdmr.dmrlib.etsi.layer3.elements.activity_id import ActivityID
 from okdmr.dmrlib.etsi.layer3.elements.additional_information_field import (
     AdditionalInformationField,
@@ -53,3 +54,5 @@ class RaisingEnums(TestCase):
             SARQ(0b10)
         with self.assertRaises(AssertionError):
             SLCOs(0b10000)
+        with self.assertRaises(ValueError):
+            SupplementaryFlag(0b10)

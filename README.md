@@ -50,7 +50,7 @@ This package provides way to parse and assemble various DMR ETSI protocols and f
 | SHORT LC        |          ✅          | Short Link Control, namely: Activity, Null                                                                                 |
 | SLOT            |          ✅          | Slot Type                                                                                                                  |
 | SYNC            |          ✅          | Synchronization patterns                                                                                                   |
-| PDP Data Header |          ✅          | Confirmed/Unconfirmed, Response, Defined Short Data                                                                        |
+| Data Header     |          ✅          | Confirmed/Unconfirmed, Response, Defined Short Data                                                                        |
 
 ### ETSI Information Elements
 
@@ -61,7 +61,7 @@ Access Types (AT), CRC Mask, CSBKO (CSBK Opcode), DPF (Data Packet Format), DT (
 Full LC Opcode), LCSS (LC Start/Stop), PI (Pre-emption and power control indicator), SLCO (Short LC Opcode), SYNC (
 Synchronization pattern), Activity ID, Additional Information Field, Answer/Response, CTO (Channel Timing Opcode), DI (
 Dynamic Identifier), Position Error, Reason Code, Service Options, Talker Alias Data Format, Defined Data Format (DD), Selective Automatic Repeat reQuest (SARQ),
-Re-Synchronize Flag (S), Send sequence number (N(S)), SAP identifier (SAP), 
+Re-Synchronize Flag (S), Send sequence number (N(S)), SAP identifier (SAP), Supplementary Flag (SF), Unified Data Transport Format (UDT Format)
 
 
 ### Additional notes
