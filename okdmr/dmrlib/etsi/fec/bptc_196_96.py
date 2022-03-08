@@ -302,9 +302,12 @@ class BPTC19696:
         return out
 
     @staticmethod
-    def deinterleave_data_bits(bits: bitarray) -> bitarray:
+    def deinterleave_data_bits(
+        bits: bitarray, repair_if_necessary: bool = True
+    ) -> bitarray:
         """
         Will take BPTC interleaved (and FEC protected) bits and return 96 bits of data
+        :param repair_if_necessary:
         :param bits: 196 bits of on-air payload
         :return: 96 bits of data (info bits)
         """
@@ -313,11 +316,52 @@ class BPTC19696:
         ), f"BPTC 196,96 decode requires 196 bits, got {len(bits)}"
         mapping = BPTC19696.DEINTERLEAVE_INFO_BITS_ONLY_MAP
 
+        if repair_if_necessary:
+            bits = BPTC19696.repair_if_necessary(bits=bits)
+
         out = bitarray([0] * len(mapping.keys()), endian="big")
         for i, n in mapping.items():
             out[i] = bits[n]
 
         return out
+
+    @staticmethod
+    def repair_if_necessary(bits: bitarray, deinterleaved: bool = False) -> bitarray:
+        """
+        Takes all 196 of interleaved or deinterleaved BPT 196.96 payload and will perform Hamming corrections
+        if necessary
+
+        :param bits:
+        :param deinterleaved:
+        :return:
+        """
+        assert (
+            len(bits) == 196
+        ), f"BPTC 196,96 can repair only full 196 bits, got {len(bits)}"
+
+        if not deinterleaved:
+            bits = BPTC19696.deinterleave_all_bits(bits)
+
+        table = BPTC19696.make_encoding_table()
+        table = BPTC19696.fill_encoding_table(table, bits)
+
+        for row in range(0, table.shape[0]):
+            table[row] = Hamming15113.correct_numpy_array(table[row])
+            for col in range(0, table.shape[1]):
+                table[:, col] = Hamming1393.correct_numpy_array(table[:, col])
+
+        for data_index, (
+            interleave_index,
+            row,
+            column,
+            is_reserved,
+            is_hamming,
+        ) in BPTC19696.INTERLEAVING_INDICES.items():
+            bits[data_index if deinterleaved else interleave_index] = table[row - 1][
+                column
+            ]
+
+        return bits
 
     @staticmethod
     def make_encoding_table() -> numpy.ndarray:

@@ -2,6 +2,10 @@ import numpy
 from bitarray import bitarray
 
 from okdmr.dmrlib.etsi.fec.fec_utils import get_syndrome_for_word
+from okdmr.dmrlib.utils.bits_bytes import (
+    numpy_array_to_bitarray,
+    bitarray_to_numpy_array,
+)
 
 
 class HammingCommon:
@@ -26,6 +30,16 @@ class HammingCommon:
             get_syndrome_for_word(numpy.array(bits.tolist()), cls.PARITY_CHECK_MATRIX),
             cls.CORRECT_SYNDROME,
         )
+
+    @classmethod
+    def correct_numpy_array(cls, bits: numpy.ndarray) -> numpy.ndarray:
+        """
+        Will repair single bit-flip and return ndarray instead of bitarray
+        :param bits:
+        :return:
+        """
+        is_correct, correct_bits = cls.check_and_correct(numpy_array_to_bitarray(bits))
+        return bits if is_correct else bitarray_to_numpy_array(correct_bits)
 
     @classmethod
     def check_and_correct(cls, bits: bitarray) -> (bool, bitarray):

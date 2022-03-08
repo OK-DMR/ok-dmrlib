@@ -1,18 +1,11 @@
 #!/usr/bin/env python3
 
 import sys
+import traceback
 from argparse import ArgumentParser
 from typing import Callable, List, Dict, Optional, Tuple
 
 from bitarray import bitarray
-from okdmr.dmrlib.etsi.fec.vbptc_128_72 import VBPTC12873
-from okdmr.dmrlib.etsi.layer2.burst import Burst
-from okdmr.dmrlib.etsi.layer2.elements.lcss import LCSS
-from okdmr.dmrlib.etsi.layer2.elements.preemption_power_indicator import (
-    PreemptionPowerIndicator,
-)
-from okdmr.dmrlib.etsi.layer2.pdu.full_link_control import FullLinkControl
-from okdmr.dmrlib.utils.parsing import try_parse_packet
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 from okdmr.kaitai.hytera.ip_site_connect_heartbeat import IpSiteConnectHeartbeat
 from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
@@ -20,6 +13,16 @@ from scapy.data import UDP_SERVICES
 from scapy.layers.inet import UDP, IP
 from scapy.layers.l2 import Ether
 from scapy.utils import PcapReader
+
+from okdmr.dmrlib.etsi.fec.vbptc_128_72 import VBPTC12873
+from okdmr.dmrlib.etsi.layer2.burst import Burst
+from okdmr.dmrlib.etsi.layer2.elements.lcss import LCSS
+from okdmr.dmrlib.etsi.layer2.elements.preemption_power_indicator import (
+    PreemptionPowerIndicator,
+)
+from okdmr.dmrlib.etsi.layer2.elements.sync_patterns import SyncPatterns
+from okdmr.dmrlib.etsi.layer2.pdu.full_link_control import FullLinkControl
+from okdmr.dmrlib.utils.parsing import try_parse_packet
 
 
 class EmbeddedExtractor:
@@ -45,8 +48,6 @@ class EmbeddedExtractor:
 
         full_lc: Optional[FullLinkControl] = None
         key: str = f"{packet.src}:{packet.getlayer(UDP).sport}"
-        # print(f"{key} data: {data.hex()} packet: {bytes(packet).hex()}")
-        # print(f"{repr(burst)}")
 
         (_lcss, _bits) = self.data.get(key, (LCSS.SingleFragmentLCorCSBK, bitarray()))
         if burst.emb.link_control_start_stop == LCSS.FirstFragmentLC:
@@ -142,6 +143,12 @@ class PcapTool:
                     else f" type {str(type(pkt)).rsplit('.')[-1]}"
                 )
             )
+
+        if burst and burst.sync_or_embedded_signalling in (
+            SyncPatterns.BsSourcedData,
+            SyncPatterns.MsSourcedData,
+        ):
+            print(data.hex())
 
         return burst
 
@@ -270,7 +277,15 @@ class PcapTool:
                             # skip udp packets without any payload
                             continue
 
-                        callback(data=udp_layer.load, packet=ip_layer)
+                        try:
+                            callback(data=udp_layer.load, packet=ip_layer)
+                        except BaseException as e:
+                            if isinstance(e, SystemExit):
+                                raise e
+                            print(
+                                f"Callback raised exception {e} for data {udp_layer.load.hex()}"
+                            )
+                            traceback.print_exc()
 
         return statistics
 

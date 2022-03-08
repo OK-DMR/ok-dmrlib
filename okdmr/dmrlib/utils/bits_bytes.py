@@ -52,3 +52,29 @@ def byteswap_bytearray(data: bytearray) -> bytes:
 
 def numpy_array_to_int(data: Union[numpy.array, numpy.ndarray]) -> int:
     return int(data.dot(2 ** numpy.arange(data.size)[::-1]))
+
+
+def numpy_array_to_bitarray(data: Union[numpy.ndarray, numpy.array]) -> bitarray:
+    """
+    This method can process only single dimensional numpy array
+    :param data:
+    :return:
+    """
+    if len(data.shape) > 1:
+        raise ValueError(
+            f"numpy_array_to_bitarray cannot convert array of more than 1 dimension, got shape {data.shape}"
+        )
+    values = data.tolist()
+    assert isinstance(
+        values, list
+    ), f"Unexpected result of numpy.(nd)array.tolist, got type: {type(values)}, values: {values}"
+    return bitarray(values) if isinstance(values, list) else bitarray()
+
+
+def bitarray_to_numpy_array(bits: bitarray) -> numpy.ndarray:
+    """
+    Will return numpy array as bitarray
+    :param bits:
+    :return:
+    """
+    return numpy.array(bits.tolist())

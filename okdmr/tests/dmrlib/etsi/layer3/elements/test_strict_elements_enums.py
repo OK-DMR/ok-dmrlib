@@ -2,6 +2,10 @@ from unittest import TestCase
 
 from okdmr.dmrlib.etsi.layer2.elements.csbk_opcodes import CsbkOpcodes
 from okdmr.dmrlib.etsi.layer2.elements.flcos import FLCOs
+from okdmr.dmrlib.etsi.layer2.elements.full_message_flag import FullMessageFlag
+from okdmr.dmrlib.etsi.layer2.elements.resynchronize_flag import ResynchronizeFlag
+from okdmr.dmrlib.etsi.layer2.elements.sarq import SARQ
+from okdmr.dmrlib.etsi.layer2.elements.slcos import SLCOs
 from okdmr.dmrlib.etsi.layer3.elements.activity_id import ActivityID
 from okdmr.dmrlib.etsi.layer3.elements.additional_information_field import (
     AdditionalInformationField,
@@ -41,3 +45,11 @@ class RaisingEnums(TestCase):
             ActivityID(0b10000)
         with self.assertRaises(ValueError):
             FLCOs(0b001001)
+        with self.assertRaises(ValueError):
+            FullMessageFlag(0b10)
+        with self.assertRaises(ValueError):
+            ResynchronizeFlag(0b10)
+        with self.assertRaises(ValueError):
+            SARQ(0b10)
+        with self.assertRaises(AssertionError):
+            SLCOs(0b10000)

@@ -1,18 +1,23 @@
 from typing import Optional
 
 from bitarray import bitarray
+from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
+from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
+
 from okdmr.dmrlib.etsi.fec.bptc_196_96 import BPTC19696
 from okdmr.dmrlib.etsi.fec.trellis import Trellis34
 from okdmr.dmrlib.etsi.layer2.elements.burst_types import BurstTypes
 from okdmr.dmrlib.etsi.layer2.elements.data_types import DataTypes
 from okdmr.dmrlib.etsi.layer2.elements.sync_patterns import SyncPatterns
+from okdmr.dmrlib.etsi.layer2.pdu.csbk import CSBK
+from okdmr.dmrlib.etsi.layer2.pdu.data_header import DataHeader
 from okdmr.dmrlib.etsi.layer2.pdu.embedded_signalling import EmbeddedSignalling
+from okdmr.dmrlib.etsi.layer2.pdu.full_link_control import FullLinkControl
 from okdmr.dmrlib.etsi.layer2.pdu.slot_type import SlotType
 from okdmr.dmrlib.hytera.hytera_constants import IPSC_KAITAI_VOICE_SLOTS
 from okdmr.dmrlib.transmission.transmission_types import TransmissionTypes
 from okdmr.dmrlib.utils.bits_bytes import bits_to_bytes, bytes_to_bits, byteswap_bytes
-from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
-from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
+from okdmr.dmrlib.utils.bits_interface import BitsInterface
 
 
 class Burst:
@@ -81,6 +86,21 @@ class Burst:
         self.sequence_no: int = 0
         self.stream_no: bytes = bytes(4)
         self.transmission_type: TransmissionTypes = TransmissionTypes.Idle
+        self.data: Optional[BitsInterface] = (
+            self.extract_data() if self.is_data_or_control else None
+        )
+
+    def extract_data(self) -> Optional[BitsInterface]:
+        if self.data_type == DataTypes.CSBK:
+            return CSBK.from_bits(self.info_bits_deinterleaved)
+        elif self.data_type == DataTypes.VoiceLCHeader:
+            return FullLinkControl.from_bits(self.info_bits_deinterleaved)
+        elif self.data_type == DataTypes.TerminatorWithLC:
+            return FullLinkControl.from_bits(self.info_bits_deinterleaved)
+        elif self.data_type == DataTypes.DataHeader:
+            return DataHeader.from_bits(self.info_bits_deinterleaved)
+
+        return None
 
     def set_sequence_no(self, sequence_no: int) -> "Burst":
         self.sequence_no = sequence_no
@@ -116,6 +136,10 @@ class Burst:
             status += repr(self.emb)
         elif self.has_slot_type:
             status += repr(self.slot_type)
+
+        if self.data:
+            status += "\n\t" + repr(self.data)
+
         return status
 
     def as_bits(self) -> bitarray:
@@ -145,7 +169,6 @@ class Burst:
 
     @staticmethod
     def from_hytera_ipsc(ipsc: IpSiteConnectProtocol) -> "Burst":
-
         fullbytes: bytes = byteswap_bytes(ipsc.ipsc_payload)[:-1]
         fullbits: bitarray = bytes_to_bits(fullbytes)
 

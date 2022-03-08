@@ -41,14 +41,15 @@ This package provides way to parse and assemble various DMR ETSI protocols and f
 
 ### ETSI PDUs (Protocol Data Units)
 
-| Name     | Encoding / Decoding | Description                                                                                                                | 
-|----------|:-------------------:|----------------------------------------------------------------------------------------------------------------------------|
-| CSBK     |          ✅          | Control Signalling Block, namely: BS Outbound Activation, Unit-Unit Request/Answer, Negative ACK, Preamble, Channel Timing |
-| EMB      |          ✅          | Embedded Signalling                                                                                                        |
-| FULL LC  |          ✅          | Full Link Control, namely: Group Voice, Unit-Unit, Talker Alias (header + blocks1,2,3), GPSInfo, Terminator with LC        |
-| SHORT LC |          ✅          | Short Link Control, namely: Activity, Null                                                                                 |
-| SLOT     |          ✅          | Slot Type                                                                                                                  |
-| SYNC     |          ✅          | Synchronization patterns                                                                                                   |
+| Name            | Encoding / Decoding | Description                                                                                                                | 
+|-----------------|:-------------------:|----------------------------------------------------------------------------------------------------------------------------|
+| CSBK            |          ✅          | Control Signalling Block, namely: BS Outbound Activation, Unit-Unit Request/Answer, Negative ACK, Preamble, Channel Timing |
+| EMB             |          ✅          | Embedded Signalling                                                                                                        |
+| FULL LC         |          ✅          | Full Link Control, namely: Group Voice, Unit-Unit, Talker Alias (header + blocks1,2,3), GPSInfo, Terminator with LC        |
+| SHORT LC        |          ✅          | Short Link Control, namely: Activity, Null                                                                                 |
+| SLOT            |          ✅          | Slot Type                                                                                                                  |
+| SYNC            |          ✅          | Synchronization patterns                                                                                                   |
+| PDP Data Header |          ✅          | Confirmed/Unconfirmed, Response, Defined Short Data                                                                        |
 
 ### ETSI Information Elements
 
@@ -58,7 +59,9 @@ describing data (discovery):
 Access Types (AT), CRC Mask, CSBKO (CSBK Opcode), DPF (Data Packet Format), DT (Data Type), FID (Feature Set ID), FLCO (
 Full LC Opcode), LCSS (LC Start/Stop), PI (Pre-emption and power control indicator), SLCO (Short LC Opcode), SYNC (
 Synchronization pattern), Activity ID, Additional Information Field, Answer/Response, CTO (Channel Timing Opcode), DI (
-Dynamic Identifier), Position Error, Reason Code, Service Options, Talker Alias Data Format
+Dynamic Identifier), Position Error, Reason Code, Service Options, Talker Alias Data Format, Defined Data Format (DD), Selective Automatic Repeat reQuest (SARQ),
+Re-Synchronize Flag (S), Send sequence number (N(S)), SAP identifier (SAP), 
+
 
 ### Additional notes
 

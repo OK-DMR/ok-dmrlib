@@ -1,8 +1,13 @@
 import enum
 
+from bitarray import bitarray
+from bitarray.util import ba2int, int2ba
+
+from okdmr.dmrlib.utils.bits_interface import BitsInterface
+
 
 @enum.unique
-class DataPacketFormats(enum.Enum):
+class DataPacketFormats(BitsInterface, enum.Enum):
     """
     ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.3.17 Data Packet Format (DPF)
     """
@@ -23,3 +28,10 @@ class DataPacketFormats(enum.Enum):
         ), f"DPF (Data Packet Format) out of range, got {value}"
         # undefined values are reserved per specification
         return DataPacketFormats.Reserved
+
+    @staticmethod
+    def from_bits(bits: bitarray) -> "DataPacketFormats":
+        return DataPacketFormats(ba2int(bits[0:4]))
+
+    def as_bits(self) -> bitarray:
+        return int2ba(self.value, length=4)
