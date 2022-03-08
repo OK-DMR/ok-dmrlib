@@ -112,7 +112,6 @@ class DataHeader(BitsInterface):
     @staticmethod
     def from_bits(bits: bitarray) -> "DataHeader":
         dpf: DataPacketFormats = DataPacketFormats.from_bits(bits[4:8])
-        print(f"{dpf} {bits.tobytes().hex()}")
         if dpf == DataPacketFormats.DataPacketConfirmed:
             return DataHeader(
                 dpf=dpf,

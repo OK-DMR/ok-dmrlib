@@ -4,6 +4,7 @@ numpy>=1.21.4
 # for testing
 pytest>=7.0.1
 pytest-cov>=3.0.0
+pytest-asyncio>=0.18.2
 # required only to run test_crc (comparing crc and bit-crc implementations)
 crc>=1.1.2
 # required for test tools working with pcap/pcapng

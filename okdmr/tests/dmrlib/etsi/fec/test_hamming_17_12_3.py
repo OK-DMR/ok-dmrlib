@@ -28,5 +28,5 @@ def test_hamming17123_repair():
         # flip single bit
         invalid.invert(randint(0, len(valid) - 1))
         is_valid, corrected = Hamming17123.check_and_correct(invalid)
-        assert not is_valid, "No bits was flipped for test purposes?"
+        assert is_valid, "single bit-flips should be repaired"
         assert bitarray(valid) == corrected

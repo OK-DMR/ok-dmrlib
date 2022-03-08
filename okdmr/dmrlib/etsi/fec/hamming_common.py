@@ -1,3 +1,5 @@
+import sys
+
 import numpy
 from bitarray import bitarray
 
@@ -39,14 +41,14 @@ class HammingCommon:
         :return:
         """
         is_correct, correct_bits = cls.check_and_correct(numpy_array_to_bitarray(bits))
-        return bits if is_correct else bitarray_to_numpy_array(correct_bits)
+        return bitarray_to_numpy_array(correct_bits) if is_correct else bits
 
     @classmethod
     def check_and_correct(cls, bits: bitarray) -> (bool, bitarray):
         """
         Will check if parity matches, if not, tries to correct one bit-error
         :param bits:
-        :return: (parity matches, corrected message)
+        :return: (status of returned message where False means it is unrepairable, message)
         """
         check = cls.check(bits)
 
@@ -55,7 +57,12 @@ class HammingCommon:
             syndrome = get_syndrome_for_word(
                 numpy.array(bits.tolist()), cls.PARITY_CHECK_MATRIX
             ).tolist()
-            bits.invert(cls.PARITY_CHECK_MATRIX.T.tolist().index(syndrome))
+            try:
+                bits.invert(cls.PARITY_CHECK_MATRIX.T.tolist().index(syndrome))
+                check = True
+            except ValueError as e:
+                # ValueError is thrown in case syndrome is not found in parity check result, making the message uncorrectable
+                return False, bits
 
         return check, bits
 

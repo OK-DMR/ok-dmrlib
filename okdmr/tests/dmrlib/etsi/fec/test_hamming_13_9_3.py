@@ -29,5 +29,14 @@ def test_hamming1393_repair():
         # flip single bit
         invalid.invert(randint(0, len(valid) - 1))
         is_valid, corrected = Hamming1393.check_and_correct(invalid)
-        assert not is_valid, "No bits was flipped for test purposes?"
+        assert is_valid, "single bit-flips should be repaired"
         assert bitarray(valid) == corrected
+
+
+def test_hamming1393_unrepairable():
+    valid: bitarray = bitarray([1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0])
+    invalid: bitarray = bitarray([1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0])
+    is_correct, corrected = Hamming1393.check_and_correct(invalid.copy())
+    assert valid != invalid
+    assert not is_correct
+    assert corrected == invalid

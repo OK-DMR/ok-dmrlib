@@ -32,6 +32,7 @@ def test_data_headers():
             "resynchronize_flag": ResynchronizeFlag.DoNotSync,
         },
         "4da123386323383b05104566": {
+            "data_packet_format": DataPacketFormats.ShortDataDefined,
             "defined_data_format": DefinedDataFormats.BCD,
             "sap_identifier": SAPIdentifier.ShortData,
             "sarq": SARQ.NotRequired,
