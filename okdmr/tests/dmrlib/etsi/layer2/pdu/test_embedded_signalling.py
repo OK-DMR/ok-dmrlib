@@ -1,6 +1,7 @@
 from typing import List
 
 from bitarray import bitarray
+
 from okdmr.dmrlib.etsi.layer2.pdu.embedded_signalling import EmbeddedSignalling
 
 

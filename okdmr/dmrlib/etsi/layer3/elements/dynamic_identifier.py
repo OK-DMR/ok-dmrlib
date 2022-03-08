@@ -23,7 +23,7 @@ class DynamicIdentifier(BitsInterface, enum.Enum):
         raise ValueError(f"DynamicIdentifier value {value} is undefined")
 
     def as_bits(self) -> bitarray:
-        return int2ba(self.value)
+        return int2ba(self.value, length=2)
 
     @staticmethod
     def from_bits(bits: bitarray) -> "DynamicIdentifier":

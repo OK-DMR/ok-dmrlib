@@ -2,6 +2,7 @@ import enum
 
 from bitarray import bitarray
 from bitarray.util import int2ba, ba2int
+
 from okdmr.dmrlib.utils.bits_interface import BitsInterface
 
 

@@ -11,7 +11,6 @@ from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
 from okdmr.kaitai.hytera.real_time_transport_protocol import RealTimeTransportProtocol
 
 from okdmr.dmrlib.utils.parsing import try_parse_packet
-from okdmr.tests.dmrlib.tests_utils import prettyprint
 
 
 def test_parsing_detection():

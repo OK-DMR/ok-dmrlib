@@ -3,6 +3,7 @@ from typing import Dict, Tuple
 import numpy
 from bitarray import bitarray
 from bitarray.util import int2ba
+
 from okdmr.dmrlib.etsi.crc.crc8 import CRC8
 from okdmr.dmrlib.etsi.fec.hamming_17_12_3 import Hamming17123
 

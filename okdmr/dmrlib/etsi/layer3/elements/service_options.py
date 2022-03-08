@@ -13,10 +13,10 @@ class ServiceOptions(BitsInterface):
 
     def __init__(
         self,
-        is_emergency: Union[bool, int],
-        is_broadcast: Union[bool, int],
-        is_open_voice_call_mode: Union[bool, int],
-        priority_level: int,
+        is_emergency: Union[bool, int] = False,
+        is_broadcast: Union[bool, int] = False,
+        is_open_voice_call_mode: Union[bool, int] = False,
+        priority_level: int = 0,
         is_privacy: Union[bool, int] = False,
         reserved: bitarray = bitarray("00"),
     ):

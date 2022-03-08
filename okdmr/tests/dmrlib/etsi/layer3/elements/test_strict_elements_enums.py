@@ -1,5 +1,7 @@
 from unittest import TestCase
 
+from bitarray import bitarray
+
 from okdmr.dmrlib.etsi.layer2.elements.csbk_opcodes import CsbkOpcodes
 from okdmr.dmrlib.etsi.layer2.elements.flcos import FLCOs
 from okdmr.dmrlib.etsi.layer2.elements.full_message_flag import FullMessageFlag
@@ -59,3 +61,5 @@ class RaisingEnums(TestCase):
             SupplementaryFlag(0b10)
         with self.assertRaises(ValueError):
             UDTOptionFlag(0b10)
+        with self.assertRaises(AssertionError):
+            ChannelTimingOpcode.from_bits(bitarray("1"))

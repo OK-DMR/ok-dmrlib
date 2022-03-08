@@ -1,12 +1,9 @@
-from typing import Optional
-
 from bitarray import bitarray
 from bitarray.util import ba2int
 
 from okdmr.dmrlib.etsi.layer2.burst import Burst
 from okdmr.dmrlib.etsi.layer2.elements.burst_types import BurstTypes
 from okdmr.dmrlib.etsi.layer2.elements.data_types import DataTypes
-from okdmr.dmrlib.utils.bits_interface import BitsInterface
 
 
 class HyteraIPSCSync(Burst):

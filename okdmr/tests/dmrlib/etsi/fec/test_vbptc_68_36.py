@@ -2,6 +2,7 @@ from typing import List
 
 from bitarray import bitarray
 from bitarray.util import int2ba
+
 from okdmr.dmrlib.etsi.crc.crc8 import CRC8
 from okdmr.dmrlib.etsi.fec.vbptc_68_28 import VBPTC6828
 from okdmr.dmrlib.etsi.layer2.elements.slcos import SLCOs

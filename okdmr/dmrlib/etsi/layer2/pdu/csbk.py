@@ -1,4 +1,3 @@
-import sys
 from typing import Union, Optional
 
 from bitarray import bitarray
@@ -32,7 +31,7 @@ class CSBK(BitsInterface):
         csbko: CsbkOpcodes,
         manufacturers_feature_set_id: FeatureSetIDs,
         # default value for crc indicates, it must be recalculated on construct
-        crc: int = -1,
+        crc: int = 0,
         # bs outbound activation fields
         bs_address: int = 0,
         source_address: int = 0,
@@ -136,7 +135,7 @@ class CSBK(BitsInterface):
             else DynamicIdentifier(source_dynamic_identifier)
         )
 
-        if self.crc < 1:
+        if self.crc <= 0:
             self.calculate_crc_ccit()
 
     def calculate_crc_ccit(self) -> "CSBK":
@@ -190,7 +189,7 @@ class CSBK(BitsInterface):
                 + int2ba(self.target_address, length=24)
                 + int2ba(self.source_address, length=24)
             )
-        elif self.csbko == ChannelTimingOpcode:
+        elif self.csbko == CsbkOpcodes.ChannelTimingCSBK:
             cto = self.channel_timing_opcode.as_bits()
             pdu += (
                 int2ba(self.sync_age, length=11)
@@ -198,11 +197,11 @@ class CSBK(BitsInterface):
                 + int2ba(self.leader_identifier, length=20)
                 + int2ba(self.new_leader, length=1)
                 + self.leader_dynamic_identifier.as_bits()
-                + cto[0:1]
+                + bitarray([cto[0]])
                 + int2ba(self.source_identifier, length=20)
                 + bitarray([0])
                 + self.source_dynamic_identifier.as_bits()
-                + cto[1:2]
+                + bitarray([cto[1]])
             )
 
         return pdu + int2ba(self.crc, length=16)
@@ -314,7 +313,7 @@ class CSBK(BitsInterface):
                 f"[FOLLOWED BY {'CSBK' if self.csbk_content_follows_preambles else 'DATA'}] "
                 f"[BTF: {self.blocks_to_follow}] [DST ADDR: {self.target_address}] [SRC ADDR: {self.source_address}]"
             )
-        elif self.csbko == ChannelTimingOpcode:
+        elif self.csbko == CsbkOpcodes.ChannelTimingCSBK:
             description += (
                 f"[AGE: {500 * self.sync_age}ms] [GENERATION: {self.generation}] "
                 f"[LEADER IDENTIFIER: {self.leader_identifier}] [NEW LEADER: {self.new_leader}] "

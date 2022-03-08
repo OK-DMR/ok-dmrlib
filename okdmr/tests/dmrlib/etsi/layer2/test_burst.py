@@ -5,13 +5,10 @@ from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
 
 from okdmr.dmrlib.etsi.layer2.burst import Burst
-from okdmr.dmrlib.etsi.layer2.elements.burst_types import BurstTypes
 from okdmr.dmrlib.etsi.layer2.elements.data_types import DataTypes
 from okdmr.dmrlib.etsi.layer2.elements.sync_patterns import SyncPatterns
 from okdmr.dmrlib.hytera.hytera_ipsc_sync import HyteraIPSCSync
 from okdmr.dmrlib.hytera.hytera_ipsc_wakeup import HyteraIPSCWakeup
-from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits, byteswap_bytes
-from okdmr.tests.dmrlib.tests_utils import prettyprint
 
 
 def test_burst_info(capsys):

@@ -2,6 +2,7 @@ from typing import Union, Optional
 
 from bitarray import bitarray
 from bitarray.util import int2ba, ba2int
+
 from okdmr.dmrlib.etsi.crc.crc8 import CRC8
 from okdmr.dmrlib.etsi.layer2.elements.slcos import SLCOs
 from okdmr.dmrlib.etsi.layer3.elements.activity_id import ActivityID

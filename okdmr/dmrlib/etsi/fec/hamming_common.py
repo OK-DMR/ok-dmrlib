@@ -1,5 +1,3 @@
-import sys
-
 import numpy
 from bitarray import bitarray
 
