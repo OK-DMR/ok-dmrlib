@@ -1,10 +1,13 @@
 import sys
-from typing import List
+from typing import List, Tuple
 
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
 
+from okdmr.dmrlib.etsi.fec.bptc_196_96 import BPTC19696
+from okdmr.dmrlib.etsi.fec.trellis import Trellis34
 from okdmr.dmrlib.etsi.layer2.burst import Burst
+from okdmr.dmrlib.etsi.layer2.elements.burst_types import BurstTypes
 from okdmr.dmrlib.etsi.layer2.elements.data_types import DataTypes
 from okdmr.dmrlib.etsi.layer2.elements.sync_patterns import SyncPatterns
 from okdmr.dmrlib.hytera.hytera_ipsc_sync import HyteraIPSCSync
@@ -51,6 +54,8 @@ def test_burst_info(capsys):
         assert len(out) > 0
         assert len(err) < 1
 
+        assert burst.as_bits().tobytes() == mmdvm.command_data.dmr_data
+
 
 def test_burst_info_hytera():
     bursts: List[str] = [
@@ -89,6 +94,24 @@ def test_burst_info_hytera():
         # common features
         if burst.has_emb or burst.has_slot_type:
             assert burst.colour_code == ipsc.color_code
+
+
+def test_burst_as_bits():
+    bursts: List[Tuple[str, BurstTypes]] = [
+        (
+            "51cf0ded894c0dec1ff8fcf294fdff57d75df5dcae7a16d064197982bf5824914c",
+            BurstTypes.DataAndControl,
+        ),
+        (
+            "2522222222a632b222222222560dff57d75df5dce2822222222791522222222c11",
+            BurstTypes.DataAndControl,
+        ),
+    ]
+    for (hexstr, burst_type) in bursts:
+        _bytes: bytes = bytes.fromhex(hexstr)
+        b: Burst = Burst.from_bytes(data=_bytes, burst_type=burst_type)
+        assert b.data.as_bits() == b.info_bits_deinterleaved
+        assert b.as_bits().tobytes() == _bytes
 
 
 if __name__ == "__main__":

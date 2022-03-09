@@ -417,7 +417,15 @@ class BPTC19696:
             table[:, column] = Hamming1393.generate(table[:, column][0:9])
 
         out: bitarray = bitarray([0] * 196)
-        for index, info_tuple in BPTC19696.INTERLEAVING_INDICES.items():
-            out[info_tuple[0]] = table[info_tuple[1] - 1][info_tuple[2]]
+        for index, (
+            interleave_index,
+            row,
+            column,
+            is_reserved,
+            is_hamming,
+        ) in BPTC19696.INTERLEAVING_INDICES.items():
+            if is_reserved:
+                continue
+            out[interleave_index] = table[row - 1][column]
 
         return out

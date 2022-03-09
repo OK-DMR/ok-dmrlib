@@ -1,8 +1,13 @@
 import enum
 
+from bitarray import bitarray
+from bitarray.util import int2ba, ba2int
+
+from okdmr.dmrlib.utils.bits_interface import BitsInterface
+
 
 @enum.unique
-class SyncPatterns(enum.Enum):
+class SyncPatterns(BitsInterface, enum.Enum):
     """
     ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.1 Synchronization (SYNC) PDU - Table 9.2: SYNC patterns
     """
@@ -29,3 +34,10 @@ class SyncPatterns(enum.Enum):
     @classmethod
     def _missing_(cls, value: object):
         return SyncPatterns.EmbeddedSignalling
+
+    def as_bits(self) -> bitarray:
+        return int2ba(self.value, length=48)
+
+    @staticmethod
+    def from_bits(bits: bitarray) -> "SyncPatterns":
+        return SyncPatterns(ba2int(bits[:48]))

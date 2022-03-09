@@ -1,6 +1,7 @@
 from unittest import TestCase
 
 from okdmr.dmrlib.etsi.layer2.elements.sync_patterns import SyncPatterns
+from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits
 
 
 def test_sync_patterns():
@@ -16,6 +17,10 @@ def test_sync_patterns():
     assert (
         SyncPatterns.resolve_bytes(b"\x00\x00\x00\x00\x00\x00")
         == SyncPatterns.EmbeddedSignalling
+    )
+
+    assert SyncPatterns.BsSourcedVoice == SyncPatterns.from_bits(
+        bytes_to_bits(sync_data_bytes)
     )
 
 

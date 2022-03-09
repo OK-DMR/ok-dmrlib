@@ -13,6 +13,7 @@ from okdmr.dmrlib.etsi.layer2.pdu.csbk import CSBK
 from okdmr.dmrlib.etsi.layer2.pdu.data_header import DataHeader
 from okdmr.dmrlib.etsi.layer2.pdu.embedded_signalling import EmbeddedSignalling
 from okdmr.dmrlib.etsi.layer2.pdu.full_link_control import FullLinkControl
+from okdmr.dmrlib.etsi.layer2.pdu.rate34_data import Rate34Data
 from okdmr.dmrlib.etsi.layer2.pdu.slot_type import SlotType
 from okdmr.dmrlib.hytera.hytera_constants import IPSC_KAITAI_VOICE_SLOTS
 from okdmr.dmrlib.transmission.transmission_types import TransmissionTypes
@@ -99,6 +100,8 @@ class Burst:
             return FullLinkControl.from_bits(self.info_bits_deinterleaved)
         elif self.data_type == DataTypes.DataHeader:
             return DataHeader.from_bits(self.info_bits_deinterleaved)
+        elif self.data_type == DataTypes.Rate34Data:
+            return Rate34Data.from_bits(self.info_bits_deinterleaved)
 
         return None
 
@@ -143,7 +146,27 @@ class Burst:
         return status
 
     def as_bits(self) -> bitarray:
-        return self.full_bits
+        if self.is_data_or_control:
+            data_bits_interleaved = self.interleave()
+            slot_bits = self.slot_type.as_bits()
+            return (
+                data_bits_interleaved[:98]
+                + slot_bits[:10]
+                + (
+                    self.emb.as_bits()
+                    if self.has_emb
+                    else self.sync_or_embedded_signalling.as_bits()
+                )
+                + slot_bits[10:]
+                + data_bits_interleaved[98:]
+            )
+        emb_bits = self.emb.as_bits() if self.has_emb else None
+        center_bits = (
+            (emb_bits[:8] + self.embedded_signalling_bits + emb_bits[8:])
+            if self.has_emb
+            else self.sync_or_embedded_signalling.as_bits()
+        )
+        return self.voice_bits[:108] + center_bits + self.voice_bits[108:]
 
     @staticmethod
     def from_bits(bits: bitarray, burst_type: BurstTypes) -> "Burst":
@@ -195,6 +218,21 @@ class Burst:
         b.set_sequence_no(ipsc.sequence_number)
         return b
 
+    def interleave(self) -> bitarray:
+        if not self.is_data_or_control:
+            return self.voice_bits
+
+        if self.data_type == DataTypes.Rate34Data:
+            return Trellis34.encode(self.data.as_bits())
+        elif self.data_type == DataTypes.Rate1Data:
+            return self.data.as_bits()
+        elif self.data_type == DataTypes.Reserved:
+            raise ValueError(
+                f"Unknown data type {self.data_type} with data {self.data}"
+            )
+        else:
+            return BPTC19696.encode(self.data.as_bits())
+
     @staticmethod
     def deinterleave(bits: bitarray, data_type: DataTypes) -> bitarray:
         if data_type == DataTypes.Rate34Data:
@@ -207,5 +245,5 @@ class Burst:
             # here expected are: rate 1/2, PI header, voice headeader/terminator, csbk, data header, idle message,
             # response header/data blocks, mbc header/continuation/last block, udt header/continuation/last block
             # unified single block data and more
-
+            # See section B.0 table B.1, FEC and CRC summary, ETSI TS 102 361-1 V2.5.1 (2017-10)
             return BPTC19696.deinterleave_data_bits(bits=bits)

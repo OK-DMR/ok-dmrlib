@@ -99,7 +99,8 @@ def test_decode_mmdvm2020_csbks():
 
 def test_decode_encode():
     hex_bursts: List[str] = [
-        "53df0a83b7a8282c2509625014fdff57d75df5dcadde429028c87ae3341e24191c"
+        "53df0a83b7a8282c2509625014fdff57d75df5dcadde429028c87ae3341e24191c",
+        "51cf0ded894c0dec1ff8fcf294fdff57d75df5dcae7a16d064197982bf5824914c",
     ]
     for hex_burst in hex_bursts:
         burst: Burst = Burst.from_bytes(
@@ -107,7 +108,7 @@ def test_decode_encode():
         )
 
         # data that can be spliced later to make parts of burst (196 bits)
-        original_info_bits: bitarray = burst.info_bits_original
+        original_info_bits: bitarray = burst.info_bits_original.copy()
 
         # deinterleaved data (96 bits)
         original_data_bits_deinterleaved: bitarray = BPTC19696.deinterleave_data_bits(

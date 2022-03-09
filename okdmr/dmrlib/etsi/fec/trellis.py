@@ -104,7 +104,7 @@ class Trellis34:
         # "b" means array stores signed chars, aka -128 through +128
         out: array = array("b", [0] * len(original))
 
-        for i in range(0, len(original)):
+        for i in range(0, len(Trellis34.TRELLIS34_INTERLEAVE_MATRIX)):
             out[Trellis34.TRELLIS34_INTERLEAVE_MATRIX[i]] = original[i]
 
         return out
@@ -117,9 +117,9 @@ class Trellis34:
         :param deinterleaved:
         :return:
         """
-        out: array = array("b", [0] * len(deinterleaved))
+        out: array = array("b", [0] * 98)
 
-        for i in range(0, len(deinterleaved)):
+        for i in range(0, len(Trellis34.TRELLIS34_INTERLEAVE_MATRIX)):
             out[i] = deinterleaved[Trellis34.TRELLIS34_INTERLEAVE_MATRIX[i]]
 
         return out
@@ -167,10 +167,10 @@ class Trellis34:
 
         :rtype: object
         """
-        out: array = array("B", [0] * 48)
+        out: array = array("B", [0] * 49)
         last: int = 0
 
-        for i in range(48):
+        for i in range(0, 49):
             start = last * 8
             matches = False
 
@@ -182,7 +182,6 @@ class Trellis34:
                     matches = True
                     last = abs((j - start) % 255)
                     out[i] = last
-                    break
 
             assert (
                 matches
@@ -198,7 +197,7 @@ class Trellis34:
         :param tribits:
         :return:
         """
-        out: array = array("B", [0] * 49)
+        out: array = array("B", [0] * len(tribits))
         state: int = 0
 
         for i in range(0, len(tribits)):
@@ -217,8 +216,8 @@ class Trellis34:
         :param tribits:
         :return:
         """
-        assert len(tribits) == 48, f"Expected 48 tribits got {len(tribits)}"
-        out: bitarray = bitarray(196 * "0", endian="big")
+        assert len(tribits) == 49, f"Expected 49 tribits got {len(tribits)}"
+        out: bitarray = bitarray(144 * [0], endian="big")
 
         for i in range(0, 144, 3):
             o = int(i / 3)
@@ -240,8 +239,9 @@ class Trellis34:
 
         for i in range(0, len(original), 3):
             out.append(ba2int(original[i : i + 3], signed=False))
+        out.append(0)
 
-        return out[:48]
+        return out
 
     @staticmethod
     def decode(encoded: bitarray, as_bytes: bool = False) -> Union[bitarray, bytes]:
@@ -254,7 +254,8 @@ class Trellis34:
         """
         assert (
             len(encoded) == 196
-        ), f"trellis_34_decode requires 18 bytes (196 bits), got {len(encoded)} bits"
+        ), f"trellis_34_decode requires 24.5 bytes (196 bits), got {len(encoded)} bits"
+
         dibits: array = Trellis34.bits_to_dibits(encoded)
         deinterleaved_dibits: array = Trellis34.deinterleave(dibits)
         points: array = Trellis34.dibits_to_points(deinterleaved_dibits)
@@ -276,9 +277,9 @@ class Trellis34:
             decoded = bits
 
         assert (
-            len(decoded) >= 196
-        ), f"trellis_34_encode requires 18 bytes (196 bits), got {len(decoded)} bits"
-        decoded = decoded[:196]
+            len(decoded) >= 144
+        ), f"trellis_34_encode requires 18 bytes (144 bits), got {len(decoded)} bits"
+        decoded = decoded[:144]
 
         tribits: array = Trellis34.bits_to_tribits(decoded)
         points: array = Trellis34.tribits_to_points(tribits)

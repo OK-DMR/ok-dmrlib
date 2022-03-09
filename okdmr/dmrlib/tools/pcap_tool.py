@@ -22,6 +22,7 @@ from okdmr.dmrlib.etsi.layer2.elements.preemption_power_indicator import (
 )
 from okdmr.dmrlib.etsi.layer2.elements.sync_patterns import SyncPatterns
 from okdmr.dmrlib.etsi.layer2.pdu.full_link_control import FullLinkControl
+from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits, byteswap_bytes
 from okdmr.dmrlib.utils.parsing import try_parse_packet
 
 
@@ -123,6 +124,10 @@ class PcapTool:
                     f"{ip_str} IPSC TS:{1 if pkt.timeslot_raw == IpSiteConnectProtocol.Timeslots.timeslot_1 else 2} "
                     f"SEQ: {pkt.sequence_number} {repr(burst)}"
                 )
+            dmr_bytes = byteswap_bytes(pkt.ipsc_payload)[:-1]
+            if burst.as_bits() != bytes_to_bits(dmr_bytes):
+                print(f"as_bits no match {dmr_bytes.hex()}")
+                exit()
         elif isinstance(pkt, Mmdvm2020):
             if isinstance(pkt.command_data, Mmdvm2020.TypeDmrData):
                 burst: Burst = Burst.from_mmdvm(pkt.command_data)
@@ -131,6 +136,9 @@ class PcapTool:
                         f"{ip_str} MMDVM TS:{1 if pkt.command_data.slot_no == Mmdvm2020.Timeslots.timeslot_1 else 2} "
                         f"SEQ: {pkt.command_data.sequence_no} {repr(burst)}"
                     )
+                if burst.as_bits() != bytes_to_bits(pkt.command_data.dmr_data):
+                    print(f"as_bits no match {pkt.command_data.dmr_data.hex()}")
+                    exit()
         elif isinstance(pkt, IpSiteConnectHeartbeat):
             pass
         elif not hide_unknown and not silent:
@@ -143,12 +151,6 @@ class PcapTool:
                     else f" type {str(type(pkt)).rsplit('.')[-1]}"
                 )
             )
-
-        if burst and burst.sync_or_embedded_signalling in (
-            SyncPatterns.BsSourcedData,
-            SyncPatterns.MsSourcedData,
-        ):
-            print(data.hex())
 
         return burst
 
@@ -280,7 +282,9 @@ class PcapTool:
                         try:
                             callback(data=udp_layer.load, packet=ip_layer)
                         except BaseException as e:
-                            if isinstance(e, SystemExit):
+                            if isinstance(e, SystemExit) or isinstance(
+                                e, KeyboardInterrupt
+                            ):
                                 raise e
                             print(
                                 f"Callback raised exception {e} for data {udp_layer.load.hex()}"
