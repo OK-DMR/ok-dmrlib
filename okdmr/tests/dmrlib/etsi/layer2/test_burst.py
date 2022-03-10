@@ -106,12 +106,22 @@ def test_burst_as_bits():
             "2522222222a632b222222222560dff57d75df5dce2822222222791522222222c11",
             BurstTypes.DataAndControl,
         ),
+        (
+            "3a1f36af232d7afda01bd78255bdff57d75df5d55c045c2e3361260e501f863363",
+            BurstTypes.DataAndControl,
+        ),
+        (
+            "00e527076f2a4b0f03ed010115ddff57d75df5d6f145422817d6234b6e08802018",
+            BurstTypes.DataAndControl,
+        ),
     ]
     for (hexstr, burst_type) in bursts:
         _bytes: bytes = bytes.fromhex(hexstr)
         b: Burst = Burst.from_bytes(data=_bytes, burst_type=burst_type)
-        assert b.data.as_bits() == b.info_bits_deinterleaved
-        assert b.as_bits().tobytes() == _bytes
+        assert (
+            b.data.as_bits() == b.info_bits_deinterleaved
+        ), f"Mismatch in {repr(b)} {b.as_bits().tobytes().hex()}"
+        assert b.as_bits().tobytes() == _bytes, f"Mismatch in {repr(b)}"
 
 
 if __name__ == "__main__":

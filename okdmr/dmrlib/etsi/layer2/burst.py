@@ -13,6 +13,7 @@ from okdmr.dmrlib.etsi.layer2.pdu.csbk import CSBK
 from okdmr.dmrlib.etsi.layer2.pdu.data_header import DataHeader
 from okdmr.dmrlib.etsi.layer2.pdu.embedded_signalling import EmbeddedSignalling
 from okdmr.dmrlib.etsi.layer2.pdu.full_link_control import FullLinkControl
+from okdmr.dmrlib.etsi.layer2.pdu.rate12_data import Rate12Data
 from okdmr.dmrlib.etsi.layer2.pdu.rate34_data import Rate34Data
 from okdmr.dmrlib.etsi.layer2.pdu.slot_type import SlotType
 from okdmr.dmrlib.hytera.hytera_constants import IPSC_KAITAI_VOICE_SLOTS
@@ -102,6 +103,8 @@ class Burst:
             return DataHeader.from_bits(self.info_bits_deinterleaved)
         elif self.data_type == DataTypes.Rate34Data:
             return Rate34Data.from_bits(self.info_bits_deinterleaved)
+        elif self.data_type == DataTypes.Rate12Data:
+            return Rate12Data.from_bits(self.info_bits_deinterleaved)
 
         return None
 

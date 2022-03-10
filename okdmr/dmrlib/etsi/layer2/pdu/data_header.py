@@ -47,6 +47,7 @@ class DataHeader(BitsInterface):
         appended_blocks: int = 0,
         defined_data_format: Optional[DefinedDataFormats] = None,
         sarq: Optional[SARQ] = None,
+        bit_padding: Optional[bitarray] = bitarray(),
         # Unified Data Transport Header (UDT_HEAD) PDU
         is_emergency: Union[int, bool] = False,
         udt_option_flag: Optional[UDTOptionFlag] = None,
@@ -76,6 +77,7 @@ class DataHeader(BitsInterface):
         self.appended_blocks: int = appended_blocks
         self.defined_data_format: Optional[DefinedDataFormats] = defined_data_format
         self.sarq: Optional[SARQ] = sarq
+        self.bit_padding: bitarray = bit_padding
         # Unified Data Transport Header (UDT_HEAD) PDU
         self.is_emergency: bool = is_emergency in (True, 1)
         self.udt_option_flag: Optional[UDTOptionFlag] = udt_option_flag
@@ -209,7 +211,7 @@ class DataHeader(BitsInterface):
                 + int2ba(self.llid_source, length=24)
                 + self.defined_data_format.as_bits()
                 + bitarray([self.sarq.value, self.full_message_flag.value])
-                + bitarray([0] * 8)
+                + self.bit_padding
                 + self.crc
             )
         elif self.data_packet_format == DataPacketFormats.UnifiedDataTransport:
@@ -282,6 +284,7 @@ class DataHeader(BitsInterface):
                 defined_data_format=DefinedDataFormats.from_bits(bits[64:70]),
                 sarq=SARQ(bits[70]),
                 full_message_flag=FullMessageFlag(bits[71]),
+                bit_padding=bits[72:80],
             )
         elif dpf == DataPacketFormats.DataPacketUnconfirmed:
             return DataHeader(
