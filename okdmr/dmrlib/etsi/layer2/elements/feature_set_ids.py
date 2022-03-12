@@ -16,6 +16,7 @@ class FeatureSetIDs(BitsInterface, enum.Enum):
     StandardizedFID = 0b00000000
     ReservedForFutureStandardization = 0b00000001
     ManufacturerFID = 0b00000100
+    HyteraFID = 0b00010000
     ReservedForFutureMFID = 0b10000000
 
     @classmethod

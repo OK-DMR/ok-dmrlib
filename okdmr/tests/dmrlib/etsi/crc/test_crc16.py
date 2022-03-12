@@ -13,6 +13,8 @@ def test_crc16():
         ("4da323383b23383b0560", "8040", CrcMasks.DataHeader),
         # csbk
         ("bd0080180008fd23383b", "b2ed", CrcMasks.CSBK),
+        # hytera pi header contents
+        ("211002177afc73000009", "0dda", CrcMasks.PiHeader)
     ]
     # fmt:on
     # @formatter:on

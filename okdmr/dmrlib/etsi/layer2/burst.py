@@ -13,6 +13,7 @@ from okdmr.dmrlib.etsi.layer2.pdu.csbk import CSBK
 from okdmr.dmrlib.etsi.layer2.pdu.data_header import DataHeader
 from okdmr.dmrlib.etsi.layer2.pdu.embedded_signalling import EmbeddedSignalling
 from okdmr.dmrlib.etsi.layer2.pdu.full_link_control import FullLinkControl
+from okdmr.dmrlib.etsi.layer2.pdu.pi_header import PIHeader
 from okdmr.dmrlib.etsi.layer2.pdu.rate12_data import Rate12Data
 from okdmr.dmrlib.etsi.layer2.pdu.rate34_data import Rate34Data
 from okdmr.dmrlib.etsi.layer2.pdu.slot_type import SlotType
@@ -97,6 +98,8 @@ class Burst:
             return CSBK.from_bits(self.info_bits_deinterleaved)
         elif self.data_type == DataTypes.VoiceLCHeader:
             return FullLinkControl.from_bits(self.info_bits_deinterleaved)
+        elif self.data_type == DataTypes.PIHeader:
+            return PIHeader.from_bits(self.info_bits_deinterleaved)
         elif self.data_type == DataTypes.TerminatorWithLC:
             return FullLinkControl.from_bits(self.info_bits_deinterleaved)
         elif self.data_type == DataTypes.DataHeader:

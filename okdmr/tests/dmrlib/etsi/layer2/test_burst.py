@@ -114,6 +114,15 @@ def test_burst_as_bits():
             "00e527076f2a4b0f03ed010115ddff57d75df5d6f145422817d6234b6e08802018",
             BurstTypes.DataAndControl,
         ),
+        (
+            "015149880ba01b3816406c80c46d5d7f77fd757e32990118206005a02341391033",
+            BurstTypes.DataAndControl,
+        ),
+        # this one does not match for valid reason, crc is nulled out, don't know why hytera sends voice lc header without set crc
+        # (
+        #    "015149880ba01b3816406c80c46d5d7f77fd757e32990118206005a02341391000",
+        #    BurstTypes.DataAndControl
+        # )
     ]
     for (hexstr, burst_type) in bursts:
         _bytes: bytes = bytes.fromhex(hexstr)
@@ -121,7 +130,9 @@ def test_burst_as_bits():
         assert (
             b.data.as_bits() == b.info_bits_deinterleaved
         ), f"Mismatch in {repr(b)} {b.as_bits().tobytes().hex()}"
-        assert b.as_bits().tobytes() == _bytes, f"Mismatch in {repr(b)}"
+        assert (
+            b.as_bits().tobytes() == _bytes
+        ), f"Mismatch in {repr(b)} {b.as_bits().tobytes().hex()} {_bytes.hex()}"
 
 
 if __name__ == "__main__":

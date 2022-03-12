@@ -6,9 +6,11 @@ from argparse import ArgumentParser
 from typing import Callable, List, Dict, Optional, Tuple
 
 from bitarray import bitarray
+from kaitaistruct import KaitaiStruct
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 from okdmr.kaitai.hytera.ip_site_connect_heartbeat import IpSiteConnectHeartbeat
 from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
+from okdmr.tests.dmrlib.tests_utils import prettyprint
 from scapy.data import UDP_SERVICES
 from scapy.layers.inet import UDP, IP
 from scapy.layers.l2 import Ether
@@ -20,7 +22,6 @@ from okdmr.dmrlib.etsi.layer2.elements.lcss import LCSS
 from okdmr.dmrlib.etsi.layer2.elements.preemption_power_indicator import (
     PreemptionPowerIndicator,
 )
-from okdmr.dmrlib.etsi.layer2.elements.sync_patterns import SyncPatterns
 from okdmr.dmrlib.etsi.layer2.pdu.full_link_control import FullLinkControl
 from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits, byteswap_bytes
 from okdmr.dmrlib.utils.parsing import try_parse_packet
@@ -38,6 +39,15 @@ class EmbeddedExtractor:
         burst: Optional[Burst] = PcapTool.debug_packet(
             data=data, packet=packet, hide_unknown=True, silent=True
         )
+        if (
+            burst
+            and burst.has_emb
+            and burst.emb.link_control_start_stop == LCSS.SingleFragmentLCorCSBK
+        ):
+            print(
+                f"Single burst data for VBPTC 32,11 [{burst.emb.preemption_and_power_control_indicator}] {burst.embedded_signalling_bits}"
+            )
+
         if (
             not burst
             or not burst.has_emb
@@ -127,7 +137,6 @@ class PcapTool:
             dmr_bytes = byteswap_bytes(pkt.ipsc_payload)[:-1]
             if burst.as_bits() != bytes_to_bits(dmr_bytes):
                 print(f"as_bits no match {dmr_bytes.hex()}")
-                exit()
         elif isinstance(pkt, Mmdvm2020):
             if isinstance(pkt.command_data, Mmdvm2020.TypeDmrData):
                 burst: Burst = Burst.from_mmdvm(pkt.command_data)
@@ -138,7 +147,6 @@ class PcapTool:
                     )
                 if burst.as_bits() != bytes_to_bits(pkt.command_data.dmr_data):
                     print(f"as_bits no match {pkt.command_data.dmr_data.hex()}")
-                    exit()
         elif isinstance(pkt, IpSiteConnectHeartbeat):
             pass
         elif not hide_unknown and not silent:
@@ -151,6 +159,8 @@ class PcapTool:
                     else f" type {str(type(pkt)).rsplit('.')[-1]}"
                 )
             )
+            if isinstance(pkt, KaitaiStruct):
+                prettyprint(pkt)
 
         return burst
 
