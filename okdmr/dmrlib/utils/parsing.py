@@ -48,6 +48,12 @@ def parse_hytera_data(bytedata: bytes) -> KaitaiStruct:
 
 def try_parse_packet(udpdata: bytes) -> Optional[KaitaiStruct]:
 
+    try:
+        if udpdata[:4] == b"USRP":
+            return None
+    finally:
+        pass
+
     # Try MMDVM/Homebrew packets
     try:
         mmdvm = Mmdvm2020.from_bytes(udpdata)

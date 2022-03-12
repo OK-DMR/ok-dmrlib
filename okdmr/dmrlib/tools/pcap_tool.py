@@ -7,6 +7,7 @@ from typing import Callable, List, Dict, Optional, Tuple
 
 from bitarray import bitarray
 from kaitaistruct import KaitaiStruct
+from okdmr.dmrlib.etsi.fec.vbptc_32_11 import VBPTC3211
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 from okdmr.kaitai.hytera.ip_site_connect_heartbeat import IpSiteConnectHeartbeat
 from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
@@ -43,10 +44,12 @@ class EmbeddedExtractor:
             burst
             and burst.has_emb
             and burst.emb.link_control_start_stop == LCSS.SingleFragmentLCorCSBK
+            and burst.embedded_signalling_bits.count(1)
         ):
             print(
-                f"Single burst data for VBPTC 32,11 [{burst.emb.preemption_and_power_control_indicator}] {burst.embedded_signalling_bits}"
+                f"Single burst data for VBPTC 32,11 [{burst.emb.preemption_and_power_control_indicator}] on-air(fec protected) {burst.embedded_signalling_bits} (vbptc deinterleaved) {VBPTC3211.deinterleave_data_bits(burst.embedded_signalling_bits)} in {data.hex()}"
             )
+            return
 
         if (
             not burst

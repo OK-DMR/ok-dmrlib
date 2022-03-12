@@ -15,6 +15,9 @@ def test_vbptc_sanity():
 def test_encode_decode_vbptc():
     bursts: List[(str,)] = [
         ("00000100010110000000100010100100",),
+        # following are not valid vbptc protected payloads, probably something proprietary / unidentified
+        # ("00001100000100010010010001000001",),
+        # ("00010111000010100000011001000100",),
     ]
 
     for (burst,) in bursts:
