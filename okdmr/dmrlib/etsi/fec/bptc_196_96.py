@@ -390,9 +390,15 @@ class BPTC19696:
         for index, interleave_index in mapping.items():
             bits_interleaved[interleave_index] = bits_deinterleaved[index]
 
-        for data_index, info_tuple in BPTC19696.INTERLEAVING_INDICES.items():
+        for data_index, (
+            interleave_index,
+            rownum,
+            colnum,
+            is_reserved,
+            is_hamming,
+        ) in BPTC19696.INTERLEAVING_INDICES.items():
             # info_tuple structure: interleave index, row (numbered from 1), column (numbered from 0), is reserved, is hamming
-            table[info_tuple[1] - 1][info_tuple[2]] = bits_interleaved[info_tuple[0]]
+            table[rownum - 1][colnum] = bits_interleaved[interleave_index]
 
         return table
 
