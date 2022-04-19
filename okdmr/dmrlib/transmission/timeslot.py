@@ -2,15 +2,14 @@ from datetime import *
 from time import time
 from typing import List
 
-from kaitaistruct import KaitaiStruct
-from okdmr.kaitai.etsi.dmr_data_header import DmrDataHeader
-from okdmr.kaitai.etsi.full_link_control import FullLinkControl
-
 from okdmr.dmrlib.etsi.layer2.burst import Burst
+from okdmr.dmrlib.etsi.layer2.pdu.data_header import DataHeader
+from okdmr.dmrlib.etsi.layer2.pdu.full_link_control import FullLinkControl
 from okdmr.dmrlib.transmission.transmission import Transmission
 from okdmr.dmrlib.transmission.transmission_observer_interface import (
     TransmissionObserverInterface,
 )
+from okdmr.dmrlib.utils.bits_interface import BitsInterface
 
 
 class Timeslot(TransmissionObserverInterface):
@@ -23,12 +22,12 @@ class Timeslot(TransmissionObserverInterface):
         self.color_code: int = 0
 
     def voice_transmission_ended(
-        self, voice_header: FullLinkControl, blocks: List[KaitaiStruct]
+        self, voice_header: FullLinkControl, blocks: List[BitsInterface]
     ):
         self.reset_rx_sequence = True
 
     def data_transmission_ended(
-        self, transmission_header: DmrDataHeader, blocks: List[KaitaiStruct]
+        self, transmission_header: DataHeader, blocks: List[BitsInterface]
     ):
         self.reset_rx_sequence = True
 

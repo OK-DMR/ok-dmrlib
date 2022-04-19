@@ -1,10 +1,9 @@
 from typing import List
 
-from kaitaistruct import KaitaiStruct
-from okdmr.kaitai.etsi.dmr_data_header import DmrDataHeader
-from okdmr.kaitai.etsi.full_link_control import FullLinkControl
-
+from okdmr.dmrlib.etsi.layer2.pdu.data_header import DataHeader
+from okdmr.dmrlib.etsi.layer2.pdu.full_link_control import FullLinkControl
 from okdmr.dmrlib.transmission.transmission_types import TransmissionTypes
+from okdmr.dmrlib.utils.bits_interface import BitsInterface
 
 
 class TransmissionObserverInterface:
@@ -18,7 +17,7 @@ class TransmissionObserverInterface:
         pass
 
     def data_transmission_ended(
-        self, transmission_header: DmrDataHeader, blocks: List[KaitaiStruct]
+        self, transmission_header: DataHeader, blocks: List[BitsInterface]
     ):
         """
         Get notified about completed (or ended) data transmission and get all blocks that made up that transmission,
@@ -31,7 +30,7 @@ class TransmissionObserverInterface:
         pass
 
     def voice_transmission_ended(
-        self, voice_header: FullLinkControl, blocks: List[KaitaiStruct]
+        self, voice_header: FullLinkControl, blocks: List[BitsInterface]
     ):
         """
         Get notified about ended voice transmission

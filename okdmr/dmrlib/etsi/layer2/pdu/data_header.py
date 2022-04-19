@@ -97,6 +97,14 @@ class DataHeader(BitsInterface):
                 self.as_bits()[:-16].tobytes(), ba2int(self.crc), CrcMasks.DataHeader
             )
 
+    def get_blocks_to_follow(self) -> Optional[int]:
+        if self.data_packet_format == DataPacketFormats.UnifiedDataTransport:
+            return None
+        elif self.data_packet_format == DataPacketFormats.ShortDataDefined:
+            return self.appended_blocks
+        else:
+            return self.blocks_to_follow
+
     def __repr__(self):
         descr: str = f"[{self.data_packet_format}] "
 

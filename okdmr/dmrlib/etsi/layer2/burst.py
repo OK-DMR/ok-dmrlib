@@ -1,9 +1,6 @@
 from typing import Optional
 
 from bitarray import bitarray
-from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
-from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
-
 from okdmr.dmrlib.etsi.fec.bptc_196_96 import BPTC19696
 from okdmr.dmrlib.etsi.fec.trellis import Trellis34
 from okdmr.dmrlib.etsi.layer2.elements.burst_types import BurstTypes
@@ -21,6 +18,8 @@ from okdmr.dmrlib.hytera.hytera_constants import IPSC_KAITAI_VOICE_SLOTS
 from okdmr.dmrlib.transmission.transmission_types import TransmissionTypes
 from okdmr.dmrlib.utils.bits_bytes import bits_to_bytes, bytes_to_bits, byteswap_bytes
 from okdmr.dmrlib.utils.bits_interface import BitsInterface
+from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
+from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
 
 
 class Burst:
@@ -86,6 +85,9 @@ class Burst:
             )
         )
         # variables not standardized in ETSI, used for various DMR protocols processing
+        self.timeslot: int = 1
+        self.source_radio_id: int = 0
+        self.target_radio_id: int = 0
         self.sequence_no: int = 0
         self.stream_no: bytes = bytes(4)
         self.transmission_type: TransmissionTypes = TransmissionTypes.Idle
@@ -108,6 +110,8 @@ class Burst:
             return Rate34Data.from_bits(self.info_bits_deinterleaved)
         elif self.data_type == DataTypes.Rate12Data:
             return Rate12Data.from_bits(self.info_bits_deinterleaved)
+        elif self.data_type == DataTypes.Rate1Data:
+            return Rate1Data.from_bits(self.info_bits_deinterleaved)
 
         return None
 
@@ -194,6 +198,9 @@ class Burst:
         )
         b.set_stream_no(mmdvm.stream_id)
         b.set_sequence_no(mmdvm.sequence_no)
+        b.source_radio_id = mmdvm.source_id
+        b.target_radio_id = mmdvm.target_id
+        b.timeslot = 1 if mmdvm.slot_no == Mmdvm2020.Timeslots.timeslot_1 else 2
         return b
 
     @staticmethod
@@ -222,6 +229,11 @@ class Burst:
             ),
         )
         b.set_sequence_no(ipsc.sequence_number)
+        b.source_radio_id = ipsc.source_radio_id
+        b.target_radio_id = ipsc.destination_radio_id
+        b.timeslot = (
+            1 if ipsc.timeslot_raw == IpSiteConnectProtocol.Timeslots.timeslot_1 else 2
+        )
         return b
 
     def interleave(self) -> bitarray:
@@ -244,7 +256,8 @@ class Burst:
         if data_type == DataTypes.Rate34Data:
             return Trellis34.decode(bits)
         elif data_type == DataTypes.Rate1Data:
-            return bits
+            # Table B.10B: Transmit bit ordering for rate 1 coded data
+            return bits[:96] + bits[100:]
         elif data_type == DataTypes.Reserved:
             raise ValueError(f"Unknown data type {data_type}")
         else:

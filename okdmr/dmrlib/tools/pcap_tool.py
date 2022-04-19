@@ -7,11 +7,10 @@ from typing import Callable, List, Dict, Optional, Tuple
 
 from bitarray import bitarray
 from kaitaistruct import KaitaiStruct
-from okdmr.dmrlib.etsi.fec.vbptc_32_11 import VBPTC3211
+from okdmr.dmrlib.transmission.transmission_watcher import TransmissionWatcher
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 from okdmr.kaitai.hytera.ip_site_connect_heartbeat import IpSiteConnectHeartbeat
 from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
-from okdmr.tests.dmrlib.tests_utils import prettyprint
 from scapy.data import UDP_SERVICES
 from scapy.layers.inet import UDP, IP
 from scapy.layers.l2 import Ether
@@ -24,8 +23,8 @@ from okdmr.dmrlib.etsi.layer2.elements.preemption_power_indicator import (
     PreemptionPowerIndicator,
 )
 from okdmr.dmrlib.etsi.layer2.pdu.full_link_control import FullLinkControl
-from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits, byteswap_bytes
 from okdmr.dmrlib.utils.parsing import try_parse_packet
+from okdmr.tests.dmrlib.tests_utils import prettyprint
 
 
 class EmbeddedExtractor:
@@ -40,16 +39,6 @@ class EmbeddedExtractor:
         burst: Optional[Burst] = PcapTool.debug_packet(
             data=data, packet=packet, hide_unknown=True, silent=True
         )
-        if (
-            burst
-            and burst.has_emb
-            and burst.emb.link_control_start_stop == LCSS.SingleFragmentLCorCSBK
-            and burst.embedded_signalling_bits.count(1)
-        ):
-            print(
-                f"Single burst data for VBPTC 32,11 [{burst.emb.preemption_and_power_control_indicator}] on-air(fec protected) {burst.embedded_signalling_bits} (vbptc deinterleaved) {VBPTC3211.deinterleave_data_bits(burst.embedded_signalling_bits)} in {data.hex()}"
-            )
-            return
 
         if (
             not burst
@@ -137,9 +126,6 @@ class PcapTool:
                     f"{ip_str} IPSC TS:{1 if pkt.timeslot_raw == IpSiteConnectProtocol.Timeslots.timeslot_1 else 2} "
                     f"SEQ: {pkt.sequence_number} {repr(burst)}"
                 )
-            dmr_bytes = byteswap_bytes(pkt.ipsc_payload)[:-1]
-            if burst.as_bits() != bytes_to_bits(dmr_bytes):
-                print(f"as_bits no match {dmr_bytes.hex()}")
         elif isinstance(pkt, Mmdvm2020):
             if isinstance(pkt.command_data, Mmdvm2020.TypeDmrData):
                 burst: Burst = Burst.from_mmdvm(pkt.command_data)
@@ -148,8 +134,6 @@ class PcapTool:
                         f"{ip_str} MMDVM TS:{1 if pkt.command_data.slot_no == Mmdvm2020.Timeslots.timeslot_1 else 2} "
                         f"SEQ: {pkt.command_data.sequence_no} {repr(burst)}"
                     )
-                if burst.as_bits() != bytes_to_bits(pkt.command_data.dmr_data):
-                    print(f"as_bits no match {pkt.command_data.dmr_data.hex()}")
         elif isinstance(pkt, IpSiteConnectHeartbeat):
             pass
         elif not hide_unknown and not silent:
@@ -298,6 +282,8 @@ class PcapTool:
                             if isinstance(e, SystemExit) or isinstance(
                                 e, KeyboardInterrupt
                             ):
+                                # if keyboard interrupt (user trying to stop the tool) or system exit (forced exit from underlying data handling) is caught
+                                # do not ignore and raise up
                                 raise e
                             print(
                                 f"Callback raised exception {e} for data {udp_layer.load.hex()}"
@@ -362,6 +348,13 @@ class PcapTool:
             action="store_true",
             default=False,
         )
+        parser.add_argument(
+            "--observe-transmissions",
+            "-o",
+            action="store_true",
+            default=False,
+            dest="observe_transmissions",
+        )
         return parser
 
     @staticmethod
@@ -380,14 +373,19 @@ class PcapTool:
             arguments = sys.argv[1:]
 
         args = PcapTool._arguments().parse_args(arguments)
+
+        callback = PcapTool.debug_packet
+        if args.extract_embedded_lc:
+            callback = EmbeddedExtractor().process_packet
+        elif args.observe_transmissions:
+            callback = TransmissionWatcher().process_packet
+
         stats = PcapTool.print_pcap(
             files=args.files,
             ports_whitelist=args.whitelist_ports,
             ports_blacklist=args.blacklist_ports,
             print_statistics=not args.no_statistics,
-            callback=EmbeddedExtractor().process_packet
-            if args.extract_embedded_lc
-            else PcapTool.debug_packet,
+            callback=callback,
         )
         if return_stats:
             return stats

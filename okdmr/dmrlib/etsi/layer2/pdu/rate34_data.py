@@ -1,12 +1,35 @@
+import enum
 from typing import Union
 
 from bitarray import bitarray
-from bitarray.util import int2ba
-
+from bitarray.util import int2ba, ba2int
 from okdmr.dmrlib.etsi.crc.crc9 import CRC9
 from okdmr.dmrlib.etsi.layer2.elements.crc_masks import CrcMasks
 from okdmr.dmrlib.utils.bits_bytes import bits_to_bytes, bytes_to_bits
 from okdmr.dmrlib.utils.bits_interface import BitsInterface
+
+
+@enum.unique
+class Rate34DataTypes(enum.Enum):
+    Undefined = 0
+    Unconfirmed = 18
+    Confirmed = 16
+    UnconfirmedLastBlock = 14
+    ConfirmedLastBlock = 12
+
+    @classmethod
+    def _missing_(cls, value: int) -> "Rate34DataTypes":
+        raise ValueError(f"Unknown Rate 3/4 DataType for data length {value}")
+
+    @staticmethod
+    def resolve(confirmed: bool, last: bool) -> "Rate34DataTypes":
+        return {
+            # confirmed, last data block
+            (True, True): Rate34DataTypes.ConfirmedLastBlock,
+            (True, False): Rate34DataTypes.Confirmed,
+            (False, True): Rate34DataTypes.UnconfirmedLastBlock,
+            (False, False): Rate34DataTypes.Unconfirmed,
+        }.get((confirmed, last), Rate34DataTypes.Undefined)
 
 
 class Rate34Data(BitsInterface):
@@ -17,18 +40,22 @@ class Rate34Data(BitsInterface):
 
     def __init__(
         self,
-        data: bytes,
-        dbsn: int = 0,
-        crc9: int = 0,
+        data: Union[bytes, bitarray],
+        packet_type: Rate34DataTypes = Rate34DataTypes.Undefined,
+        dbsn: Union[int, bitarray] = 0,
+        crc9: Union[int, bitarray] = 0,
         crc32: Union[int, bytes] = 0,
     ):
-        self.data: bytes = data
-        self.dbsn: int = dbsn
+        self.data: bytes = data if isinstance(data, bytes) else bits_to_bytes(data)
+        self.validate_packet_type(packet_type=packet_type, data_length=len(self.data))
+        self.dbsn: int = dbsn if isinstance(dbsn, int) else ba2int(dbsn)
+        self.packet_type: Rate34DataTypes = Rate34DataTypes(len(self.data))
         self.crc32: int = (
             crc32 if isinstance(crc32, int) else int.from_bytes(crc32, byteorder="big")
         )
 
         self.crc9: int = self.calculate_crc9()
+        crc9 = crc9 if isinstance(crc9, int) else ba2int(crc9)
         self.crc9_ok: bool = self.crc9 == crc9 if crc9 > 0 else True
 
     def calculate_crc9(self) -> int:
@@ -63,11 +90,61 @@ class Rate34Data(BitsInterface):
         raise ValueError(f"__repr__ not implemented for data len {len(self.data)}")
 
     @staticmethod
+    def validate_packet_type(packet_type: Rate34DataTypes, data_length: int) -> bool:
+        if data_length == 0 or packet_type == Rate34DataTypes.Undefined:
+            return True
+        else:
+            assert (
+                data_length == packet_type.value
+            ), f"{packet_type} data must be {packet_type.value} bytes, got {data_length} bytes"
+
+    @staticmethod
     def from_bits(bits: bitarray) -> "Rate34Data":
+        return Rate34Data.from_bits_typed(bits, Rate34DataTypes.Undefined)
+
+    @staticmethod
+    def from_bits_typed(
+        bits: bitarray, data_type: Rate34DataTypes = Rate34DataTypes.Undefined
+    ) -> "Rate34Data":
         assert (
             len(bits) == 144
         ), f"Rate 3/4 Data packet must be 144 bits (18 bytes) long, got {len(bits)} bits"
-        return Rate34Data(data=bits_to_bytes(bits))
+        if data_type in (Rate34DataTypes.Undefined, Rate34DataTypes.Unconfirmed):
+            return Rate34Data(data=bits, packet_type=data_type)
+        elif data_type == Rate34DataTypes.Confirmed:
+            return Rate34Data(
+                dbsn=bits[0:7],
+                crc9=bits[7:16],
+                data=bits[16:144],
+                packet_type=data_type,
+            )
+        elif data_type == Rate34DataTypes.ConfirmedLastBlock:
+            return Rate34Data(
+                dbsn=bits[0:7],
+                crc9=bits[7:16],
+                data=bits[16:112],
+                crc32=bits[112:144],
+                packet_type=data_type,
+            )
+        elif data_type == Rate34DataTypes.UnconfirmedLastBlock:
+            return Rate34Data(
+                data=bits[0:112], crc32=bits[112:144], packet_type=data_type
+            )
+
+    def convert(self, new_type: Rate34DataTypes):
+        return Rate34Data.from_bits_typed(bits=self.as_bits(), data_type=new_type)
+
+    def is_confirmed(self) -> bool:
+        return self.packet_type in (
+            Rate34DataTypes.Confirmed,
+            Rate34DataTypes.ConfirmedLastBlock,
+        )
+
+    def is_last_block(self) -> bool:
+        return self.packet_type in (
+            Rate34DataTypes.ConfirmedLastBlock,
+            Rate34DataTypes.UnconfirmedLastBlock,
+        )
 
     def as_bits(self):
         if len(self.data) == 18:
