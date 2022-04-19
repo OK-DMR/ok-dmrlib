@@ -50,14 +50,14 @@ class Rate1Data(BitsInterface):
         self.data: bytes = data if isinstance(data, bytes) else bits_to_bytes(data)
         self.validate_packet_type(packet_type=packet_type, data_length=len(self.data))
         self.dbsn: int = dbsn if isinstance(dbsn, int) else ba2int(dbsn)
-        self.packet_type: Rate1DataTypes = Rate1DataTypes(len(data))
+        self.packet_type: Rate1DataTypes = Rate1DataTypes(len(self.data))
         self.crc32: int = (
             crc32 if isinstance(crc32, int) else int.from_bytes(crc32, byteorder="big")
         )
 
         self.crc9: int = self.calculate_crc9()
         crc9 = crc9 if isinstance(crc9, int) else ba2int(crc9)
-        self.crc9_ok: bool = self.crc9 == crc9 if crc9 > 0 else True
+        self.crc9_ok: bool = self.crc9 == crc9 if crc9 > 0 else False
 
     @staticmethod
     def validate_packet_type(packet_type: Rate1DataTypes, data_length: int) -> bool:
@@ -85,12 +85,12 @@ class Rate1Data(BitsInterface):
             data=self.data,
             serial_number=self.dbsn,
             crc32=self.crc32,
-            mask=CrcMasks.Rate12DataContinuation,
+            mask=CrcMasks.Rate1DataContinuation,
         )
 
     def __repr__(self) -> str:
-        if self.packet_type == Rate1DataTypes.Unconfirmed:
-            return f"[RATE 1 DATA] [DATA(24) {self.data.hex()}]"
+        if self.packet_type in (Rate1DataTypes.Unconfirmed, Rate1DataTypes.Undefined):
+            return f"[RATE 1 DATA UNCONFIRMED] [DATA(24) {self.data.hex()}]"
         elif self.packet_type == Rate1DataTypes.Confirmed:
             return (
                 f"[RATE 1 DATA CONFIRMED] [DATA(22) {self.data.hex()}]"
@@ -99,17 +99,16 @@ class Rate1Data(BitsInterface):
             )
         elif self.packet_type == Rate1DataTypes.UnconfirmedLastBlock:
             return (
-                f"[RATE 1 DATA - LAST BLOCK UNCONFIRMED] [DATA(20) {self.data.hex()}]"
+                f"[RATE 1 DATA UNCONFIRMED - LAST BLOCK] [DATA(20) {self.data.hex()}]"
                 + f" [CRC32 int({self.crc32}) hex({self.crc32.to_bytes(4, byteorder='big').hex()})]"
             )
         elif self.packet_type == Rate1DataTypes.ConfirmedLastBlock:
             return (
-                f"[RATE 1 DATA - LAST BLOCK CONFIRMED] [DATA(18) {self.data.hex()}]"
+                f"[RATE 1 DATA CONFIRMED - LAST BLOCK] [DATA(18) {self.data.hex()}]"
                 + f" [CRC9: {self.crc9}]"
                 + (" [CRC9 INVALID]" if not self.crc9_ok else "")
                 + f" [CRC32 int({self.crc32}) hex({self.crc32.to_bytes(4, byteorder='big').hex()})]"
             )
-        raise ValueError(f"__repr__ not implemented for data len {len(self.data)}")
 
     @staticmethod
     def from_bits(bits: bitarray) -> "Rate1Data":

@@ -9,6 +9,9 @@ from okdmr.dmrlib.etsi.layer2.elements.resynchronize_flag import ResynchronizeFl
 from okdmr.dmrlib.etsi.layer2.elements.sarq import SARQ
 from okdmr.dmrlib.etsi.layer2.elements.slcos import SLCOs
 from okdmr.dmrlib.etsi.layer2.elements.supplementary_flag import SupplementaryFlag
+from okdmr.dmrlib.etsi.layer2.pdu.rate12_data import Rate12DataTypes
+from okdmr.dmrlib.etsi.layer2.pdu.rate1_data import Rate1DataTypes
+from okdmr.dmrlib.etsi.layer2.pdu.rate34_data import Rate34DataTypes
 from okdmr.dmrlib.etsi.layer3.elements.activity_id import ActivityID
 from okdmr.dmrlib.etsi.layer3.elements.additional_information_field import (
     AdditionalInformationField,
@@ -63,3 +66,9 @@ class RaisingEnums(TestCase):
             UDTOptionFlag(0b10)
         with self.assertRaises(AssertionError):
             ChannelTimingOpcode.from_bits(bitarray("1"))
+        with self.assertRaises(ValueError):
+            Rate12DataTypes(-1)
+        with self.assertRaises(ValueError):
+            Rate34DataTypes(-1)
+        with self.assertRaises(ValueError):
+            Rate1DataTypes(-1)

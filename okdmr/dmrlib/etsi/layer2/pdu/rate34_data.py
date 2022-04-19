@@ -56,7 +56,7 @@ class Rate34Data(BitsInterface):
 
         self.crc9: int = self.calculate_crc9()
         crc9 = crc9 if isinstance(crc9, int) else ba2int(crc9)
-        self.crc9_ok: bool = self.crc9 == crc9 if crc9 > 0 else True
+        self.crc9_ok: bool = self.crc9 == crc9 if crc9 > 0 else False
 
     def calculate_crc9(self) -> int:
         return CRC9.calculate_from_parts(
@@ -67,27 +67,26 @@ class Rate34Data(BitsInterface):
         )
 
     def __repr__(self) -> str:
-        if len(self.data) == 18:
-            return f"[RATE 3/4 DATA] [DATA(18) {self.data.hex()}]"
-        elif len(self.data) == 16:
+        if self.packet_type in (Rate34DataTypes.Unconfirmed, Rate34DataTypes.Undefined):
+            return f"[RATE 3/4 DATA UNCONFIRMED] [DATA(18) {self.data.hex()}]"
+        elif self.packet_type == Rate34DataTypes.Confirmed:
             return (
                 f"[RATE 3/4 DATA CONFIRMED] [DATA(16) {self.data.hex()}]"
                 + f" [CRC9: {self.crc9}]"
                 + (" [CRC9 INVALID]" if not self.crc9_ok else "")
             )
-        elif len(self.data) == 14:
+        elif self.packet_type == Rate34DataTypes.UnconfirmedLastBlock:
             return (
-                f"[RATE 3/4 DATA - LAST BLOCK UNCONFIRMED] [DATA(14) {self.data.hex()}]"
+                f"[RATE 3/4 DATA UNCONFIRMED - LAST BLOCK] [DATA(14) {self.data.hex()}]"
                 + f" [CRC32 int({self.crc32}) hex({self.crc32.to_bytes(4, byteorder='big').hex()})]"
             )
-        elif len(self.data) == 12:
+        elif self.packet_type == Rate34DataTypes.ConfirmedLastBlock:
             return (
-                f"[RATE 3/4 DATA - LAST BLOCK CONFIRMED] [DATA(12) {self.data.hex()}]"
+                f"[RATE 3/4 DATA CONFIRMED - LAST BLOCK] [DATA(12) {self.data.hex()}]"
                 + f" [CRC9: {self.crc9}]"
                 + (" [CRC9 INVALID]" if not self.crc9_ok else "")
                 + f" [CRC32 int({self.crc32}) hex({self.crc32.to_bytes(4, byteorder='big').hex()})]"
             )
-        raise ValueError(f"__repr__ not implemented for data len {len(self.data)}")
 
     @staticmethod
     def validate_packet_type(packet_type: Rate34DataTypes, data_length: int) -> bool:
@@ -147,24 +146,24 @@ class Rate34Data(BitsInterface):
         )
 
     def as_bits(self):
-        if len(self.data) == 18:
+        if self.packet_type == Rate34DataTypes.Unconfirmed:
             # R_3_4_DATA PDU content for unconfirmed data
             return bytes_to_bits(self.data)
-        elif len(self.data) == 16:
+        elif self.packet_type == Rate34DataTypes.Confirmed:
             # R_3_4_DATA PDU content for confirmed data
             return (
                 int2ba(self.dbsn, length=7)
-                + int2ba(self.crc9, length=9)
+                + int2ba(self.crc9, length=9, endian="little")
                 + bytes_to_bits(self.data)
             )
-        elif len(self.data) == 14:
+        elif self.packet_type == Rate34DataTypes.UnconfirmedLastBlock:
             # R_3_4_LDATA PDU content for unconfirmed data
             return bytes_to_bits(self.data) + int2ba(self.crc32, length=32)
-        elif len(self.data) == 12:
+        elif self.packet_type == Rate34DataTypes.ConfirmedLastBlock:
             # R_3_4_LDATA PDU content for confirmed data
             return (
                 int2ba(self.dbsn, length=7)
-                + int2ba(self.crc9, length=9)
+                + int2ba(self.crc9, length=9, endian="little")
                 + bytes_to_bits(self.data)
                 + int2ba(self.crc32, length=32)
             )

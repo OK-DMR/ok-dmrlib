@@ -3,7 +3,6 @@ from typing import Union
 
 from bitarray import bitarray
 from bitarray.util import int2ba, ba2int
-
 from okdmr.dmrlib.etsi.crc.crc9 import CRC9
 from okdmr.dmrlib.etsi.layer2.elements.crc_masks import CrcMasks
 from okdmr.dmrlib.utils.bits_bytes import bits_to_bytes, bytes_to_bits
@@ -55,9 +54,9 @@ class Rate12Data(BitsInterface):
             crc32 if isinstance(crc32, int) else int.from_bytes(crc32, byteorder="big")
         )
 
-        self.crc9: int = self.calculate_crc9()
         crc9 = crc9 if isinstance(crc9, int) else ba2int(crc9)
-        self.crc9_ok: bool = self.crc9 == crc9 if crc9 > 0 else True
+        self.crc9: int = self.calculate_crc9() if self.is_confirmed() else crc9
+        self.crc9_ok: bool = self.crc9 == crc9 if crc9 > 0 else False
 
     @staticmethod
     def validate_packet_type(packet_type: Rate12DataTypes, data_length: int) -> bool:
@@ -89,8 +88,8 @@ class Rate12Data(BitsInterface):
         )
 
     def __repr__(self) -> str:
-        if self.packet_type == Rate12DataTypes.Unconfirmed:
-            return f"[RATE 1/2 DATA] [DATA(12) {self.data.hex()}]"
+        if self.packet_type in (Rate12DataTypes.Unconfirmed, Rate12DataTypes.Undefined):
+            return f"[RATE 1/2 DATA UNCONFIRMED] [DATA(12) {self.data.hex()}]"
         elif self.packet_type == Rate12DataTypes.Confirmed:
             return (
                 f"[RATE 1/2 DATA CONFIRMED] [DATA(10) {self.data.hex()}]"
@@ -99,17 +98,16 @@ class Rate12Data(BitsInterface):
             )
         elif self.packet_type == Rate12DataTypes.UnconfirmedLastBlock:
             return (
-                f"[RATE 1/2 DATA - LAST BLOCK UNCONFIRMED] [DATA(8) {self.data.hex()}]"
+                f"[RATE 1/2 DATA UNCONFIRMED - LAST BLOCK] [DATA(8) {self.data.hex()}]"
                 + f" [CRC32 int({self.crc32}) hex({self.crc32.to_bytes(4, byteorder='big').hex()})]"
             )
         elif self.packet_type == Rate12DataTypes.ConfirmedLastBlock:
             return (
-                f"[RATE 1/2 DATA - LAST BLOCK CONFIRMED] [DATA(6) {self.data.hex()}]"
+                f"[RATE 1/2 DATA CONFIRMED - LAST BLOCK] [DATA(6) {self.data.hex()}]"
                 + f" [CRC9: {self.crc9}]"
                 + (" [CRC9 INVALID]" if not self.crc9_ok else "")
                 + f" [CRC32 int({self.crc32}) hex({self.crc32.to_bytes(4, byteorder='big').hex()})]"
             )
-        raise ValueError(f"__repr__ not implemented for data len {len(self.data)}")
 
     @staticmethod
     def from_bits(bits: bitarray) -> "Rate12Data":
@@ -160,7 +158,7 @@ class Rate12Data(BitsInterface):
             # R_1_2_LDATA PDU content for confirmed data
             return (
                 int2ba(self.dbsn, length=7)
-                + int2ba(self.calculate_crc9(), length=9)
+                + int2ba(self.crc9, length=9)
                 + bytes_to_bits(self.data)
                 + int2ba(self.crc32, length=32)
             )

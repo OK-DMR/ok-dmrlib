@@ -12,6 +12,7 @@ from okdmr.dmrlib.etsi.layer2.pdu.embedded_signalling import EmbeddedSignalling
 from okdmr.dmrlib.etsi.layer2.pdu.full_link_control import FullLinkControl
 from okdmr.dmrlib.etsi.layer2.pdu.pi_header import PIHeader
 from okdmr.dmrlib.etsi.layer2.pdu.rate12_data import Rate12Data
+from okdmr.dmrlib.etsi.layer2.pdu.rate1_data import Rate1Data
 from okdmr.dmrlib.etsi.layer2.pdu.rate34_data import Rate34Data
 from okdmr.dmrlib.etsi.layer2.pdu.slot_type import SlotType
 from okdmr.dmrlib.hytera.hytera_constants import IPSC_KAITAI_VOICE_SLOTS

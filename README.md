@@ -53,6 +53,7 @@ This package provides way to parse and assemble various DMR ETSI protocols and f
 | SYNC          |          ✅          | Synchronization patterns                                                                                                   |
 | Data Header   |          ✅          | Confirmed/Unconfirmed, Response, Defined Short Data                                                                        |
 | PI Header     |          ✅          | Privacy (PI) Header, without further understanding of transported data                                                     |
+| Rate 1 Data   |          ✅          | Rate 1 data (confirmed and unconfirmed) and last block data (confirmed and unconfirmed)                                    |
 | Rate 1/2 Data |          ✅          | Rate 1/2 data (confirmed and unconfirmed) and last block data (confirmed and unconfirmed)                                  |
 | Rate 3/4 Data |          ✅          | Rate 3/4 data (confirmed and unconfirmed) and last block data (confirmed and unconfirmed)                                  |
 

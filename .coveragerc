@@ -2,6 +2,7 @@
 source=okdmr.dmrlib
 
 [report]
+precision = 2
 exclude_lines =
     if __name__ == .__main__.:
     pass
