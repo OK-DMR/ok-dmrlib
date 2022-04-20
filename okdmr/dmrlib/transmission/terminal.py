@@ -17,7 +17,7 @@ class Terminal:
         """
         assert (
             0 < dmrid <= 0xFFFFFF
-        ), f"Address does not comfort to Air Interface (AI) Numbering and dialling plan"
+        ), f"Address does not comfort to Air Interface (AI) Numbering and dialling plan, got {dmrid}"
         self.id: int = dmrid
         self.timeslots: Dict[int, Timeslot] = {
             1: Timeslot(timeslot=1),

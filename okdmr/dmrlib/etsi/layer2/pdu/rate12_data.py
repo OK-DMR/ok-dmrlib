@@ -3,6 +3,7 @@ from typing import Union
 
 from bitarray import bitarray
 from bitarray.util import int2ba, ba2int
+
 from okdmr.dmrlib.etsi.crc.crc9 import CRC9
 from okdmr.dmrlib.etsi.layer2.elements.crc_masks import CrcMasks
 from okdmr.dmrlib.utils.bits_bytes import bits_to_bytes, bytes_to_bits
@@ -30,6 +31,16 @@ class Rate12DataTypes(enum.Enum):
             (False, True): Rate12DataTypes.UnconfirmedLastBlock,
             (False, False): Rate12DataTypes.Unconfirmed,
         }.get((confirmed, last), Rate12DataTypes.Undefined)
+
+    @staticmethod
+    def label(rate12_data_type: "Rate12DataTypes") -> str:
+        return {
+            Rate12DataTypes.Undefined: "UNDEFINED",
+            Rate12DataTypes.Unconfirmed: "UNCONFIRMED",
+            Rate12DataTypes.UnconfirmedLastBlock: "UNCONFIRMED - LAST BLOCK",
+            Rate12DataTypes.Confirmed: "CONFIRMED",
+            Rate12DataTypes.ConfirmedLastBlock: "CONFIRMED - LAST BLOCK",
+        }.get(rate12_data_type)
 
 
 class Rate12Data(BitsInterface):
@@ -88,26 +99,17 @@ class Rate12Data(BitsInterface):
         )
 
     def __repr__(self) -> str:
-        if self.packet_type in (Rate12DataTypes.Unconfirmed, Rate12DataTypes.Undefined):
-            return f"[RATE 1/2 DATA UNCONFIRMED] [DATA(12) {self.data.hex()}]"
-        elif self.packet_type == Rate12DataTypes.Confirmed:
-            return (
-                f"[RATE 1/2 DATA CONFIRMED] [DATA(10) {self.data.hex()}]"
-                + f" [CRC9: {self.crc9}]"
-                + (" [CRC9 INVALID]" if not self.crc9_ok else "")
+        label: str = (
+            f"[RATE 1/2 DATA {Rate12DataTypes.label(self.packet_type)}] "
+            f"[DATA({self.packet_type.value}) {self.data.hex()}] "
+        )
+        if self.is_confirmed():
+            label += f"[DBSN: {self.dbsn}] " f"[CRC9: {self.crc9}] " + (
+                " [CRC9 INVALID]" if not self.crc9_ok else ""
             )
-        elif self.packet_type == Rate12DataTypes.UnconfirmedLastBlock:
-            return (
-                f"[RATE 1/2 DATA UNCONFIRMED - LAST BLOCK] [DATA(8) {self.data.hex()}]"
-                + f" [CRC32 int({self.crc32}) hex({self.crc32.to_bytes(4, byteorder='big').hex()})]"
-            )
-        elif self.packet_type == Rate12DataTypes.ConfirmedLastBlock:
-            return (
-                f"[RATE 1/2 DATA CONFIRMED - LAST BLOCK] [DATA(6) {self.data.hex()}]"
-                + f" [CRC9: {self.crc9}]"
-                + (" [CRC9 INVALID]" if not self.crc9_ok else "")
-                + f" [CRC32 int({self.crc32}) hex({self.crc32.to_bytes(4, byteorder='big').hex()})]"
-            )
+        if self.is_last_block():
+            label += f" [CRC32 int({self.crc32}) hex({self.crc32.to_bytes(4, byteorder='big').hex()})]"
+        return label
 
     @staticmethod
     def from_bits(bits: bitarray) -> "Rate12Data":

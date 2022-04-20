@@ -49,7 +49,10 @@ class HyteraIPSCSync(Burst):
         return self.full_bits
 
     def __repr__(self):
-        return f"[IPSC SYNC] [SOURCE: {self.source}] [TARGET: {self.target}]"
+        label = f"[IPSC SYNC] [SOURCE: {self.source}] [TARGET: {self.target}]"
+        if self.data:
+            label += repr(self.data)
+        return label
 
     @staticmethod
     def from_bits(bits: bitarray, burst_type: BurstTypes) -> "HyteraIPSCSync":

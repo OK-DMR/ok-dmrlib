@@ -16,6 +16,7 @@ from okdmr.dmrlib.etsi.layer3.elements.dynamic_identifier import DynamicIdentifi
 from okdmr.dmrlib.etsi.layer3.elements.reason_code import ReasonCode
 from okdmr.dmrlib.etsi.layer3.elements.service_options import ServiceOptions
 from okdmr.dmrlib.etsi.layer3.elements.source_type import SourceType
+from okdmr.dmrlib.utils.bits_bytes import bits_to_bytes, bytes_to_bits
 from okdmr.dmrlib.utils.bits_interface import BitsInterface
 
 
@@ -58,6 +59,8 @@ class CSBK(BitsInterface):
         channel_timing_opcode: Union[ChannelTimingOpcode, int] = 0,
         source_identifier: int = 0,
         source_dynamic_identifier: Union[DynamicIdentifier, int] = 0,
+        # for unknown / manufacturer-specific data
+        raw_data: Union[bytes, bitarray] = b"",
     ):
         """
         Params that are optional, are specific for particular CSBKO
@@ -134,6 +137,9 @@ class CSBK(BitsInterface):
             if isinstance(source_dynamic_identifier, DynamicIdentifier)
             else DynamicIdentifier(source_dynamic_identifier)
         )
+        self.raw_data: bytes = (
+            bits_to_bytes(raw_data) if isinstance(raw_data, bitarray) else raw_data
+        )
 
         if self.crc <= 0:
             self.calculate_crc_ccit()
@@ -203,6 +209,8 @@ class CSBK(BitsInterface):
                 + self.source_dynamic_identifier.as_bits()
                 + bitarray([cto[1]])
             )
+        elif self.csbko == CsbkOpcodes.HyteraIPSCSync:
+            pdu += bytes_to_bits(self.raw_data)
 
         return pdu + int2ba(self.crc, length=16)
 
@@ -292,8 +300,19 @@ class CSBK(BitsInterface):
                 source_identifier=ba2int(bits[56:76]),
                 source_dynamic_identifier=DynamicIdentifier.from_bits(bits[77:79]),
             )
+        elif csbko == CsbkOpcodes.HyteraIPSCSync:
+            return CSBK(
+                last_block=lb,
+                protect_flag=pf,
+                manufacturers_feature_set_id=fid,
+                crc=crc_ccit,
+                csbko=csbko,
+                raw_data=bits[16:80],
+            )
 
-        raise ValueError(f"Not-implemented CSBKO {csbko}")
+        raise ValueError(
+            f"Not-implemented CSBKO {csbko} PDU {bits_to_bytes(bits).hex()}"
+        )
 
     def __repr__(self) -> str:
         description = f"[{self.csbko}] [LB: {int(self.last_block)}] [PF: {int(self.protect_flag)}] [{self.feature_set}] "
@@ -322,4 +341,6 @@ class CSBK(BitsInterface):
                 f"[SOURCE DYN IDENTIFIER: {self.source_dynamic_identifier}] "
                 f"[CTO: {self.channel_timing_opcode}]"
             )
+        elif self.csbko == CsbkOpcodes.HyteraIPSCSync:
+            description += f"[MFID DATA HEX({self.raw_data.hex()})]"
         return description

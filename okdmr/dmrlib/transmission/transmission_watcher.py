@@ -15,6 +15,7 @@ class TransmissionWatcher(LoggingTrait):
             self.terminals[dmrid] = Terminal(dmrid)
 
     def process_packet(self, data: bytes, packet: IP) -> None:
+        # to avoid circular dependency problem import must be local/inline
         from okdmr.dmrlib.tools.pcap_tool import PcapTool
 
         burst: Optional[Burst] = PcapTool.debug_packet(
@@ -24,6 +25,9 @@ class TransmissionWatcher(LoggingTrait):
             self.process_burst(burst)
 
     def process_burst(self, burst: Burst) -> None:
+        if not burst.target_radio_id:
+            # print(f"TransmissionWatcher.process_burst ignoring {burst.__class__.__name__} with target radio id {burst.target_radio_id}")
+            return
         self.ensure_terminal(burst.target_radio_id)
         self.terminals[burst.target_radio_id].process_incoming_burst(
             burst=burst, timeslot=burst.timeslot

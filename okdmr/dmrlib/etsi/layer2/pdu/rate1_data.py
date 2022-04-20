@@ -32,6 +32,16 @@ class Rate1DataTypes(enum.Enum):
             (False, False): Rate1DataTypes.Unconfirmed,
         }.get((confirmed, last), Rate1DataTypes.Undefined)
 
+    @staticmethod
+    def label(rate1_data_type: "Rate1DataTypes") -> str:
+        return {
+            Rate1DataTypes.Undefined: "UNDEFINED",
+            Rate1DataTypes.ConfirmedLastBlock: "CONFIRMED - LAST BLOCK",
+            Rate1DataTypes.Confirmed: "CONFIRMED",
+            Rate1DataTypes.Unconfirmed: "UNCONFIRMED",
+            Rate1DataTypes.UnconfirmedLastBlock: "UNCONFIRMED - LAST BLOCK",
+        }.get(rate1_data_type, "UNKNOWN")
+
 
 class Rate1Data(BitsInterface):
     """
@@ -89,26 +99,17 @@ class Rate1Data(BitsInterface):
         )
 
     def __repr__(self) -> str:
-        if self.packet_type in (Rate1DataTypes.Unconfirmed, Rate1DataTypes.Undefined):
-            return f"[RATE 1 DATA UNCONFIRMED] [DATA(24) {self.data.hex()}]"
-        elif self.packet_type == Rate1DataTypes.Confirmed:
-            return (
-                f"[RATE 1 DATA CONFIRMED] [DATA(22) {self.data.hex()}]"
-                + f" [CRC9: {self.crc9}]"
-                + (" [CRC9 INVALID]" if not self.crc9_ok else "")
+        label: str = (
+            f"[RATE 1 DATA {Rate1DataTypes.label(self.packet_type)}] "
+            f"[DATA({self.packet_type.value}) {self.data.hex()}] "
+        )
+        if self.is_confirmed():
+            label += f"[DBSN: {self.dbsn}] " f"[CRC9: {self.crc9}] " + (
+                " [CRC9 INVALID]" if not self.crc9_ok else ""
             )
-        elif self.packet_type == Rate1DataTypes.UnconfirmedLastBlock:
-            return (
-                f"[RATE 1 DATA UNCONFIRMED - LAST BLOCK] [DATA(20) {self.data.hex()}]"
-                + f" [CRC32 int({self.crc32}) hex({self.crc32.to_bytes(4, byteorder='big').hex()})]"
-            )
-        elif self.packet_type == Rate1DataTypes.ConfirmedLastBlock:
-            return (
-                f"[RATE 1 DATA CONFIRMED - LAST BLOCK] [DATA(18) {self.data.hex()}]"
-                + f" [CRC9: {self.crc9}]"
-                + (" [CRC9 INVALID]" if not self.crc9_ok else "")
-                + f" [CRC32 int({self.crc32}) hex({self.crc32.to_bytes(4, byteorder='big').hex()})]"
-            )
+        if self.is_last_block():
+            label += f" [CRC32 int({self.crc32}) hex({self.crc32.to_bytes(4, byteorder='big').hex()})]"
+        return label
 
     @staticmethod
     def from_bits(bits: bitarray) -> "Rate1Data":

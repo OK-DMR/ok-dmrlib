@@ -4,8 +4,6 @@ from typing import List, Tuple
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
 
-from okdmr.dmrlib.etsi.fec.bptc_196_96 import BPTC19696
-from okdmr.dmrlib.etsi.fec.trellis import Trellis34
 from okdmr.dmrlib.etsi.layer2.burst import Burst
 from okdmr.dmrlib.etsi.layer2.elements.burst_types import BurstTypes
 from okdmr.dmrlib.etsi.layer2.elements.data_types import DataTypes
@@ -26,6 +24,10 @@ def test_burst_info(capsys):
         "444d52449128072200000900280722907cd1c462d8bac5704529d00ed0c8aac57047f7d5dd57dfd529d00fd1c8aac570452bd11fd10130",
         # [EmbeddedData] [CC 1] [DATA TYPE Reserved] [PI 0] [LCSS 3] [EMB Parity 0091 VERIFIED]
         "444d52440320baef0000090020baef8100000001b9e881526173002a6bb9e8815261303000a0391173002a6bb9e881526173002a6b3334",
+        # MMDVM TS:2 SEQ: 2 [MsSourcedData] [DataTypes.Rate12Data] [CC: 1] [RATE 1/2 DATA UNCONFIRMED] [DATA(12) 000501737311000100040a23]
+        "444d5244022338630008fd0023383be76f944918117b3090722540f9233581a285ed5d7f77fd75709464602846c3022109c3050079002f",
+        # MMDVM TS:2 SEQ: 1 [MsSourcedData] [DataTypes.PIHeader] [CC: 1] [PI Header] [Data(10) 211003d537d57a000009]
+        "444d52440128072200000900280722a02b2d896f167b90897c009bb941434301840d5d7f77fd757d9d6b51e02230cac7011f149419002f",
     ]
     for burst_hex in bursts:
         mmdvm: Mmdvm2020 = Mmdvm2020.from_bytes(bytes.fromhex(burst_hex))
@@ -76,6 +78,8 @@ def test_burst_info_hytera():
         "5a5a5a5a872a00004100050102000000222244445555000040910f39d932282ba139b224016ebd1557ff5dd7d5f5105c9a1132208b2d1b43aa0c006bd93200003b38230063382300",
         "5a5a5a5a862a00004100050102000000222266665555000040b02f25b5e2b622e2f2d276e5320d9657ff5dd7dcf51fe3a1ef2f2202032df2207200e2b5e20000633823003b382300",
         "5a5a5a5a852a00004100050102000000222244445555000040903b3141203d2865701a3761f6bd1557ff5dd7d5f5185cde1de0314f24db13ba15002141200000633823003b382300",
+        # pi header IPSC TS:2 SEQ: 2 [MsSourcedData] [DataTypes.PIHeader] [CC: 1] [PI Header] [Data(10) 211003d537d57a000009]
+        "5a5a5a5a02e0000001000501020000002222222211110000405c7b168990007cb99b434101430d847f5dfd777d756b9de0513022c7ca1f0194140000630201000900000022072800",
     ]
     for burst_hex in bursts:
         ipsc: IpSiteConnectProtocol = IpSiteConnectProtocol.from_bytes(
@@ -94,6 +98,8 @@ def test_burst_info_hytera():
         # common features
         if burst.has_emb or burst.has_slot_type:
             assert burst.colour_code == ipsc.color_code
+        assert len(repr(burst))
+        print(repr(burst))
 
 
 def test_burst_as_bits():

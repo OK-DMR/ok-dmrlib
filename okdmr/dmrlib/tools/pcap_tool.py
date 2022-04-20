@@ -7,7 +7,6 @@ from typing import Callable, List, Dict, Optional, Tuple
 
 from bitarray import bitarray
 from kaitaistruct import KaitaiStruct
-from okdmr.dmrlib.transmission.transmission_watcher import TransmissionWatcher
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 from okdmr.kaitai.hytera.ip_site_connect_heartbeat import IpSiteConnectHeartbeat
 from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
@@ -23,6 +22,7 @@ from okdmr.dmrlib.etsi.layer2.elements.preemption_power_indicator import (
     PreemptionPowerIndicator,
 )
 from okdmr.dmrlib.etsi.layer2.pdu.full_link_control import FullLinkControl
+from okdmr.dmrlib.transmission.transmission_watcher import TransmissionWatcher
 from okdmr.dmrlib.utils.parsing import try_parse_packet
 from okdmr.tests.dmrlib.tests_utils import prettyprint
 
@@ -189,6 +189,7 @@ class PcapTool:
         ports_whitelist: List[int] = [],
         ports_blacklist: List[int] = [],
         print_statistics: bool = True,
+        print_raw: bool = False,
         callback: Optional[Callable] = None,
     ) -> Dict[int, int]:
         """
@@ -204,6 +205,7 @@ class PcapTool:
             files=files,
             ports_whitelist=ports_whitelist,
             ports_blacklist=ports_blacklist,
+            print_raw=print_raw,
             callback=PcapTool.debug_packet if callback is None else callback,
         )
         if print_statistics:
@@ -220,6 +222,7 @@ class PcapTool:
         callback: Optional[Callable] = None,
         ports_whitelist: List[int] = [],
         ports_blacklist: List[int] = [],
+        print_raw: bool = False,
     ) -> Dict[int, int]:
         """
         Iterate pcap/pcapng file and on each UDP packet found, that matches ports settings, run callback
@@ -277,6 +280,9 @@ class PcapTool:
                             continue
 
                         try:
+                            if print_raw:
+                                print(udp_layer.load.hex())
+
                             callback(data=udp_layer.load, packet=ip_layer)
                         except BaseException as e:
                             if isinstance(e, SystemExit) or isinstance(
@@ -285,10 +291,13 @@ class PcapTool:
                                 # if keyboard interrupt (user trying to stop the tool) or system exit (forced exit from underlying data handling) is caught
                                 # do not ignore and raise up
                                 raise e
+                            print("=" * 30, file=sys.stderr)
                             print(
-                                f"Callback raised exception {e} for data {udp_layer.load.hex()}"
+                                f"Callback raised exception {e} for data {udp_layer.load.hex()}",
+                                file=sys.stderr,
                             )
                             traceback.print_exc()
+                            print("=" * 30, file=sys.stderr)
 
         return statistics
 
@@ -342,6 +351,9 @@ class PcapTool:
             default=False,
         )
         parser.add_argument(
+            "--print-raw", "-r", dest="print_raw", action="store_true", default=False
+        )
+        parser.add_argument(
             "--extract-embedded-lc",
             "-e",
             dest="extract_embedded_lc",
@@ -385,6 +397,7 @@ class PcapTool:
             ports_whitelist=args.whitelist_ports,
             ports_blacklist=args.blacklist_ports,
             print_statistics=not args.no_statistics,
+            print_raw=args.print_raw,
             callback=callback,
         )
         if return_stats:

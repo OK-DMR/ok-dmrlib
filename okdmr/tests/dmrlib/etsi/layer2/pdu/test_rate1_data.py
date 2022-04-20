@@ -73,6 +73,7 @@ def test_rate12_data():
         .convert(Rate1DataTypes.Confirmed)
         .as_bits()
     )
+    assert Rate1Data.from_bits(r12cl_bits).as_bits() == r12cl_bits
 
 
 def test_rate12_data_types():

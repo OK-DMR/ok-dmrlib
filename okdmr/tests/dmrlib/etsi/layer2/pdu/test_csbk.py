@@ -7,6 +7,7 @@ from okdmr.dmrlib.etsi.layer2.burst import Burst
 from okdmr.dmrlib.etsi.layer2.elements.csbk_opcodes import CsbkOpcodes
 from okdmr.dmrlib.etsi.layer2.elements.feature_set_ids import FeatureSetIDs
 from okdmr.dmrlib.etsi.layer2.pdu.csbk import CSBK
+from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits
 
 
 def test_single_csbk():
@@ -58,3 +59,16 @@ def test_csbk():
         assert len(repr(csbk))
         assert csbk.feature_set == FeatureSetIDs.StandardizedFID
         assert _bits == csbk.as_bits()
+
+
+def test_hytera_ipsc_sync():
+    csbks: List[str] = [
+        # [CsbkOpcodes.HyteraIPSCSync] [LB: 1] [PF: 0] [FeatureSetIDs.HyteraFID] [HYTERA IPSC SYNC data-hex(0008fd2337fdf020)]
+        "88100008fd2337fdf020e68b"
+    ]
+    for binstr in csbks:
+        _bits = bytes_to_bits(bytes.fromhex(binstr))
+        csbk = CSBK.from_bits(_bits)
+        assert csbk.feature_set == FeatureSetIDs.HyteraFID
+        assert csbk.as_bits() == _bits
+        assert len(repr(csbk))

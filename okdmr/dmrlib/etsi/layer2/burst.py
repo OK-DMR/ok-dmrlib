@@ -244,7 +244,9 @@ class Burst:
         if self.data_type == DataTypes.Rate34Data:
             return Trellis34.encode(self.data.as_bits())
         elif self.data_type == DataTypes.Rate1Data:
-            return self.data.as_bits()
+            bits = self.data.as_bits()
+            # Rate 1 uncoded data bits (192) + 4 padding bits in the middle makes full 196 bits on-air payload
+            return bits[:96] + bitarray([0, 0, 0, 0]) + bits[96:]
         elif self.data_type == DataTypes.Reserved:
             raise ValueError(
                 f"Unknown data type {self.data_type} with data {self.data}"

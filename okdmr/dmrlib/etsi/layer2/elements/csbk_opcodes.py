@@ -14,6 +14,9 @@ class CsbkOpcodes(BitsInterface, enum.Enum):
     ETSI TS 102 361-4 V1.10.1 (2019-08) - B.1   CSBK/MBC/UDT Opcode List
     """
 
+    # Hytera non-standard
+    HyteraIPSCSync = 0b001000
+
     # Tier II
     UnitToUnitVoiceServiceRequest = 0b000100
     """UU_V_Req"""

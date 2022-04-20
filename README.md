@@ -43,19 +43,19 @@ This package provides way to parse and assemble various DMR ETSI protocols and f
 
 ### ETSI PDUs (Protocol Data Units)
 
-| Name          | Encoding / Decoding | Description                                                                                                                | 
-|---------------|:-------------------:|----------------------------------------------------------------------------------------------------------------------------|
-| CSBK          |          ✅          | Control Signalling Block, namely: BS Outbound Activation, Unit-Unit Request/Answer, Negative ACK, Preamble, Channel Timing |
-| EMB           |          ✅          | Embedded Signalling                                                                                                        |
-| FULL LC       |          ✅          | Full Link Control, namely: Group Voice, Unit-Unit, Talker Alias (header + blocks1,2,3), GPSInfo, Terminator with LC        |
-| SHORT LC      |          ✅          | Short Link Control, namely: Activity, Null                                                                                 |
-| SLOT          |          ✅          | Slot Type                                                                                                                  |
-| SYNC          |          ✅          | Synchronization patterns                                                                                                   |
-| Data Header   |          ✅          | Confirmed/Unconfirmed, Response, Defined Short Data                                                                        |
-| PI Header     |          ✅          | Privacy (PI) Header, without further understanding of transported data                                                     |
-| Rate 1 Data   |          ✅          | Rate 1 data (confirmed and unconfirmed) and last block data (confirmed and unconfirmed)                                    |
-| Rate 1/2 Data |          ✅          | Rate 1/2 data (confirmed and unconfirmed) and last block data (confirmed and unconfirmed)                                  |
-| Rate 3/4 Data |          ✅          | Rate 3/4 data (confirmed and unconfirmed) and last block data (confirmed and unconfirmed)                                  |
+| Name                    | Encoding / Decoding | Description                                                                                                                | 
+|-------------------------|:-------------------:|----------------------------------------------------------------------------------------------------------------------------|
+| CSBK                    |          ✅          | Control Signalling Block, namely: BS Outbound Activation, Unit-Unit Request/Answer, Negative ACK, Preamble, Channel Timing |
+| EMB                     |          ✅          | Embedded Signalling                                                                                                        |
+| FULL&nbsp;LC            |          ✅          | Full Link Control, namely: Group Voice, Unit-Unit, Talker Alias (header + blocks1,2,3), GPSInfo, Terminator with LC        |
+| SHORT&nbsp;LC           |          ✅          | Short Link Control, namely: Activity, Null                                                                                 |
+| SLOT                    |          ✅          | Slot Type                                                                                                                  |
+| SYNC                    |          ✅          | Synchronization patterns                                                                                                   |
+| Data&nbsp;Header        |          ✅          | Confirmed/Unconfirmed, Response, Defined Short Data                                                                        |
+| PI&nbsp;Header          |          ✅          | Privacy (PI) Header, without further understanding of transported data                                                     |
+| Rate&nbsp;1&nbsp;Data   |          ✅          | Rate 1 data (confirmed and unconfirmed) and last block data (confirmed and unconfirmed)                                    |
+| Rate&nbsp;1/2&nbsp;Data |          ✅          | Rate 1/2 data (confirmed and unconfirmed) and last block data (confirmed and unconfirmed)                                  |
+| Rate&nbsp;3/4&nbsp;Data |          ✅          | Rate 3/4 data (confirmed and unconfirmed) and last block data (confirmed and unconfirmed)                                  |
 
 ### ETSI Information Elements
 

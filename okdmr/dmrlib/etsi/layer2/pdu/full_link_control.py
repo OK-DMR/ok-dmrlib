@@ -64,9 +64,7 @@ class FullLinkControl(BitsInterface):
         self.talker_alias_data: bytes = talker_alias_data
 
     def __repr__(self) -> str:
-        descr: str = (
-            f"[FLCO: {self.full_link_control_opcode}] [FID:{self.feature_set_id}] "
-        )
+        descr: str = f"[{self.full_link_control_opcode}] [{self.feature_set_id}] "
 
         if self.full_link_control_opcode == FLCOs.UnitToUnitVoiceChannelUser:
             return descr + (
