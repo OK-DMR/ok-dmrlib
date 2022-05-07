@@ -198,6 +198,7 @@ class PcapTool:
         :param files:
         :param ports_whitelist:
         :param ports_blacklist:
+        :param print_raw:
         :param print_statistics: whether statistics should be printed directly to stdout
         :return: port statistics (dict [key=sport/dport number] [value=number of packets encountered])
         """
@@ -227,6 +228,7 @@ class PcapTool:
         """
         Iterate pcap/pcapng file and on each UDP packet found, that matches ports settings, run callback
 
+        :param print_raw:
         :param files:
         :param ports_blacklist:
         :param callback:
@@ -349,9 +351,15 @@ class PcapTool:
             dest="no_statistics",
             action="store_true",
             default=False,
+            help="Suppress statistics at the end of output",
         )
         parser.add_argument(
-            "--print-raw", "-r", dest="print_raw", action="store_true", default=False
+            "--print-raw",
+            "-r",
+            dest="print_raw",
+            action="store_true",
+            default=False,
+            help="Print raw UDP Data before parsing the payload",
         )
         parser.add_argument(
             "--extract-embedded-lc",
@@ -359,6 +367,7 @@ class PcapTool:
             dest="extract_embedded_lc",
             action="store_true",
             default=False,
+            help="Extract only Embedded LinkControl data and print these",
         )
         parser.add_argument(
             "--observe-transmissions",
@@ -366,6 +375,7 @@ class PcapTool:
             action="store_true",
             default=False,
             dest="observe_transmissions",
+            help="Feed bursts to Transmission and debug the data and how the state of terminals changed",
         )
         return parser
 

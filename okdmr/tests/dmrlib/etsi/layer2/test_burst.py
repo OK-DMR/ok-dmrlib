@@ -8,8 +8,11 @@ from okdmr.dmrlib.etsi.layer2.burst import Burst
 from okdmr.dmrlib.etsi.layer2.elements.burst_types import BurstTypes
 from okdmr.dmrlib.etsi.layer2.elements.data_types import DataTypes
 from okdmr.dmrlib.etsi.layer2.elements.sync_patterns import SyncPatterns
+from okdmr.dmrlib.etsi.layer2.elements.voice_bursts import VoiceBursts
 from okdmr.dmrlib.hytera.hytera_ipsc_sync import HyteraIPSCSync
 from okdmr.dmrlib.hytera.hytera_ipsc_wakeup import HyteraIPSCWakeup
+from okdmr.dmrlib.transmission.transmission import Transmission
+from okdmr.dmrlib.transmission.transmission_types import TransmissionTypes
 
 
 def test_burst_info(capsys):
@@ -99,7 +102,6 @@ def test_burst_info_hytera():
         if burst.has_emb or burst.has_slot_type:
             assert burst.colour_code == ipsc.color_code
         assert len(repr(burst))
-        print(repr(burst))
 
 
 def test_burst_as_bits():
@@ -139,6 +141,49 @@ def test_burst_as_bits():
         assert (
             b.as_bits().tobytes() == _bytes
         ), f"Mismatch in {repr(b)} {b.as_bits().tobytes().hex()} {_bytes.hex()}"
+
+
+def test_vocoder_socket():
+    bursts: List[Tuple[str, VoiceBursts]] = [
+        (
+            "5a5a5a5a0d05000041000501020000002222777755550000401382a900c0a043ce88a4ee83f82770fd55f77d775fca2cc4aec5e043821a3162c2004200c001006f000000fc372300",
+            VoiceBursts.VoiceBurstA,
+        ),
+        (
+            "5a5a5a5a0e05000041000501020000002222888855550000405039d447807d326646b3e88005352530200230f4885a4c48c824a101825937a85a006a478001006f000000fc372300",
+            VoiceBursts.VoiceBurstB,
+        ),
+        (
+            "5a5a5a5a0f05000041000501020000002222999955550000407775dc07c518074810ef0ee74405069a600850a2164238080c2882e8cc5c3764f200ce07c501006f000000fc372300",
+            VoiceBursts.VoiceBurstC,
+        ),
+        (
+            "5a5a5a5a1005000041000501020000002222aaaa555500004033738fc8529055805a9cca706335cc0160a010a5c64bb4ca804aaf12a2d4c4c4f500aac85201006f000000fc372300",
+            VoiceBursts.VoiceBurstD,
+        ),
+        (
+            "5a5a5a5a1105000041000501020000002222bbbb55550000402194aa9ed656db622cc12234cff55331432be89bd127e946e221e84027e4ed622e00629ed601006f000000fc372300",
+            VoiceBursts.VoiceBurstE,
+        ),
+        (
+            "5a5a5a5a1205000041000501020000002222cccc55550000405303c82326d1ed005fce062125a512c10964d1cb3f5b4dea0a24ce12205dbb2a4800ea232601006f000000fc372300",
+            VoiceBursts.VoiceBurstF,
+        ),
+    ]
+    transmission: Transmission = Transmission()
+    transmission.new_transmission(TransmissionTypes.VoiceTransmission)
+    for (hexstr, burst_type) in bursts:
+        b: Burst = Burst.from_hytera_ipsc(
+            IpSiteConnectProtocol.from_bytes(bytes.fromhex(hexstr))
+        )
+        # print(repr(b))
+        # print(b.voice_bits.tobytes().hex())
+        returned: Burst = transmission.process_packet(burst=b)
+        # print(repr(b))
+        assert b.voice_burst == burst_type
+        assert returned.voice_burst == burst_type
+        assert b.is_vocoder
+    transmission.end_voice_transmission()
 
 
 if __name__ == "__main__":

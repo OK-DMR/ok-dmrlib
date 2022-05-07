@@ -179,7 +179,7 @@ class Transmission(LoggingTrait):
             self.last_voice_burst == VoiceBursts.VoiceBurstF
             and burst.data_type == DataTypes.Reserved
         ):
-            burst.voice_burst = VoiceBursts.VoiceBurstA
+            burst.set_is_voice(burst_id=VoiceBursts.VoiceBurstA)
         elif burst.data_type == DataTypes.Reserved and self.last_voice_burst in [
             VoiceBursts.VoiceBurstA,
             VoiceBursts.VoiceBurstB,
@@ -187,7 +187,7 @@ class Transmission(LoggingTrait):
             VoiceBursts.VoiceBurstD,
             VoiceBursts.VoiceBurstE,
         ]:
-            burst.voice_burst = VoiceBursts(self.last_voice_burst.value + 1)
+            burst.set_is_voice(VoiceBursts(self.last_voice_burst.value + 1))
 
         self.last_voice_burst = burst.voice_burst
         self.last_burst_data_type = burst.data_type

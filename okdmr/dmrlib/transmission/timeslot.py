@@ -3,6 +3,7 @@ from time import time
 from typing import List
 
 from okdmr.dmrlib.etsi.layer2.burst import Burst
+from okdmr.dmrlib.etsi.layer2.elements.sync_patterns import SyncPatterns
 from okdmr.dmrlib.etsi.layer2.pdu.data_header import DataHeader
 from okdmr.dmrlib.etsi.layer2.pdu.full_link_control import FullLinkControl
 from okdmr.dmrlib.transmission.transmission import Transmission
@@ -38,7 +39,12 @@ class Timeslot(TransmissionObserverInterface):
 
     def process_burst(self, dmrdata: Burst) -> Burst:
         self.last_packet_received = time()
-        self.color_code = dmrdata.colour_code
+        if (
+            not dmrdata.is_voice_superframe_start
+            or dmrdata.sync_or_embedded_signalling == SyncPatterns.Reserved
+        ):
+            # Voice burst with SYNC (MS/BS Sourced, TDMA TS1/2, Reserved) do not carry CC information
+            self.color_code = dmrdata.colour_code
 
         out: Burst = (
             self.transmission.process_packet(dmrdata)

@@ -62,3 +62,8 @@ def test_data_headers():
         nulled_crc = _bits.copy()
         nulled_crc[80:] = 0
         assert DataHeader.from_bits(nulled_crc).as_bits() == _bits
+        assert (
+            (dh.get_blocks_to_follow() is None)
+            if dh.data_packet_format == DataPacketFormats.UnifiedDataTransport
+            else isinstance(dh.get_blocks_to_follow(), int)
+        )

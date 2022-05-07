@@ -6,6 +6,7 @@ from okdmr.dmrlib.etsi.fec.trellis import Trellis34
 from okdmr.dmrlib.etsi.layer2.elements.burst_types import BurstTypes
 from okdmr.dmrlib.etsi.layer2.elements.data_types import DataTypes
 from okdmr.dmrlib.etsi.layer2.elements.sync_patterns import SyncPatterns
+from okdmr.dmrlib.etsi.layer2.elements.voice_bursts import VoiceBursts
 from okdmr.dmrlib.etsi.layer2.pdu.csbk import CSBK
 from okdmr.dmrlib.etsi.layer2.pdu.data_header import DataHeader
 from okdmr.dmrlib.etsi.layer2.pdu.embedded_signalling import EmbeddedSignalling
@@ -42,12 +43,19 @@ class Burst:
         self.voice_bits: bitarray = full_bits[:108] + full_bits[156:]
         self.info_bits_original: bitarray = full_bits[:98] + full_bits[166:]
 
-        self.is_voice_superframe_start = self.sync_or_embedded_signalling in [
+        self.is_voice_superframe_start: bool = self.sync_or_embedded_signalling in [
             SyncPatterns.Tdma2Voice,
             SyncPatterns.Tdma1Voice,
             SyncPatterns.MsSourcedVoice,
             SyncPatterns.BsSourcedVoice,
         ]
+        # set initial value, subsequent bursts must be detected and marked manually
+        self.is_vocoder: bool = self.is_voice_superframe_start
+        self.voice_burst: VoiceBursts = (
+            VoiceBursts.VoiceBurstA
+            if self.is_voice_superframe_start
+            else VoiceBursts.Unknown
+        )
         self.is_data_or_control = (
             burst_type == BurstTypes.DataAndControl
             or self.sync_or_embedded_signalling
@@ -116,6 +124,11 @@ class Burst:
 
         return None
 
+    def set_is_voice(self, burst_id: VoiceBursts = VoiceBursts.Unknown) -> "Burst":
+        self.is_vocoder = burst_id != VoiceBursts.Unknown
+        self.voice_burst = burst_id
+        return self
+
     def set_sequence_no(self, sequence_no: int) -> "Burst":
         self.sequence_no = sequence_no
         return self
@@ -146,6 +159,10 @@ class Burst:
 
     def __repr__(self) -> str:
         status: str = f"[{self.sync_or_embedded_signalling.name}] "
+
+        if self.is_vocoder:
+            status += f" [{self.voice_burst}]"
+
         if self.has_emb:
             status += repr(self.emb)
         elif self.has_slot_type:
