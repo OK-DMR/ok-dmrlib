@@ -176,10 +176,7 @@ def test_vocoder_socket():
         b: Burst = Burst.from_hytera_ipsc(
             IpSiteConnectProtocol.from_bytes(bytes.fromhex(hexstr))
         )
-        # print(repr(b))
-        # print(b.voice_bits.tobytes().hex())
         returned: Burst = transmission.process_packet(burst=b)
-        # print(repr(b))
         assert b.voice_burst == burst_type
         assert returned.voice_burst == burst_type
         assert b.is_vocoder

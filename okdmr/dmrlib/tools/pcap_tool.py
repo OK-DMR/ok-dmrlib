@@ -377,6 +377,13 @@ class PcapTool:
             dest="observe_transmissions",
             help="Feed bursts to Transmission and debug the data and how the state of terminals changed",
         )
+        parser.add_argument(
+            "--debug-vocoder-bytes",
+            action="store_true",
+            default=False,
+            dest="debug_vocoder_bytes",
+            help="Effective only with --observe-transmissions, will print voice bytes in format ready for vocoder decode",
+        )
         return parser
 
     @staticmethod
@@ -400,7 +407,11 @@ class PcapTool:
         if args.extract_embedded_lc:
             callback = EmbeddedExtractor().process_packet
         elif args.observe_transmissions:
-            callback = TransmissionWatcher().process_packet
+            callback = (
+                TransmissionWatcher()
+                .set_debug_voice_bytes(do_debug=args.debug_vocoder_bytes)
+                .process_packet
+            )
 
         stats = PcapTool.print_pcap(
             files=args.files,
