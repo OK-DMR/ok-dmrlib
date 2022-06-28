@@ -1,3 +1,4 @@
+import traceback
 from typing import List
 
 from okdmr.dmrlib.etsi.layer2.pdu.data_header import DataHeader
@@ -39,3 +40,47 @@ class TransmissionObserverInterface:
         @return:
         """
         pass
+
+
+class WithObservers(TransmissionObserverInterface):
+    def __init__(self, observers: List[TransmissionObserverInterface] = ()):
+        self.observers: List[TransmissionObserverInterface] = observers
+
+    def add_observer(self, observer: TransmissionObserverInterface) -> "WithObservers":
+        self.observers.append(observer)
+        return self
+
+    def remove_observer(
+        self, observer: TransmissionObserverInterface
+    ) -> "WithObservers":
+        self.observers.remove(observer)
+        return self
+
+    def voice_transmission_ended(
+        self, voice_header: FullLinkControl, blocks: List[BitsInterface]
+    ):
+        for observer in self.observers:
+            try:
+                observer.voice_transmission_ended(
+                    voice_header=voice_header, blocks=blocks
+                )
+            except:
+                traceback.print_exc()
+
+    def data_transmission_ended(
+        self, transmission_header: DataHeader, blocks: List[BitsInterface]
+    ):
+        for observer in self.observers:
+            try:
+                observer.data_transmission_ended(
+                    transmission_header=transmission_header, blocks=blocks
+                )
+            except:
+                traceback.print_exc()
+
+    def transmission_started(self, transmission_type: TransmissionTypes):
+        for observer in self.observers:
+            try:
+                observer.transmission_started(transmission_type=transmission_type)
+            except:
+                traceback.print_exc()

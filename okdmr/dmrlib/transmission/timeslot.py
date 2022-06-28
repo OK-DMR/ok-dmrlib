@@ -9,12 +9,16 @@ from okdmr.dmrlib.etsi.layer2.pdu.full_link_control import FullLinkControl
 from okdmr.dmrlib.transmission.transmission import Transmission
 from okdmr.dmrlib.transmission.transmission_observer_interface import (
     TransmissionObserverInterface,
+    WithObservers,
 )
 from okdmr.dmrlib.utils.bits_interface import BitsInterface
 
 
-class Timeslot(TransmissionObserverInterface):
-    def __init__(self, timeslot: int):
+class Timeslot(WithObservers):
+    def __init__(
+        self, timeslot: int, observers: List[TransmissionObserverInterface] = ()
+    ):
+        super().__init__(observers=observers)
         self.timeslot = timeslot
         self.last_packet_received: float = 0
         self.rx_sequence: int = 0
@@ -25,11 +29,15 @@ class Timeslot(TransmissionObserverInterface):
     def voice_transmission_ended(
         self, voice_header: FullLinkControl, blocks: List[BitsInterface]
     ):
+        super().voice_transmission_ended(voice_header=voice_header, blocks=blocks)
         self.reset_rx_sequence = True
 
     def data_transmission_ended(
         self, transmission_header: DataHeader, blocks: List[BitsInterface]
     ):
+        super().data_transmission_ended(
+            transmission_header=transmission_header, blocks=blocks
+        )
         self.reset_rx_sequence = True
 
     def get_rx_sequence(self, increment: bool = True) -> int:
