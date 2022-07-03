@@ -225,8 +225,6 @@ class VBPTC3211:
 
     @staticmethod
     def set_parity(column: numpy.ndarray) -> numpy.ndarray:
-        assert len(column) in (1, 2)
-        if len(column) == 1:
-            column = numpy.append(column, [0])
+        assert len(column) == 2
         column[1] = column[0]
         return column

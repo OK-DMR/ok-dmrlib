@@ -28,7 +28,7 @@ class HRNP(BytesInterface):
     def __init__(
         self,
         data: Optional[Union[bytes, HDAP]] = None,
-        opcode: HRNPOpcodes = HRNPOpcodes.DATA,
+        opcode: HRNPOpcodes = HRNPOpcodes.CONNECT,
         source: int = 0x20,
         destination: int = 0x10,
         block_number: int = 0x00,
@@ -56,8 +56,6 @@ class HRNP(BytesInterface):
         self.data: Optional[HDAP] = (
             HDAP.from_bytes(data) if isinstance(data, bytes) else data
         )
-        if isinstance(data, bytes):
-            print(f"HDAP from bytes {data.hex()}")
         self.header: bytes = (
             header.to_bytes(length=1, byteorder="big")
             if isinstance(header, int)
@@ -68,7 +66,10 @@ class HRNP(BytesInterface):
             if isinstance(version, int)
             else version
         )
-        (self.checksum_correct, self.checksum) = self.verify_checksum(checksum=checksum)
+        (
+            self.checksum_correct,
+            self.checksum,
+        ) = self.verify_checksum(checksum=checksum)
 
     @staticmethod
     def from_bytes(data: bytes) -> "HRNP":
@@ -114,15 +115,37 @@ class HRNP(BytesInterface):
             + (repr(self.data) if self.opcode == HRNPOpcodes.DATA else "")
         )
 
-    @staticmethod
     def verify_checksum(
-        checksum: Union[bytes, int] = b"\x00\x00"
+        self, checksum: Union[bytes, int] = b"\x00\x00"
     ) -> Tuple[bool, bytes]:
-        if isinstance(checksum, bytes) and checksum == b"\x00\x00":
-            return True, checksum
-        if isinstance(checksum, int):
-            if checksum == 0:
-                return True, b"\x00\x00"
-            checksum = checksum.to_bytes(length=2, byteorder="big")
-        # TODO
-        return False, checksum
+        checked_data: bytes = (
+            self.header
+            + self.version
+            + bytes(
+                [self.block_number, self.opcode.value, self.source, self.destination]
+            )
+            + self.packet_number.to_bytes(length=2, byteorder="big")
+            + len(self).to_bytes(2, byteorder="big")
+        )
+        if self.has_data():
+            checked_data += self.data.as_bytes()
+        if len(checked_data) % 2 == 1:
+            # pad with single zero byte, to allow for crc16 checksum
+            checked_data += b"\x00"
+
+        checksum: int = (
+            checksum
+            if isinstance(checksum, int)
+            else int.from_bytes(checksum, byteorder="big")
+        )
+
+        # weird quirk, checksum is always off-by-one when opcode is HRNPOpcodes.DATA
+        check: int = 1 if self.has_data() else 0
+
+        for i in range(0, len(checked_data), 2):
+            check = (
+                check + int.from_bytes(checked_data[i : i + 2], byteorder="big")
+            ) & 0xFFFF
+        check = (check ^ 0xFFFF) & 0xFFFF
+
+        return (check == checksum, check.to_bytes(length=2, byteorder="big"))

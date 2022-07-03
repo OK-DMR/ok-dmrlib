@@ -1,5 +1,5 @@
 import enum
-from typing import Optional, Union
+from typing import Optional, Union, Literal
 
 from okdmr.dmrlib.hytera.pdu.hdap import HDAP, HyteraServiceType
 
@@ -176,7 +176,7 @@ class RadioControlProtocol(HDAP):
             else int.from_bytes(target_id, byteorder="little")
         )
 
-    def get_endianness(self) -> str:
+    def get_endianness(self) -> Literal["big", "little"]:
         return "little"
 
     def get_opcode(self) -> bytes:
@@ -213,7 +213,6 @@ class RadioControlProtocol(HDAP):
             )
 
     def get_payload(self) -> bytes:
-        print(f"get payload {self.opcode}")
         if self.opcode == RCPOpcode.UnknownService:
             # UnknownService is special as it has to keep the original opcode and value untouched
             return self.raw_payload

@@ -1,5 +1,5 @@
 import enum
-from typing import Optional
+from typing import Optional, Literal
 
 from okdmr.dmrlib.utils.bytes_interface import BytesInterface
 from okdmr.dmrlib.utils.logging_trait import LoggingTrait
@@ -54,7 +54,7 @@ class HDAP(BytesInterface, LoggingTrait):
 
         return bytes([((csum ^ 0xFF) + 0x33) & 0xFF])
 
-    def get_endianness(self) -> str:
+    def get_endianness(self) -> Literal["big", "little"]:
         return "big"
 
     def as_bytes(self) -> bytes:
