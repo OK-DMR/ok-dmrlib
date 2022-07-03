@@ -56,6 +56,8 @@ class HRNP(BytesInterface):
         self.data: Optional[HDAP] = (
             HDAP.from_bytes(data) if isinstance(data, bytes) else data
         )
+        if isinstance(data, bytes):
+            print(f"HDAP from bytes {data.hex()}")
         self.header: bytes = (
             header.to_bytes(length=1, byteorder="big")
             if isinstance(header, int)
