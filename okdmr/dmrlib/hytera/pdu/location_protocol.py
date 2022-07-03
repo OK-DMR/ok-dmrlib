@@ -1,7 +1,9 @@
 import enum
-from typing import Union
+from datetime import datetime, date, time
+from typing import Union, Optional, Literal
 
 from okdmr.dmrlib.hytera.pdu.hdap import HDAP, HyteraServiceType
+from okdmr.dmrlib.utils.bytes_interface import BytesInterface
 
 
 @enum.unique
@@ -58,6 +60,85 @@ class LocationProtocolResultCodes(enum.Enum):
     FormatError = 105
 
 
+class GPSData(BytesInterface):
+    def __init__(
+        self,
+        data_valid: Literal["A", "V"],
+        greenwich_time: Union[bytes, time],
+        greenwich_date: Union[bytes, date],
+        north_south: Literal["N", "S"],
+        latitude: Union[bytes, float],
+        east_west: Literal["E", "W"],
+        longitude: Union[bytes, float],
+        speed_knots: Union[bytes, float],
+        direction: Union[bytes, int],
+    ):
+        self.data_valid: Literal["A", "V"] = data_valid
+        self.greenwich_time: time = (
+            greenwich_time
+            if isinstance(greenwich_time, time)
+            else time(
+                hour=int(greenwich_time[0:2]),
+                minute=int(greenwich_time[2:4]),
+                second=int(greenwich_time[4:6]),
+            )
+        )
+        self.greenwich_date: date = (
+            greenwich_date
+            if isinstance(greenwich_date, date)
+            else date(
+                day=int(greenwich_date[0:2]),
+                month=int(greenwich_date[2:4]),
+                year=2000 + int(greenwich_date[4:6]),
+            )
+        )
+        self.north_south: Literal["N", "S"] = north_south
+        self.east_west: Literal["E", "W"] = east_west
+        self.latitude: float = (
+            latitude if isinstance(latitude, float) else float(latitude.decode("ascii"))
+        )
+        self.longitude: float = (
+            longitude
+            if isinstance(longitude, float)
+            else float(longitude.decode("ascii"))
+        )
+        self.speed_knots: float = (
+            speed_knots
+            if isinstance(speed_knots, float)
+            else float(speed_knots.decode("ascii"))
+        )
+        self.direction: int = int(direction)
+
+    @staticmethod
+    def from_bytes(data: bytes) -> Optional["GPSData"]:
+        if len(data) < 40:
+            return None
+        return GPSData(
+            data_valid="A" if data[0:1] == b"A" else "V",
+            greenwich_time=data[1:7],
+            greenwich_date=data[7:13],
+            north_south="N" if data[13:14] == b"N" else "S",
+            latitude=data[14:23],
+            east_west="E" if data[23:24] == b"E" else "W",
+            longitude=data[24:34],
+            speed_knots=data[34:37],
+            direction=data[37:40],
+        )
+
+    def as_bytes(self) -> bytes:
+        return (
+            self.data_valid
+            + self.greenwich_time.strftime("%H%M%S")
+            + self.greenwich_date.strftime("%d%m%y")
+            + self.north_south
+            + f"{self.latitude:09.4f}"
+            + self.east_west
+            + f"{self.longitude:010.4f}"
+            + f"{self.speed_knots:03}"
+            + f"{self.direction:03}"
+        ).encode("ascii")
+
+
 class LocationProtocol(HDAP):
     """
     Hytera DMR Application Protocol
@@ -69,7 +150,7 @@ class LocationProtocol(HDAP):
         request_id: Union[int, bytes],
         radio_ip: Union[int, bytes],
         result: Union[int, bytes],
-        gpsdata: Union[bytes],
+        gpsdata: Union[bytes, GPSData],
     ):
         self.specific_service = (
             opcode
@@ -96,7 +177,9 @@ class LocationProtocol(HDAP):
             if isinstance(result, int)
             else int.from_bytes(result, byteorder="big")
         )
-        self.gpsdata: bytes = gpsdata
+        self.gpsdata: GPSData = (
+            GPSData.from_bytes(gpsdata) if isinstance(gpsdata, bytes) else gpsdata
+        )
 
     def get_service_type(self) -> HyteraServiceType:
         return HyteraServiceType.LP
@@ -110,7 +193,7 @@ class LocationProtocol(HDAP):
                 self.request_id.to_bytes(length=4, byteorder="big")
                 + self.radio_ip.to_bytes(length=4, byteorder="big")
                 + self.result.value.to_bytes(length=2, byteorder="big")
-                + self.gpsdata
+                + self.gpsdata.as_bytes()
             )
         raise NotImplementedError(
             f"LP get_payload not implemented for {self.specific_service}"
