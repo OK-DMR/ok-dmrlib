@@ -1,5 +1,5 @@
 import enum
-from typing import Union, Optional
+from typing import Optional
 
 from okdmr.dmrlib.utils.bytes_interface import BytesInterface
 from okdmr.dmrlib.utils.logging_trait import LoggingTrait
@@ -25,60 +25,66 @@ class HDAP(BytesInterface, LoggingTrait):
 
     """
 
-    def __init__(
-        self,
-        pdu_type: HyteraServiceType,
-        is_reliable: bool = False,
-        payload: Optional[Union["HDAP", bytes]] = None,
-        checksum: Union[bytes, int] = 0,
-        msg_end: bytes = b"\x03",
-    ):
+    MSG_END: bytes = b"\x03"
+
+    def get_service_type(self) -> HyteraServiceType:
+        """
+        Message Header / ServiceType
         """
 
-        :param pdu_type:
-        :param payload:
-        :param checksum:
-        :param msg_end:
+    def get_opcode(self) -> bytes:
         """
-        self.pdu_type: HyteraServiceType = pdu_type
-        self.is_reliable: bool = is_reliable
-        self.checksum: bytes = (
-            checksum
-            if isinstance(checksum, bytes)
-            else checksum.to_bytes(length=1, byteorder="big")
-        )
-        self.payload: Optional[HDAP] = (
-            payload
-            if (payload is None or isinstance(payload, HDAP))
-            else HDAP.from_bytes(payload)
-        )
-        self.msg_end: bytes = msg_end
+        Opcode (2-bytes)
+        """
 
-    def __len__(self) -> int:
-        return 12 + (len(self.payload) if self.payload else 0)
+    def get_payload(self) -> bytes:
+        """
+        Payload (n-bytes)
+        """
+
+    @staticmethod
+    def get_hdap_checksum(checked_data: bytes) -> bytes:
+        """
+        Get 1-byte checksum for opcode through payload fields
+        """
+
+        csum: int = 0
+        for byteval in checked_data:
+            csum = (csum + byteval) & 0xFF
+
+        return bytes([((csum ^ 0xFF) + 0x33) & 0xFF])
+
+    def get_endianness(self) -> str:
+        return "big"
+
+    def as_bytes(self) -> bytes:
+        payload = self.get_payload()
+        checked_data = (
+            self.get_opcode()
+            + len(payload).to_bytes(length=2, byteorder=self.get_endianness())
+            + payload
+        )
+
+        return (
+            self.get_service_type().value.to_bytes(length=1, byteorder="big")
+            + checked_data
+            + HDAP.get_hdap_checksum(checked_data)
+            + HDAP.MSG_END
+        )
+
+    def __len__(self):
+        return 7 + len(self.get_payload())
 
     @staticmethod
     def from_bytes(data: bytes) -> Optional["HDAP"]:
-        if len(data) == 0:
+        if len(data) < 1:
             return None
-        # prevent circular imports
+        opcode = HyteraServiceType(data[0])
+
         from okdmr.dmrlib.hytera.pdu.location_protocol import LocationProtocol
         from okdmr.dmrlib.hytera.pdu.radio_control_protocol import RadioControlProtocol
 
-        assert len(data) >= 1
-        service = HyteraServiceType(data[0])
         return {
-            HyteraServiceType.LP: lambda x: LocationProtocol.from_bytes(x),
-            HyteraServiceType.RCP: lambda x: RadioControlProtocol.from_bytes(x),
-        }[service](data)
-
-    def get_checksum(self, provided_checksum: Union[bytes, int]) -> int:
-        return 0
-
-    # noinspection PyMethodMayBeStatic
-    def get_opcode(self) -> bytes:
-        """
-        Get 2-byte opcode of inner
-        :return:
-        """
-        return b"\x00\x00"
+            HyteraServiceType.LP: LocationProtocol.from_bytes,
+            HyteraServiceType.RCP: RadioControlProtocol.from_bytes,
+        }[opcode](data)

@@ -129,7 +129,7 @@ class RCPOpcode(enum.Enum):
         return RCPOpcode.UnknownService
 
     def as_bytes(self) -> bytes:
-        return self.value.to_bytes(length=2, byteorder="little")
+        return self.value.to_bytes(length=2, byteorder="big")
 
 
 @enum.unique
@@ -152,10 +152,7 @@ class RadioControlProtocol(HDAP):
 
     def __init__(
         self,
-        opcode: Union[bytes, int],
-        payload_length: int,
-        checksum: Union[bytes, int],
-        msg_end: Union[bytes, int],
+        opcode: Union[bytes, RCPOpcode],
         # unknown service
         raw_payload: bytes = b"",
         raw_opcode: bytes = b"",
@@ -163,15 +160,11 @@ class RadioControlProtocol(HDAP):
         call_type: Optional[Union[int, RCPCallType]] = None,
         target_id: Optional[Union[int, bytes]] = None,
     ):
-        super().__init__(
-            pdu_type=HyteraServiceType.RCP, msg_end=msg_end, checksum=checksum
-        )
-        self.opcode = RCPOpcode(
+        self.opcode: RCPOpcode = RCPOpcode(
             opcode
-            if isinstance(opcode, int)
-            else int.from_bytes(opcode, byteorder="little")
+            if isinstance(opcode, RCPOpcode)
+            else int.from_bytes(opcode, byteorder="big")
         )
-        self.payload_length: int = payload_length
         self.raw_payload: bytes = raw_payload
         self.raw_opcode: bytes = raw_opcode
         self.call_type: Optional[RCPCallType] = (
@@ -183,41 +176,34 @@ class RadioControlProtocol(HDAP):
             else int.from_bytes(target_id, byteorder="little")
         )
 
+    def get_endianness(self) -> str:
+        return "little"
+
+    def get_opcode(self) -> bytes:
+        if self.opcode == RCPOpcode.UnknownService:
+            return self.raw_opcode[0:2]
+        return self.opcode.value.to_bytes(length=2, byteorder="little")
+
+    def get_service_type(self) -> HyteraServiceType:
+        return HyteraServiceType.RCP
+
     @staticmethod
     def from_bytes(data: bytes) -> Optional["RadioControlProtocol"]:
-        assert (
-            data[0] == 0x02
-        ), f"RCP header does not match, expected 0x02, got {data[0:1].hex()}"
-        opcode = RCPOpcode(int.from_bytes(data[1:3], byteorder="little"))
-        payload_length = int.from_bytes(data[3:5], byteorder="little")
-        checksum_byte = data[-2:-1]
-        msg_end = data[-1:]
-        assert (
-            msg_end == b"\x03"
-        ), f"RCP MsgEnd (last byte) does not match, expected 0x03, got {msg_end.hex()}"
+        opcode = RCPOpcode(int.from_bytes(data[0:2], byteorder="big"))
         if opcode == RCPOpcode.UnknownService:
             return RadioControlProtocol(
-                opcode=data[1:3],
-                payload_length=payload_length,
-                checksum=checksum_byte,
-                msg_end=msg_end,
+                opcode=opcode,
                 raw_payload=data[5:-2],
                 raw_opcode=data[1:3],
             )
         elif opcode == RCPOpcode.BroadcastStatusConfigurationRequest:
             return RadioControlProtocol(
-                opcode=data[1:3],
-                payload_length=payload_length,
-                checksum=checksum_byte,
-                msg_end=msg_end,
+                opcode=opcode,
                 raw_payload=data[5:-2],
             )
         elif opcode == RCPOpcode.CallRequest:
             return RadioControlProtocol(
-                opcode=data[1:3],
-                payload_length=payload_length,
-                checksum=checksum_byte,
-                msg_end=msg_end,
+                opcode=opcode,
                 call_type=data[5],
                 target_id=data[6:10],
             )
@@ -226,28 +212,22 @@ class RadioControlProtocol(HDAP):
                 f"Opcode {opcode} (0x{bytes(reversed(data[1:3])).hex().upper()}) not yet implemented"
             )
 
-    def as_bytes(self) -> bytes:
-        rtn = (
-            bytes([0x02])
-            + self.opcode.as_bytes()
-            + self.payload_length.to_bytes(length=2, byteorder="little")
-        )
+    def get_payload(self) -> bytes:
+        print(f"get payload {self.opcode}")
         if self.opcode == RCPOpcode.UnknownService:
             # UnknownService is special as it has to keep the original opcode and value untouched
-            rtn = rtn[0:1] + self.raw_opcode + rtn[3:5] + self.raw_payload
+            return self.raw_payload
         elif self.opcode == RCPOpcode.BroadcastStatusConfigurationRequest:
-            rtn += (
+            return (
                 # TODO parse to fields and serialize from fields
                 self.raw_payload
             )
         elif self.opcode == RCPOpcode.CallRequest:
-            rtn += bytes([self.call_type.value]) + self.target_id.to_bytes(
+            return bytes([self.call_type.value]) + self.target_id.to_bytes(
                 length=4, byteorder="little"
             )
-        return rtn + self.checksum + self.msg_end
 
-    def __len__(self):
-        return 7 + self.payload_length
+        raise NotImplementedError(f"get_payload not implemented for {self.opcode}")
 
     def __repr__(self):
         represented = f"[RCP.{self.opcode.name}] "
@@ -257,4 +237,4 @@ class RadioControlProtocol(HDAP):
             represented += f"[Configure {self.raw_payload[0]} broadcast functions]"
         elif self.opcode == RCPOpcode.CallRequest:
             represented += f"[{self.call_type}] [TO: {self.target_id}]"
-        return represented + (f" [CRC: {self.checksum.hex()}]")
+        return represented
