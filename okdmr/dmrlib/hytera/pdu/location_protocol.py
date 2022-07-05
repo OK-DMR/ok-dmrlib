@@ -1,5 +1,5 @@
 import enum
-from datetime import datetime, date, time
+from datetime import date, time
 from typing import Union, Optional, Literal
 
 from okdmr.dmrlib.hytera.pdu.hdap import HDAP, HyteraServiceType
@@ -111,8 +111,9 @@ class GPSData(BytesInterface):
 
     @staticmethod
     def from_bytes(data: bytes) -> Optional["GPSData"]:
-        if len(data) < 40:
-            return None
+        assert (
+            len(data) == 40
+        ), f"GPS Data expects 40 bytes of payload, got {len(data)} value {data.hex()}"
         return GPSData(
             data_valid="A" if data[0:1] == b"A" else "V",
             greenwich_time=data[1:7],
@@ -151,7 +152,9 @@ class LocationProtocol(HDAP):
         radio_ip: Union[int, bytes],
         result: Union[int, bytes],
         gpsdata: Union[bytes, GPSData],
+        is_reliable: bool = False,
     ):
+        super().__init__(is_reliable=is_reliable)
         self.specific_service = (
             opcode
             if isinstance(opcode, LocationProtocolSpecificService)
@@ -201,9 +204,9 @@ class LocationProtocol(HDAP):
 
     @staticmethod
     def from_bytes(data: bytes) -> "LocationProtocol":
-        assert (
-            data[0] == 0x08
-        ), f"LocationProtocol HDAP PDU should start with 0x08, got {hex(data[0])}"
+        (is_reliable, service_type) = HDAP.get_reliable_and_service(data[0:1])
+        assert service_type == HyteraServiceType.LP, f"Expected LP got {service_type}"
+
         opcode = LocationProtocolSpecificService(
             int.from_bytes(data[1:3], byteorder="big")
         )
@@ -214,6 +217,7 @@ class LocationProtocol(HDAP):
                 radio_ip=data[9:13],
                 result=data[13:15],
                 gpsdata=data[15:55],
+                is_reliable=is_reliable,
             )
 
         raise NotImplementedError(f"LP {opcode} not yet implemented")

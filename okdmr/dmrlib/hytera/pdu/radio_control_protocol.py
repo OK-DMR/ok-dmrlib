@@ -159,7 +159,9 @@ class RadioControlProtocol(HDAP):
         # call request
         call_type: Optional[Union[int, RCPCallType]] = None,
         target_id: Optional[Union[int, bytes]] = None,
+        is_reliable: bool = False,
     ):
+        super().__init__(is_reliable=is_reliable)
         self.opcode: RCPOpcode = RCPOpcode(
             opcode
             if isinstance(opcode, RCPOpcode)
@@ -189,23 +191,27 @@ class RadioControlProtocol(HDAP):
 
     @staticmethod
     def from_bytes(data: bytes) -> Optional["RadioControlProtocol"]:
-        opcode = RCPOpcode(int.from_bytes(data[0:2], byteorder="big"))
+        (is_reliable, service_type) = HDAP.get_reliable_and_service(data[0:1])
+        assert service_type == HyteraServiceType.RCP, f"Expected RCP got {service_type}"
+
+        opcode = RCPOpcode(int.from_bytes(data[1:3], byteorder="big"))
         if opcode == RCPOpcode.UnknownService:
             return RadioControlProtocol(
                 opcode=opcode,
                 raw_payload=data[5:-2],
                 raw_opcode=data[1:3],
+                is_reliable=is_reliable,
             )
         elif opcode == RCPOpcode.BroadcastStatusConfigurationRequest:
             return RadioControlProtocol(
-                opcode=opcode,
-                raw_payload=data[5:-2],
+                opcode=opcode, raw_payload=data[5:-2], is_reliable=is_reliable
             )
         elif opcode == RCPOpcode.CallRequest:
             return RadioControlProtocol(
                 opcode=opcode,
                 call_type=data[5],
                 target_id=data[6:10],
+                is_reliable=is_reliable,
             )
         else:
             raise NotImplementedError(

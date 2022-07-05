@@ -1,5 +1,5 @@
 import enum
-from typing import Optional, Literal
+from typing import Optional, Literal, Tuple, Union
 
 from okdmr.dmrlib.utils.bytes_interface import BytesInterface
 from okdmr.dmrlib.utils.logging_trait import LoggingTrait
@@ -24,6 +24,9 @@ class HDAP(BytesInterface, LoggingTrait):
     | Checksum (1 byte) | MsgEnd (1 byte) |
 
     """
+
+    def __init__(self, is_reliable: bool):
+        self.is_reliable: bool = is_reliable
 
     MSG_END: bytes = b"\x03"
 
@@ -66,7 +69,9 @@ class HDAP(BytesInterface, LoggingTrait):
         )
 
         return (
-            self.get_service_type().value.to_bytes(length=1, byteorder="big")
+            (
+                self.get_service_type().value | (0x80 if self.is_reliable else 0)
+            ).to_bytes(length=1, byteorder=self.get_endianness())
             + checked_data
             + HDAP.get_hdap_checksum(checked_data)
             + HDAP.MSG_END
@@ -76,15 +81,36 @@ class HDAP(BytesInterface, LoggingTrait):
         return 7 + len(self.get_payload())
 
     @staticmethod
+    def get_reliable_and_service(
+        byte: Union[int, bytes] = 0x00
+    ) -> Tuple[bool, Optional[HyteraServiceType]]:
+        """
+        Uses first byte and returns (is_reliable_message, Optional[HyteraServiceType])
+        If no data provided, returns (not reliable, None)
+        """
+        first: int = (
+            byte if isinstance(byte, int) else (byte[0] if len(byte) > 0 else 0)
+        )
+        return (
+            (first & 0x80 == 0x80, HyteraServiceType(abs(first & 0x7F)))
+            if first > 0
+            else (False, None)
+        )
+
+    @staticmethod
     def from_bytes(data: bytes) -> Optional["HDAP"]:
         if len(data) < 1:
             return None
-        opcode = HyteraServiceType(data[0])
+        (is_reliable, service_type) = HDAP.get_reliable_and_service(data[0])
 
         from okdmr.dmrlib.hytera.pdu.location_protocol import LocationProtocol
         from okdmr.dmrlib.hytera.pdu.radio_control_protocol import RadioControlProtocol
+        from okdmr.dmrlib.hytera.pdu.radio_registration_service import (
+            RadioRegistrationService,
+        )
 
         return {
             HyteraServiceType.LP: LocationProtocol.from_bytes,
             HyteraServiceType.RCP: RadioControlProtocol.from_bytes,
-        }[opcode](data)
+            HyteraServiceType.RRS: RadioRegistrationService.from_bytes,
+        }[service_type](data)
