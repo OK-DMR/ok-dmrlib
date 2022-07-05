@@ -3,6 +3,7 @@ from datetime import date, time
 from typing import Union, Optional, Literal
 
 from okdmr.dmrlib.hytera.pdu.hdap import HDAP, HyteraServiceType
+from okdmr.dmrlib.hytera.pdu.radio_ip import RadioIP
 from okdmr.dmrlib.utils.bytes_interface import BytesInterface
 
 
@@ -149,7 +150,7 @@ class LocationProtocol(HDAP):
         self,
         opcode: Union[bytes, LocationProtocolSpecificService],
         request_id: Union[int, bytes],
-        radio_ip: Union[int, bytes],
+        radio_ip: Union[bytes, RadioIP],
         result: Union[int, bytes],
         gpsdata: Union[bytes, GPSData],
         is_reliable: bool = False,
@@ -170,10 +171,8 @@ class LocationProtocol(HDAP):
             if isinstance(request_id, int)
             else int.from_bytes(request_id, byteorder="big")
         )
-        self.radio_ip: int = (
-            radio_ip
-            if isinstance(radio_ip, int)
-            else int.from_bytes(radio_ip, byteorder="big")
+        self.radio_ip: RadioIP = (
+            radio_ip if isinstance(radio_ip, RadioIP) else RadioIP.from_bytes(radio_ip)
         )
         self.result: LocationProtocolResultCodes = LocationProtocolResultCodes(
             result
@@ -194,7 +193,7 @@ class LocationProtocol(HDAP):
         if self.specific_service == LocationProtocolSpecificService.StandardReport:
             return (
                 self.request_id.to_bytes(length=4, byteorder="big")
-                + self.radio_ip.to_bytes(length=4, byteorder="big")
+                + self.radio_ip.as_bytes()
                 + self.result.value.to_bytes(length=2, byteorder="big")
                 + self.gpsdata.as_bytes()
             )
