@@ -119,7 +119,10 @@ class LRRP(MBXMLDocument):
             MBXMLDocumentIdentifier.LRRP_TriggeredLocationStopRequest_NCDT,
             MBXMLDocumentIdentifier.LRRP_LocationProtocolRequest_NCDT,
         ):
-            element_tokens |= LRRP.QUERY_REQUEST_MESSAGES_ELEMENT_TOKENS
+            element_tokens = {
+                **element_tokens,
+                **LRRP.QUERY_REQUEST_MESSAGES_ELEMENT_TOKENS,
+            }
         elif doc_type in (
             MBXMLDocumentIdentifier.LRRP_TriggeredLocationReport,
             MBXMLDocumentIdentifier.LRRP_TriggeredLocationReport_NCDT,
@@ -131,7 +134,10 @@ class LRRP(MBXMLDocument):
             MBXMLDocumentIdentifier.LRRP_TriggeredLocationStopAnswer,
             MBXMLDocumentIdentifier.LRRP_TriggeredLocationStopAnswer_NCDT,
         ):
-            element_tokens |= LRRP.ANSWER_AND_REPORT_MESSAGES_ELEMENT_TOKENS
+            element_tokens = {
+                **element_tokens,
+                **LRRP.ANSWER_AND_REPORT_MESSAGES_ELEMENT_TOKENS,
+            }
 
         return {
             MBXMLTokenType.ATTRIBUTE_TOKEN: LRRP.ATTRIBUTE_TOKENS,
