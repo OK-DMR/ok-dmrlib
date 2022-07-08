@@ -1,8 +1,11 @@
 import enum
 import math
 from copy import copy
-from typing import List, Optional, Tuple, Dict
+from typing import List, Optional, Tuple, Dict, Type, Union
 from xml.dom import minidom
+
+from bitarray.util import ba2int
+from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits
 
 
 @enum.unique
@@ -68,6 +71,26 @@ class GlobalToken(enum.Enum):
     """
     Values 1D - 1F are used for document specific use
     """
+    CIRCLE_2D = -0x03
+    """
+    Special structure that is serialized specially [lat 4 octets | lon 4 octets | radius 2 octets ufloatvar ]
+    """
+    CIRCLE_3D = -0x04
+    """
+    Special structure that is serialized specially [lat 4 octets | lon 4 octets | radius 2 octets ufloatvar ]
+    """
+    INFO_TIME = -0x05
+    """
+    5 byte opaque value encoding date+time
+    """
+    POINT_2D = -0x06
+    """
+    Special structure [lat 4 octets | lon 4 octets]
+    """
+    POINT_3D = -0x07
+    """
+    Special structure [lat 4 octets | lon 4 octets | altitude ufloatvar ]
+    """
 
     @classmethod
     def _missing_(cls, value: int) -> "GlobalToken":
@@ -87,6 +110,7 @@ class MBXMLDocumentIdentifier(enum.Enum):
     Tuple structure is (document id, is NCDT, root xml element name)
     """
 
+    # fmt:off
     Reserved = (0x00, False, "Reserved")
     ReservedNCDT = (0x01, True, "Reserved")
     ReservedTesting = (0x02, False, "Reserved-Testing")
@@ -103,17 +127,9 @@ class MBXMLDocumentIdentifier(enum.Enum):
     LRRP_TriggeredLocationReport = (0x0C, False, "Triggered-Location-Report")
     LRRP_TriggeredLocationReport_NCDT = (0x0D, True, "Triggered-Location-Report")
     LRRP_TriggeredLocationStopRequest = (0x0E, False, "Triggered-Location-Stop-Request")
-    LRRP_TriggeredLocationStopRequest_NCDT = (
-        0x0F,
-        True,
-        "Triggered-Location-Stop-Request",
-    )
+    LRRP_TriggeredLocationStopRequest_NCDT = (0x0F, True, "Triggered-Location-Stop-Request")
     LRRP_TriggeredLocationStopAnswer = (0x10, False, "Triggered-Location-Stop-Answer")
-    LRRP_TriggeredLocationStopAnswer_NCDT = (
-        0x11,
-        True,
-        "Triggered-Location-Stop-Answer",
-    )
+    LRRP_TriggeredLocationStopAnswer_NCDT = (0x11, True, "Triggered-Location-Stop-Answer")
     LRRP_UnsolicitedLocationReport = (0x12, False, "Location-Protocol-Report")
     LRRP_UnsolicitedLocationReport_NCDT = (0x13, True, "Location-Protocol-Report")
     LRRP_LocationProtocolRequest_NCDT = (0x14, True, "Location-Protocol-Request")
@@ -137,6 +153,8 @@ class MBXMLDocumentIdentifier(enum.Enum):
     ARRP_UnsolicitedInformationReport_NCDT = (0x25, True)
     ARRP_InformationProtocolRequest_NCDT = (0x26, True)
     ARRP_InformationProtocolReport_NCDT = (0x27, True)
+
+    # fmt:on
 
     @classmethod
     def resolve(cls, docid: int) -> Optional["MBXMLDocumentIdentifier"]:
@@ -173,7 +191,7 @@ class MBXMLToken:
         self.token_type: GlobalToken = _type
         self.token_id: int = token_id
         self.last_attribute: bool = last_attribute
-        self.attributes: List[int] = attributes or []
+        self.attributes: List[Union[int, MBXMLToken]] = attributes or []
         self.length: Optional[int] = length
         self.path: Optional[str] = path
         self.value: Optional[any] = value
@@ -185,6 +203,8 @@ class MBXMLToken:
             return val.decode("ascii")
         elif isinstance(self.value, bytes):
             return self.value.hex().upper()
+        elif self.token_type in (GlobalToken.SFLOATVAR, GlobalToken.UFLOATVAR):
+            return round(self.value, 5)
         return self.value
 
     def get_attributes(self, doc: "MBXMLDocument") -> Dict[str, str]:
@@ -193,10 +213,100 @@ class MBXMLToken:
         """
         rtn: Dict[str, str] = {}
         for attr_id in self.attributes:
-            attr_def = doc.attributes_config[attr_id]
-            rtn[attr_def.name] = attr_def.get_value(doc)
+            if isinstance(attr_id, int):
+                attr_def = doc.attributes_config[attr_id]
+                rtn[attr_def.name] = attr_def.get_value(doc)
+            elif isinstance(attr_id, MBXMLToken):
+                rtn[attr_id.name] = attr_id.value
 
         return rtn
+
+    def as_xml(
+        self,
+        document: minidom.Document,
+        root: minidom.Element,
+        mbxml_document: "MBXMLDocument",
+    ):
+        part_element: minidom.Element = document.createElement(self.name)
+
+        if self.token_type == GlobalToken.CIRCLE_2D:
+            lat_el: minidom.Element = document.createElement("lat")
+            long_el: minidom.Element = document.createElement("long")
+            radius_el: minidom.Element = document.createElement("radius")
+
+            (_lat, _long, _radius) = self.value
+            _lat = int.from_bytes(_lat, byteorder="big")
+            _long = int.from_bytes(_long, byteorder="big")
+
+            lat_el.appendChild(
+                document.createTextNode(str(round((_lat * 90) / 2**31, 6)))
+            )
+            long_el.appendChild(
+                document.createTextNode(str(round((_long * 360) / 2**32, 6)))
+            )
+            radius_el.appendChild(document.createTextNode(str(round(_radius, 2))))
+
+            part_element.appendChild(lat_el)
+            part_element.appendChild(long_el)
+            part_element.appendChild(radius_el)
+        elif self.token_type == GlobalToken.POINT_2D:
+            (_lat, _long) = self.value
+
+            lat_el: minidom.Element = document.createElement("lat")
+            long_el: minidom.Element = document.createElement("long")
+
+            _lat = int.from_bytes(_lat, byteorder="big")
+            _long = int.from_bytes(_long, byteorder="big")
+
+            lat_el.appendChild(
+                document.createTextNode(str(round((_lat * 90) / 2**31, 6)))
+            )
+            long_el.appendChild(
+                document.createTextNode(str(round((_long * 360) / 2**32, 6)))
+            )
+
+            part_element.appendChild(lat_el)
+            part_element.appendChild(long_el)
+
+        elif self.token_type == GlobalToken.INFO_TIME:
+            bits = bytes_to_bits(self.value)
+            part_element.appendChild(
+                document.createTextNode(
+                    f"{ba2int(bits[0:-26]):4}"
+                    f"{ba2int(bits[-26:-22]):02}"
+                    f"{ba2int(bits[-22:-17]):02}"
+                    f"{ba2int(bits[-17:-12]):02}"
+                    f"{ba2int(bits[-12:-6]):02}"
+                    f"{ba2int(bits[-6:]):02}"
+                )
+            )
+        else:
+            val: Optional[any] = self.get_value(mbxml_document)
+            if val:
+                part_value: minidom.Text = document.createTextNode(str(val))
+                part_element.appendChild(part_value)
+            for attr_name, attr_value in self.get_attributes(mbxml_document).items():
+                part_element.setAttribute(attr_name, str(attr_value))
+
+        parent = root
+
+        if isinstance(self.path, str) and len(self.path) > 1:
+            for path_part in self.path.split("."):
+                path_part_exists: bool = False
+                for _child in parent.childNodes:
+                    if (
+                        isinstance(_child, minidom.Element)
+                        and _child.nodeName == path_part
+                    ):
+                        parent = _child
+                        path_part_exists = True
+                        break
+                if not path_part_exists:
+                    _elm = document.createElement(path_part)
+                    parent.appendChild(_elm)
+                    parent = _elm
+
+        parent.appendChild(part_element)
 
     def __str__(self):
         return f"[{self.name} is {self.token_type.name} ({hex(self.token_id)})]"
@@ -207,76 +317,6 @@ class MBXMLToken:
             if self.value
             else ""
         )
-
-
-LRRP_CONSTANT_TABLE: Dict[int, MBXMLToken] = {
-    0: MBXMLToken("", GlobalToken.STR8_I, value="HIGH"),
-    1: MBXMLToken("", GlobalToken.STR8_I, value="NORMAL"),
-    2: MBXMLToken("", GlobalToken.STR8_I, value="APCO"),
-    3: MBXMLToken("", GlobalToken.STR8_I, value="IPV4"),
-    4: MBXMLToken("", GlobalToken.STR8_I, value="IPV6"),
-    5: MBXMLToken("", GlobalToken.STR8_I, value="PLMN"),
-    6: MBXMLToken("", GlobalToken.STR8_I, value="TETRA"),
-    7: MBXMLToken("", GlobalToken.STR8_I, value="USER-SPECIFIED"),
-    8: MBXMLToken("", GlobalToken.STR8_I, value="http://"),
-    9: MBXMLToken("", GlobalToken.STR8_I, value="http://www."),
-    10: MBXMLToken("", GlobalToken.STR8_I, value="YES"),
-    11: MBXMLToken("", GlobalToken.STR8_I, value="NO"),
-    12: MBXMLToken("", GlobalToken.STR8_I, value="LTD"),
-}
-
-DOCUMENT_CONFIGURATION: Dict[
-    MBXMLDocumentIdentifier, Dict[MBXMLTokenType, Dict[int, MBXMLToken]]
-] = {
-    MBXMLDocumentIdentifier.LRRP_ImmediateLocationRequest_NCDT: {
-        MBXMLTokenType.ELEMENT_TOKEN: {
-            0x22: MBXMLToken("request-id", GlobalToken.OPAQUE_I),
-            0x23: MBXMLToken("request-id", GlobalToken.OPAQUE_I, length=1),
-            0x24: MBXMLToken("request-id", GlobalToken.OPAQUE_T),
-            0x50: MBXMLToken(
-                "ret-info", GlobalToken.NO_VALUE, attributes=[0x50], path="query-info"
-            ),
-            0x51: MBXMLToken(
-                "ret-info",
-                GlobalToken.NO_VALUE,
-                attributes=[0x51, 0x54],
-                path="query-info",
-            ),
-            0x52: MBXMLToken(
-                "ret-info", GlobalToken.NO_VALUE, attributes=[0x54], path="query-info"
-            ),
-            0x53: MBXMLToken("ret-info", GlobalToken.NO_VALUE, path="query-info"),
-            0x62: MBXMLToken(
-                "request-speed-hor", GlobalToken.NO_VALUE, path="query-info"
-            ),
-        },
-        MBXMLTokenType.ATTRIBUTE_TOKEN: {
-            0x22: MBXMLToken("result-code", GlobalToken.UINTVAR, last_attribute=True),
-            0x23: MBXMLToken(
-                "result-code", GlobalToken.UINTVAR, length=0, last_attribute=True
-            ),
-            0x50: MBXMLToken(
-                "ret-info-accuracy",
-                GlobalToken.STR8_ST,
-                value=0x49,
-                last_attribute=True,
-            ),
-            0x51: MBXMLToken("ret-info-accuracy", GlobalToken.STR8_ST, value=0x49),
-            0x52: MBXMLToken(
-                "ret-info-no-req-id",
-                GlobalToken.STR8_ST,
-                value=0x49,
-                last_attribute=True,
-            ),
-            0x53: MBXMLToken("ret-info-no-req-id", GlobalToken.STR8_ST, value=0x49),
-            0x54: MBXMLToken(
-                "ret-info-time", GlobalToken.STR8_ST, value=0x49, last_attribute=True
-            ),
-            0x55: MBXMLToken("ret-info-time", GlobalToken.STR8_ST, value=0x49),
-        },
-        MBXMLTokenType.CONSTANT_TOKEN: LRRP_CONSTANT_TABLE,
-    }
-}
 
 
 class MBXMLDocument:
@@ -317,44 +357,34 @@ class MBXMLDocument:
             _repr += "\n\t" + repr(part)
         return _repr
 
-    def as_xml(self) -> str:
-        root: minidom.Document = minidom.Document()
+    @staticmethod
+    def get_configuration(
+        doc_type: MBXMLDocumentIdentifier,
+    ) -> Dict[MBXMLTokenType, Dict[int, MBXMLToken]]:
+        """
+        In implementation (LRRP, ARRP, ...) this should return configuration dictionary appropriate for given doc_type
 
-        xml: minidom.Element = root.createElement(
+        structure should always look like this
+        {
+          MBXMLTokenType.ELEMENT_TOKEN: Dict[int, MBXMLToken],
+          MBXMLTokenType.CONSTANT_TOKEN: Dict[int, MBXMLToken],
+          MBXMLTokenType.ATTRIBUTE_TOKEN: Dict[int, MBXMLToken]
+        }
+        """
+        raise NotImplementedError
+
+    def as_xml(self) -> str:
+        document: minidom.Document = minidom.Document()
+
+        root: minidom.Element = document.createElement(
             self.id.value[2] or "Unknown-XML-Root-Element"
         )
-        root.appendChild(xml)
+        document.appendChild(root)
 
         for part in self.parts:
-            part_element: minidom.Element = root.createElement(part.name)
-            val: Optional[any] = part.get_value(self)
-            if val:
-                part_value: minidom.Text = root.createTextNode(str(val))
-                part_element.appendChild(part_value)
-            for attr_name, attr_value in part.get_attributes(self).items():
-                part_element.setAttribute(attr_name, attr_value)
+            part.as_xml(root=root, document=document, mbxml_document=self)
 
-            parent = xml
-
-            if isinstance(part.path, str) and len(part.path) > 1:
-                for path_part in part.path.split("."):
-                    path_part_exists: bool = False
-                    for _child in parent.childNodes:
-                        if (
-                            isinstance(_child, minidom.Element)
-                            and _child.nodeName == path_part
-                        ):
-                            parent = _child
-                            path_part_exists = True
-                            break
-                    if not path_part_exists:
-                        _elm = root.createElement(path_part)
-                        parent.appendChild(_elm)
-                        parent = _elm
-
-            parent.appendChild(part_element)
-
-        return root.toprettyxml(indent="\t")
+        return document.toprettyxml(indent="\t")
 
 
 class MBXML:
@@ -494,10 +524,21 @@ class MBXML:
         return data[idx : idx + bytes_len], idx + bytes_len
 
     @classmethod
+    def read_opaque_defined_size(
+        cls, data: bytes, idx: int, size: int
+    ) -> Tuple[bytes, int]:
+        """
+        Just read number of bytes and move the pointer
+        """
+        return data[idx : idx + size], idx + size
+
+    @classmethod
     def read_document(
         cls, doctype: MBXMLDocumentIdentifier, data: bytes, idx: int
     ) -> MBXMLDocument:
-        doctype_configuration = DOCUMENT_CONFIGURATION[doctype]
+        doctype_configuration = cls.get_implementation(doctype).get_configuration(
+            doctype
+        )
         (document_id, has_no_constants_table, _) = doctype.value
         doc = MBXMLDocument(
             document_id=doctype,
@@ -522,11 +563,47 @@ class MBXML:
             token_config.token_id = token_id
 
             if token_config.token_type == GlobalToken.OPAQUE_I:
-                (token_config.value, idx) = cls.read_opaque(data, idx)
+                if token_config.length:
+                    (token_config.value, idx) = cls.read_opaque_defined_size(
+                        data, idx, token_config.length
+                    )
+                elif token_config.length != 0 and len(token_config.attributes):
+                    newattrs = []
+                    for attr_id in token_config.attributes:
+                        attr_config = copy(
+                            doctype_configuration[MBXMLTokenType.ATTRIBUTE_TOKEN][
+                                attr_id
+                            ]
+                        )
+                        (attr_config.value, idx) = cls.read_uintvar(data, idx)
+                        newattrs.append(attr_config)
+                    token_config.attributes = newattrs
+                    (token_config.value, idx) = cls.read_opaque(data, idx)
+                elif token_config.length == 0:
+                    token_config.value = b""
+                else:
+                    (token_config.value, idx) = cls.read_opaque(data, idx)
+            elif token_config.token_type == GlobalToken.INFO_TIME:
+                (token_config.value, idx) = cls.read_opaque_defined_size(data, idx, 5)
             elif token_config.token_type == GlobalToken.NO_VALUE:
                 pass
+            elif token_config.token_type == GlobalToken.UFLOATVAR:
+                (token_config.value, idx) = cls.read_ufloatvar(data, idx)
+            elif token_config.token_type == GlobalToken.UINTVAR:
+                (token_config.value, idx) = cls.read_uintvar(data, idx)
+            elif token_config.token_type == GlobalToken.CIRCLE_2D:
+                (lat, idx) = cls.read_opaque_defined_size(data, idx, 4)
+                (long, idx) = cls.read_opaque_defined_size(data, idx, 4)
+                (radius, idx) = cls.read_ufloatvar(data, idx)
+                token_config.value = (lat, long, radius)
+            elif token_config.token_type == GlobalToken.POINT_2D:
+                (lat, idx) = cls.read_opaque_defined_size(data, idx, 4)
+                (long, idx) = cls.read_opaque_defined_size(data, idx, 4)
+                token_config.value = (lat, long)
             else:
-                raise NotImplementedError(f"not implemented for config {token_config}")
+                raise NotImplementedError(
+                    f"read_document not implemented for config {token_config}"
+                )
 
             doc.parts.append(token_config)
 
@@ -535,9 +612,30 @@ class MBXML:
     @classmethod
     def write_part(cls, part: MBXMLToken) -> bytes:
         if part.token_type == GlobalToken.OPAQUE_I:
-            return (
-                bytes([part.token_id]) + cls.write_uintvar(len(part.value)) + part.value
-            )
+            if part.length:
+                return bytes([part.token_id]) + part.value
+            else:
+                attributes: bytes = b""
+                for attr in part.attributes:
+                    if isinstance(attr, MBXMLToken):
+                        attributes += cls.write_uintvar(attr.value)
+
+                return (
+                    bytes([part.token_id])
+                    + attributes
+                    + (
+                        (cls.write_uintvar(len(part.value)) + part.value)
+                        if len(part.value)
+                        else b""
+                    )
+                )
+        elif part.token_type == GlobalToken.UINTVAR:
+            return bytes([part.token_id]) + cls.write_uintvar(part.value)
+        elif part.token_type == GlobalToken.INFO_TIME:
+            return bytes([part.token_id]) + part.value
+        elif part.token_type == GlobalToken.POINT_2D:
+            (lat, lon) = part.value
+            return bytes([part.token_id]) + lat + lon
         elif part.token_type == GlobalToken.NO_VALUE:
             return bytes([part.token_id])
         elif part.token_type == GlobalToken.STR8_I:
@@ -546,16 +644,38 @@ class MBXML:
                 + cls.write_uintvar(len(part.value))
                 + part.value.encode("ascii")
             )
+        elif part.token_type == GlobalToken.UFLOATVAR:
+            return bytes([part.token_id]) + cls.write_ufloatvar(part.value, 1)
+        elif part.token_type == GlobalToken.CIRCLE_2D:
+            (lat, long, radius) = part.value
+            return bytes([part.token_id]) + lat + long + cls.write_ufloatvar(radius, 1)
 
         raise NotImplementedError(f"write_part not implemented for {part.token_type}")
 
     @classmethod
+    def get_implementation(
+        cls, doc_type: MBXMLDocumentIdentifier
+    ) -> Type[MBXMLDocument]:
+        """
+        This just proxies classes implementing different MBXML-represented protocols
+        """
+        prefix: str = doc_type.name[0:4]
+        if prefix == "LRRP":
+            from okdmr.dmrlib.motorola.lrrp import LRRP
+
+            return LRRP
+        elif prefix == "ARRP":
+            from okdmr.dmrlib.motorola.arrp import ARRP
+
+            return ARRP
+
+        print(f"get_implementation returns default for {doc_type}")
+        return MBXMLDocument
+
+    @classmethod
     def build_constants_table(cls, document_type: MBXMLDocumentIdentifier):
-        assert document_type in DOCUMENT_CONFIGURATION, f"Not implemented document type"
-        assert (
-            MBXMLTokenType.CONSTANT_TOKEN in DOCUMENT_CONFIGURATION[document_type]
-        ), f"Missing constants configuration"
-        values: Dict[int, MBXMLToken] = DOCUMENT_CONFIGURATION[document_type][
+        impl = cls.get_implementation(doc_type=document_type)
+        values: Dict[int, MBXMLToken] = impl.get_configuration(doc_type=document_type)[
             MBXMLTokenType.CONSTANT_TOKEN
         ]
         tbl = b""
@@ -571,6 +691,8 @@ class MBXML:
         """
         data_len = len(data)
         rtn: List[MBXMLDocument] = []
+
+        print(f"MBXML.from_bytes {data.hex()}")
 
         idx: int = 0
         while True:

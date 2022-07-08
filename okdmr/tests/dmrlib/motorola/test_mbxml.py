@@ -1,6 +1,10 @@
 from typing import List, Tuple
 
-from okdmr.dmrlib.motorola.mbxml import MBXML, MBXMLDocumentIdentifier, MBXMLDocument
+from bitarray import bitarray
+from bitarray.util import ba2int
+from okdmr.dmrlib.motorola.mbxml import MBXML, MBXMLDocumentIdentifier
+from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits
+from okdmr.tests.dmrlib.motorola.test_lrrp import lrrp_asserts
 
 
 def test_uintvar():
@@ -92,7 +96,7 @@ def test_lrrp_constant_table():
     assert built == expected
 
 
-def test_mbxml_example():
+def test_lrrp_example():
     serialized: bytes = bytes.fromhex("050822042468ACE05162")
     xml: str = """<?xml version="1.0" ?>
 <Immediate-Location-Request>
@@ -103,10 +107,22 @@ def test_mbxml_example():
 \t</query-info>
 </Immediate-Location-Request>
 """
-    docs: List[MBXMLDocument] = MBXML.from_bytes(serialized)
-    assert len(docs) == 1
+    lrrp_asserts(
+        msg=serialized,
+        xml=xml,
+        docid=MBXMLDocumentIdentifier.LRRP_ImmediateLocationRequest_NCDT,
+    )
 
-    doc = docs[0]
-    assert doc.id == MBXMLDocumentIdentifier.LRRP_ImmediateLocationRequest_NCDT
-    assert MBXML.as_bytes(doc) == serialized
-    assert doc.as_xml() == xml
+
+def test_infotime():
+    as_bytes: bytes = bytes.fromhex("1F4DBC7780")
+    as_string: str = "20030630073000"
+    bits: bitarray = bytes_to_bits(as_bytes)
+    assert as_string == (
+        f"{ba2int(bits[0:-26]):4}"
+        f"{ba2int(bits[-26:-22]):02}"
+        f"{ba2int(bits[-22:-17]):02}"
+        f"{ba2int(bits[-17:-12]):02}"
+        f"{ba2int(bits[-12:-6]):02}"
+        f"{ba2int(bits[-6:]):02}"
+    )

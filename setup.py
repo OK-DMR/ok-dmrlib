@@ -32,6 +32,9 @@ setup(
         "okdmr.dmrlib.etsi.layer3",
         "okdmr.dmrlib.etsi.layer3.elements",
         "okdmr.dmrlib.etsi.layer3.pdu",
+        "okdmr.dmrlib.motorola",
+        "okdmr.dmrlib.hytera",
+        "okdmr.dmrlib.hytera.pdu",
     ],
     zip_safe=True,
     entry_points={
@@ -42,7 +45,7 @@ setup(
     keywords="dmr etsi ham mmdvm homebrew radio hytera motorola",
     python_requires="~=3.8",
     install_requires=[
-        "dmr-kaitai>=0.7",
+        "dmr-kaitai>=0.9",
         "bitarray>=2.4.0",
         "numpy>=1.21.4",
         "scapy>=2.4.5",
