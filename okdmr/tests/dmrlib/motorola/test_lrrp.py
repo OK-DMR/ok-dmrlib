@@ -12,7 +12,11 @@ def lrrp_asserts(msg: bytes, xml: str, docid: MBXMLDocumentIdentifier) -> None:
     doc: MBXMLDocument = docs[0]
     assert doc.id == docid
     assert MBXML.as_bytes(doc) == msg
-    assert doc.as_xml() == xml
+    if len(xml) > 1:
+        assert doc.as_xml() == xml
+    else:
+        print(repr(doc))
+        print(doc.as_xml())
 
 
 def test_example_report():
@@ -124,4 +128,14 @@ def test_example_triggered_stop_answer():
         xml=xml,
         msg=msg,
         docid=MBXMLDocumentIdentifier.LRRP_TriggeredLocationStopAnswer_NCDT,
+    )
+
+
+def test_random_samples():
+    msg: bytes = bytes.fromhex("1313232F341F99B20E87664728A1C70A38D29F561A")
+
+    lrrp_asserts(
+        xml="",
+        msg=msg,
+        docid=MBXMLDocumentIdentifier.LRRP_UnsolicitedLocationReport_NCDT,
     )

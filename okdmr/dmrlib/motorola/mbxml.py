@@ -5,6 +5,7 @@ from typing import List, Optional, Tuple, Dict, Type, Union
 from xml.dom import minidom
 
 from bitarray.util import ba2int
+
 from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits
 
 
@@ -312,11 +313,13 @@ class MBXMLToken:
         return f"[{self.name} is {self.token_type.name} ({hex(self.token_id)})]"
 
     def __repr__(self):
-        return f"[{self.token_type.name} {self.name} ({hex(self.token_id)})]" + (
-            f" [VAL: {self.value.hex() if isinstance(self.value, bytes) else self.value}]"
-            if self.value
-            else ""
-        )
+        repre: str = f"[{self.token_type.name} {self.name} ({hex(self.token_id)})]"
+        if self.value:
+            repre += f" [VAL: {self.value.hex() if isinstance(self.value, bytes) else self.value}]"
+        for attr in self.attributes:
+            if isinstance(attr, MBXMLToken):
+                repre += "\n\t" + repr(attr)
+        return repre
 
 
 class MBXMLDocument:
@@ -483,6 +486,14 @@ class MBXML:
         return (integer + (decimal / 128 ** (idx_2 - idx))), idx_2
 
     @classmethod
+    def read_uint8(cls, data: bytes, idx: int) -> Tuple[int, int]:
+        """
+        Read single byte and return as unsigned value
+        """
+        uint = int.from_bytes(data[idx : idx + 1], byteorder="big", signed=False)
+        return uint, idx + 1
+
+    @classmethod
     def write_ufloatvar(cls, value: float, precision: int) -> bytes:
         """
         write ufloatvar and return bytes representation
@@ -585,6 +596,8 @@ class MBXML:
                     (token_config.value, idx) = cls.read_opaque(data, idx)
             elif token_config.token_type == GlobalToken.INFO_TIME:
                 (token_config.value, idx) = cls.read_opaque_defined_size(data, idx, 5)
+            elif token_config.token_type == GlobalToken.UINT8:
+                (token_config.value, idx) = cls.read_uint8(data, idx)
             elif token_config.token_type == GlobalToken.NO_VALUE:
                 pass
             elif token_config.token_type == GlobalToken.UFLOATVAR:
@@ -638,6 +651,10 @@ class MBXML:
             return bytes([part.token_id]) + lat + lon
         elif part.token_type == GlobalToken.NO_VALUE:
             return bytes([part.token_id])
+        elif part.token_type == GlobalToken.UINT8:
+            return bytes([part.token_id]) + int(part.value).to_bytes(
+                length=1, byteorder="big", signed=False
+            )
         elif part.token_type == GlobalToken.STR8_I:
             return (
                 bytes([part.token_id])
