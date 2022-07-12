@@ -75,10 +75,10 @@ class LRRP(MBXMLDocument):
         0x51: MBXMLToken("circle-2d", GlobalToken.CIRCLE_2D, path="info-data.shape"),
         0x54: MBXMLToken("circle-3d", GlobalToken.CIRCLE_3D, path="info-data.shape"),
         0x55: MBXMLToken("circle-3d", GlobalToken.CIRCLE_3D, path="info-data.shape"),
-        0x56: MBXMLToken("direction-hor", GlobalToken.UINT8),
+        0x56: MBXMLToken("direction-hor", GlobalToken.UINT8, path="info-data"),
         0x34: MBXMLToken("info-time", GlobalToken.INFO_TIME, length=5, path="info-data"),
         0x35: MBXMLToken("info-time", GlobalToken.INFO_TIME, path="info-data"),
-        0x65: MBXMLToken("lev-conf", GlobalToken.UINT8),
+        0x65: MBXMLToken("lev-conf", GlobalToken.UINT8, path="info-data"),
         0x66: MBXMLToken("point-2d", GlobalToken.POINT_2D, path="info-data.shape"),
         0x69: MBXMLToken("point-3d", GlobalToken.POINT_3D, path="info-data.shape"),
         0x6A: MBXMLToken("point-3d", GlobalToken.POINT_3D, path="info-data.shape"),
@@ -87,7 +87,8 @@ class LRRP(MBXMLDocument):
         0x38: MBXMLToken("result", GlobalToken.OPAQUE_I, length=0, attributes=[0x23]),
         0x39: MBXMLToken("result", GlobalToken.OPAQUE_I, attributes=[0x22], path="operation-error"),
         0x6C: MBXMLToken("speed-hor", GlobalToken.UFLOATVAR, path="info-data"),
-        0x70: MBXMLToken("speed-vrt", GlobalToken.SFLOATVAR, path="info-data")
+        0x70: MBXMLToken("speed-vrt", GlobalToken.SFLOATVAR, path="info-data"),
+        0x6B: MBXMLToken("unknown-uint8", GlobalToken.UINT8)
         # fmt:on
     }
 

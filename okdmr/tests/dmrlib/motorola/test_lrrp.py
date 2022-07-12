@@ -3,11 +3,13 @@ from typing import List
 from okdmr.dmrlib.motorola.mbxml import MBXML, MBXMLDocument, MBXMLDocumentIdentifier
 
 
-def lrrp_asserts(msg: bytes, xml: str, docid: MBXMLDocumentIdentifier) -> None:
+def lrrp_asserts(
+    msg: bytes, xml: str, docid: MBXMLDocumentIdentifier, debug: bool = False
+) -> None:
     assert msg[1] == (
         len(msg) - 2
     ), f"single message document length should be {len(msg)-2} got {msg[1]}"
-    docs: List[MBXMLDocument] = MBXML.from_bytes(msg)
+    docs: List[MBXMLDocument] = MBXML.from_bytes(data=msg, debug=debug)
     assert len(docs) == 1
     doc: MBXMLDocument = docs[0]
     assert doc.id == docid
@@ -15,7 +17,9 @@ def lrrp_asserts(msg: bytes, xml: str, docid: MBXMLDocumentIdentifier) -> None:
     if len(xml) > 1:
         assert doc.as_xml() == xml
     else:
+        print()
         print(repr(doc))
+        print()
         print(doc.as_xml())
 
 
@@ -132,10 +136,15 @@ def test_example_triggered_stop_answer():
 
 
 def test_random_samples():
-    msg: bytes = bytes.fromhex("1313232F341F99B20E87664728A1C70A38D29F561A")
-
-    lrrp_asserts(
-        xml="",
-        msg=msg,
-        docid=MBXMLDocumentIdentifier.LRRP_UnsolicitedLocationReport_NCDT,
-    )
+    samples: List[str] = [
+        "1315232F341F4AD07B2E66474326660A4D56E46B0B5620",
+        "1313232F341F99B20E87664728A1C70A38D29F561A",
+    ]
+    for sample in samples:
+        msg: bytes = bytes.fromhex(sample)
+        lrrp_asserts(
+            xml="",
+            msg=msg,
+            debug=True,
+            docid=MBXMLDocumentIdentifier.LRRP_UnsolicitedLocationReport_NCDT,
+        )

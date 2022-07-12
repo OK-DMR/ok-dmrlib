@@ -395,8 +395,9 @@ class MBXML:
     Utility class to serialize (as_bytes) and de-serialize (from_bytes) MBXML documents
     """
 
-    UINTVAR_MAX = 4294967295
-    SINTVAR_MAX = 2147483647
+    UINTVAR_MAX: int = 4294967295
+    SINTVAR_MAX: int = 2147483647
+    DEBUG: bool = False
 
     @classmethod
     def read_uintvar(cls, data: bytes, idx: int) -> Tuple[int, int]:
@@ -556,6 +557,8 @@ class MBXML:
             elements_config=doctype_configuration[MBXMLTokenType.ELEMENT_TOKEN],
             attributes_config=doctype_configuration[MBXMLTokenType.ATTRIBUTE_TOKEN],
         )
+        if cls.DEBUG:
+            print(repr(doc))
 
         if not has_no_constants_table:
             # fill in constants, if indicated
@@ -566,12 +569,21 @@ class MBXML:
                 doctype_configuration[MBXMLTokenType.CONSTANT_TOKEN]
             )
 
+        _lastidx = 0
         while idx != len(data):
+            _lastidx = copy(idx)
             (token_id, idx) = cls.read_uintvar(data, idx)
+            if cls.DEBUG:
+                print(
+                    f"token {token_id} in hex {hex(token_id)} data[{_lastidx}:{idx}]={data[_lastidx:idx].hex()}"
+                )
             token_config: MBXMLToken = copy(
                 doctype_configuration[MBXMLTokenType.ELEMENT_TOKEN][token_id]
             )
             token_config.token_id = token_id
+            if cls.DEBUG:
+                print(f"read_document token {token_config}")
+                # print(repr(doc))
 
             if token_config.token_type == GlobalToken.OPAQUE_I:
                 if token_config.length:
@@ -702,14 +714,16 @@ class MBXML:
         return tbl
 
     @classmethod
-    def from_bytes(cls, data: bytes) -> List["MBXMLDocument"]:
+    def from_bytes(cls, data: bytes, debug: bool = False) -> List["MBXMLDocument"]:
         """
         Parse bytes and return all found de-serialized documents
         """
+        cls.DEBUG = debug
         data_len = len(data)
         rtn: List[MBXMLDocument] = []
 
-        print(f"MBXML.from_bytes {data.hex()}")
+        if cls.DEBUG:
+            print(f"MBXML.from_bytes {data.hex()}")
 
         idx: int = 0
         while True:
@@ -721,6 +735,7 @@ class MBXML:
             if idx == data_len:
                 break
 
+        cls.DEBUG = False
         return rtn
 
     @classmethod

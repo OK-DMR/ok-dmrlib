@@ -2,6 +2,7 @@ from typing import List, Tuple
 
 from bitarray import bitarray
 from bitarray.util import ba2int
+
 from okdmr.dmrlib.motorola.mbxml import MBXML, MBXMLDocumentIdentifier
 from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits
 from okdmr.tests.dmrlib.motorola.test_lrrp import lrrp_asserts
