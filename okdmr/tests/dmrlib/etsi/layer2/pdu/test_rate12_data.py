@@ -12,7 +12,7 @@ def test_rate12_data():
         == r12u_bits
     )
 
-    r12c: Rate12Data = Rate12Data(data=b"t~\xa3B5\xcc\xc4JwK", dbsn=1, crc9=316)
+    r12c: Rate12Data = Rate12Data(data=b"t~\xa3B5\xcc\xc4JwK", dbsn=1, crc9=69)
     r12c_bits = r12c.as_bits()
     assert r12c.crc9_ok
     assert r12c.is_confirmed()

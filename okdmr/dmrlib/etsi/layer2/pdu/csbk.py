@@ -27,10 +27,10 @@ class CSBK(BitsInterface):
 
     def __init__(
         self,
-        last_block: Union[bool, int],
-        protect_flag: Union[bool, int],
         csbko: CsbkOpcodes,
-        manufacturers_feature_set_id: FeatureSetIDs,
+        last_block: Union[bool, int] = True,
+        protect_flag: Union[bool, int] = False,
+        manufacturers_feature_set_id: FeatureSetIDs = FeatureSetIDs.StandardizedFID,
         # default value for crc indicates, it must be recalculated on construct
         crc: int = 0,
         # bs outbound activation fields
@@ -310,7 +310,7 @@ class CSBK(BitsInterface):
                 raw_data=bits[16:80],
             )
 
-        raise ValueError(
+        raise NotImplementedError(
             f"Not-implemented CSBKO {csbko} PDU {bits_to_bytes(bits).hex()}"
         )
 

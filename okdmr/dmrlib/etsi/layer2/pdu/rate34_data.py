@@ -54,9 +54,11 @@ class Rate34Data(BitsInterface):
             crc32 if isinstance(crc32, int) else int.from_bytes(crc32, byteorder="big")
         )
 
-        self.crc9: int = self.calculate_crc9()
-        crc9 = crc9 if isinstance(crc9, int) else ba2int(crc9)
-        self.crc9_ok: bool = self.crc9 == crc9 if crc9 > 0 else False
+        self.crc9: int = crc9 if isinstance(crc9, int) else ba2int(crc9[::-1])
+        calculated_crc9 = self.calculate_crc9()
+        if self.crc9 <= 0:
+            self.crc9 = calculated_crc9
+        self.crc9_ok: bool = self.crc9 == calculated_crc9
 
     def calculate_crc9(self) -> int:
         return CRC9.calculate_from_parts(
@@ -72,6 +74,7 @@ class Rate34Data(BitsInterface):
         elif self.packet_type == Rate34DataTypes.Confirmed:
             return (
                 f"[RATE 3/4 DATA CONFIRMED] [DATA(16) {self.data.hex()}]"
+                + f" [DBSN: {self.dbsn}]"
                 + f" [CRC9: {self.crc9}]"
                 + (" [CRC9 INVALID]" if not self.crc9_ok else "")
             )
@@ -83,6 +86,7 @@ class Rate34Data(BitsInterface):
         elif self.packet_type == Rate34DataTypes.ConfirmedLastBlock:
             return (
                 f"[RATE 3/4 DATA CONFIRMED - LAST BLOCK] [DATA(12) {self.data.hex()}]"
+                + f" [DBSN: {self.dbsn}]"
                 + f" [CRC9: {self.crc9}]"
                 + (" [CRC9 INVALID]" if not self.crc9_ok else "")
                 + f" [CRC32 int({self.crc32}) hex({self.crc32.to_bytes(4, byteorder='big').hex()})]"

@@ -1,5 +1,7 @@
 from typing import Dict, Optional, List
 
+from scapy.layers.inet import IP
+
 from okdmr.dmrlib.etsi.layer2.burst import Burst
 from okdmr.dmrlib.transmission.terminal import Terminal
 from okdmr.dmrlib.transmission.transmission_observer_interface import (
@@ -7,11 +9,10 @@ from okdmr.dmrlib.transmission.transmission_observer_interface import (
     WithObservers,
 )
 from okdmr.dmrlib.utils.logging_trait import LoggingTrait
-from scapy.layers.inet import IP
 
 
 class TransmissionWatcher(LoggingTrait, WithObservers):
-    def __init__(self, observers: List[TransmissionObserverInterface] = ()):
+    def __init__(self, observers: List[TransmissionObserverInterface] = ()) -> None:
         super().__init__(observers=observers)
         self.terminals: Dict[int, Terminal] = {}
         self.last_stream_no: bytes = b""
@@ -21,7 +22,7 @@ class TransmissionWatcher(LoggingTrait, WithObservers):
         self.debug_voice_bytes = do_debug
         return self
 
-    def ensure_terminal(self, dmrid: int):
+    def ensure_terminal(self, dmrid: int) -> None:
         if dmrid not in self.terminals:
             self.terminals[dmrid] = Terminal(dmrid, self.observers)
 
@@ -47,16 +48,16 @@ class TransmissionWatcher(LoggingTrait, WithObservers):
 
     def process_burst(self, burst: Burst) -> Optional[Burst]:
         if not burst.target_radio_id:
-            print(
-                f"TransmissionWatcher.process_burst ignoring {burst.__class__.__name__} with target radio id {burst.target_radio_id}"
-            )
+            # print(
+            #     f"TransmissionWatcher.process_burst ignoring {burst.__class__.__name__} with target radio id {burst.target_radio_id}"
+            # )
             return None
         self.ensure_terminal(burst.target_radio_id)
         return self.terminals[burst.target_radio_id].process_incoming_burst(
             burst=burst, timeslot=burst.timeslot
         )
 
-    def end_all_transmissions(self):
+    def end_all_transmissions(self) -> None:
         for terminal in self.terminals.values():
             for timeslot in terminal.timeslots.values():
                 timeslot.transmission.end_transmissions()

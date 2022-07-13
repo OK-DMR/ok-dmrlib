@@ -44,15 +44,22 @@ class TransmissionObserverInterface:
 
 class WithObservers(TransmissionObserverInterface):
     def __init__(self, observers: List[TransmissionObserverInterface] = ()):
-        self.observers: List[TransmissionObserverInterface] = observers
+        self.observers: List[TransmissionObserverInterface] = list(observers)
 
     def add_observer(self, observer: TransmissionObserverInterface) -> "WithObservers":
-        self.observers.append(observer)
+        """
+        Add observer, if not already added
+        """
+        if observer not in self.observers:
+            self.observers.append(observer)
         return self
 
     def remove_observer(
         self, observer: TransmissionObserverInterface
     ) -> "WithObservers":
+        """
+        Remove observer
+        """
         self.observers.remove(observer)
         return self
 
@@ -60,6 +67,7 @@ class WithObservers(TransmissionObserverInterface):
         self, voice_header: FullLinkControl, blocks: List[BitsInterface]
     ):
         for observer in self.observers:
+            # noinspection PyBroadException
             try:
                 observer.voice_transmission_ended(
                     voice_header=voice_header, blocks=blocks
@@ -71,6 +79,7 @@ class WithObservers(TransmissionObserverInterface):
         self, transmission_header: DataHeader, blocks: List[BitsInterface]
     ):
         for observer in self.observers:
+            # noinspection PyBroadException
             try:
                 observer.data_transmission_ended(
                     transmission_header=transmission_header, blocks=blocks
@@ -80,6 +89,7 @@ class WithObservers(TransmissionObserverInterface):
 
     def transmission_started(self, transmission_type: TransmissionTypes):
         for observer in self.observers:
+            # noinspection PyBroadException
             try:
                 observer.transmission_started(transmission_type=transmission_type)
             except:

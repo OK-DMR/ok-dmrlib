@@ -1,4 +1,5 @@
 import enum
+from typing import Any
 
 
 @enum.unique
@@ -17,9 +18,8 @@ class VoiceBursts(enum.Enum):
     VoiceBurstF = 105
 
     @classmethod
-    def _missing_(cls, value: int):
+    def _missing_(cls, value: int) -> Any:
         assert (
             100 <= value <= 105
         ) or value == 1, f"Unknown VoiceBurst value, got {value}"
-
-        return VoiceBursts.Unknown
+        # no return value here, since assert checks all available values

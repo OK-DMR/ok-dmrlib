@@ -30,7 +30,9 @@ class Burst:
     """
 
     def __init__(
-        self, full_bits: bitarray, burst_type: BurstTypes = BurstTypes.Undefined
+        self,
+        full_bits: bitarray = bitarray(264),
+        burst_type: BurstTypes = BurstTypes.Undefined,
     ):
         assert (
             len(full_bits) == 264

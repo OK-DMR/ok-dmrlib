@@ -3,13 +3,19 @@ from unittest import TestCase
 from bitarray import bitarray
 
 from okdmr.dmrlib.etsi.layer2.elements.csbk_opcodes import CsbkOpcodes
+from okdmr.dmrlib.etsi.layer2.elements.data_packet_formats import DataPacketFormats
 from okdmr.dmrlib.etsi.layer2.elements.flcos import FLCOs
+from okdmr.dmrlib.etsi.layer2.elements.fragment_sequence_number import (
+    FragmentSequenceNumber,
+)
 from okdmr.dmrlib.etsi.layer2.elements.full_message_flag import FullMessageFlag
 from okdmr.dmrlib.etsi.layer2.elements.resynchronize_flag import ResynchronizeFlag
 from okdmr.dmrlib.etsi.layer2.elements.sarq import SARQ
 from okdmr.dmrlib.etsi.layer2.elements.slcos import SLCOs
 from okdmr.dmrlib.etsi.layer2.elements.supplementary_flag import SupplementaryFlag
+from okdmr.dmrlib.etsi.layer2.elements.voice_bursts import VoiceBursts
 from okdmr.dmrlib.etsi.layer2.pdu.csbk import CSBK
+from okdmr.dmrlib.etsi.layer2.pdu.data_header import DataHeader
 from okdmr.dmrlib.etsi.layer2.pdu.rate12_data import Rate12DataTypes
 from okdmr.dmrlib.etsi.layer2.pdu.rate1_data import Rate1DataTypes
 from okdmr.dmrlib.etsi.layer2.pdu.rate34_data import Rate34DataTypes
@@ -79,4 +85,15 @@ class RaisingElements(TestCase):
                 bitarray(
                     "100010010001000000000000000010001111110100100011001101111111110111110000001000001110011010001011"
                 )
+            )
+        with self.assertRaises(AssertionError):
+            FragmentSequenceNumber(0b10101)
+        with self.assertRaises(AssertionError):
+            VoiceBursts(5)
+        with self.assertRaises(NotImplementedError):
+            DataHeader(dpf=DataPacketFormats.ProprietaryDataPacket).as_bits()
+        with self.assertRaises(NotImplementedError):
+            DataHeader.from_bits(
+                bits=bitarray([0] * 4)
+                + DataPacketFormats.ProprietaryDataPacket.as_bits()
             )

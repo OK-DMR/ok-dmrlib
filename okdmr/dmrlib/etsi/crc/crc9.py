@@ -35,7 +35,7 @@ class CRC9:
     ):
         source_data: bitarray = bytes_to_bits(data, endian="big")
 
-        if crc32 is not None:
+        if crc32 is not None and crc32 != 0:
             if isinstance(crc32, int):
                 crc32 = crc32.to_bytes(4, byteorder="big")
             assert len(crc32) == 4, "32-bit CRC must be exactly 4-bytes long"

@@ -34,9 +34,10 @@ class EmbeddedSignalling(BitsInterface):
         assert (
             0b0 <= colour_code <= 0b1111
         ), f"CC (Colour Code) value must be in range 0-15, got {colour_code}"
-        assert (
-            0b00 <= link_control_start_stop <= 0b11
-        ), f"LCSS value must be in range 0-3, got {link_control_start_stop}"
+        if isinstance(link_control_start_stop, int):
+            assert (
+                0b00 <= link_control_start_stop <= 0b11
+            ), f"LCSS value must be in range 0-3, got {link_control_start_stop}"
         assert (
             0b0 <= preemption_and_power_control_indicator <= 0b1
         ), f"PI must be in range 0-1, got {preemption_and_power_control_indicator}"

@@ -1,5 +1,4 @@
 import secrets
-import traceback
 from typing import List, Optional, Union
 
 from okdmr.dmrlib.etsi.fec.bptc_196_96 import BPTC19696
@@ -16,14 +15,16 @@ from okdmr.dmrlib.etsi.layer2.pdu.rate1_data import Rate1Data, Rate1DataTypes
 from okdmr.dmrlib.etsi.layer2.pdu.rate34_data import Rate34Data, Rate34DataTypes
 from okdmr.dmrlib.transmission.transmission_observer_interface import (
     TransmissionObserverInterface,
+    WithObservers,
 )
 from okdmr.dmrlib.transmission.transmission_types import TransmissionTypes
 from okdmr.dmrlib.utils.bits_interface import BitsInterface
 from okdmr.dmrlib.utils.logging_trait import LoggingTrait
 
 
-class Transmission(LoggingTrait):
-    def __init__(self, observer: TransmissionObserverInterface = None):
+class Transmission(WithObservers, LoggingTrait):
+    def __init__(self, observer: TransmissionObserverInterface = ()):
+        super().__init__(observers=[observer])
         self.type = TransmissionTypes.Idle
         self.blocks_expected: int = 0
         self.blocks_received: int = 0
@@ -34,12 +35,6 @@ class Transmission(LoggingTrait):
         self.blocks: List[BitsInterface] = list()
         self.header: Optional[DataHeader] = None
         self.stream_no: bytes = secrets.token_bytes(4)
-        self.observers: List[TransmissionObserverInterface] = (
-            [] if observer is None else [observer]
-        )
-
-    def add_transmission_observer(self, observer: TransmissionObserverInterface):
-        self.observers.append(observer)
 
     def new_transmission(self, newtype: TransmissionTypes):
         if (
@@ -57,12 +52,15 @@ class Transmission(LoggingTrait):
         self.header = None
         self.stream_no = secrets.token_bytes(4)
 
+        if newtype != TransmissionTypes.Idle:
+            self.transmission_started(transmission_type=newtype)
+
     def ensure_transmission(self, transmission_type: TransmissionTypes):
         if not self.type == transmission_type:
             self.new_transmission(transmission_type)
 
     def process_voice_header(self, voice_header: FullLinkControl):
-        self.new_transmission(TransmissionTypes.VoiceTransmission)
+        self.ensure_transmission(TransmissionTypes.VoiceTransmission)
         self.header = voice_header
 
         # header + terminator
@@ -101,7 +99,7 @@ class Transmission(LoggingTrait):
                 self.blocks_expected - self.blocks_received != csbk.blocks_to_follow + 1
             ):
                 self.log_warning(
-                    f"CSBK not setting expected to {self.blocks_expected} - {self.blocks_received} != {csbk.blocks_to_follow}"
+                    f"CSBK not setting expected to {self.blocks_expected} - {self.blocks_received} != {csbk.blocks_to_follow + 1}"
                 )
 
         self.blocks_received += 1
@@ -128,12 +126,7 @@ class Transmission(LoggingTrait):
         self.log_info(f"[VOICE CALL END]")
         if isinstance(self.header, FullLinkControl):
 
-            for observer in self.observers:
-                # noinspection PyBroadException
-                try:
-                    observer.voice_transmission_ended(self.header, [])
-                except:
-                    traceback.print_exc()
+            self.voice_transmission_ended(self.header, self.blocks)
 
             if self.header.full_link_control_opcode == FLCOs.GroupVoiceChannelUser:
                 self.log_info(
@@ -161,12 +154,7 @@ class Transmission(LoggingTrait):
             f"[Packets {self.blocks_received}/{self.blocks_expected} ({len(self.blocks)})] "
         )
 
-        for observer in self.observers:
-            # noinspection PyBroadException
-            try:
-                observer.data_transmission_ended(self.header, self.blocks)
-            except:
-                traceback.print_exc()
+        self.data_transmission_ended(self.header, self.blocks)
 
         self.new_transmission(TransmissionTypes.Idle)
 

@@ -17,4 +17,5 @@ class ARRP(MBXMLDocument):
     def get_configuration(
         doc_type: MBXMLDocumentIdentifier,
     ) -> Dict[MBXMLTokenType, Dict[int, MBXMLToken]]:
-        pass
+        # TODO implement
+        return {}

@@ -14,6 +14,16 @@ from okdmr.dmrlib.etsi.layer2.elements.udt_format import UDTFormat
 from okdmr.dmrlib.etsi.layer2.pdu.data_header import DataHeader
 
 
+def test_crc():
+    orig: bitarray = bitarray(
+        "010000110100111000100011001110000110001100100011001110000011101110000100000010000001100011000001"
+    )
+    dh: DataHeader = DataHeader.from_bits(orig)
+    assert dh.crc_ok
+    auto_crc: DataHeader = DataHeader.from_bits(orig[:-16] + bitarray(16 * "0"))
+    assert dh.crc == auto_crc.crc
+
+
 def test_data_headers():
     pdus: Dict[str, Dict[str, any]] = {
         "023a2337fc2337fe820081a3": {

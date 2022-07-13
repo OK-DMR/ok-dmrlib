@@ -1,7 +1,7 @@
 from okdmr.dmrlib.etsi.layer2.pdu.rate1_data import Rate1Data, Rate1DataTypes
 
 
-def test_rate12_data():
+def test_rate1_data():
     r12u: Rate1Data = Rate1Data(
         data=b"\xe9\xdf\x9e\x0b\xff\xd3\xf0Y\xd1\x91\xd2\xf1\\\xee\x93\x81\x13]\\\xce\xff\x95\xd5\\"
     )
@@ -17,7 +17,7 @@ def test_rate12_data():
     r12c: Rate1Data = Rate1Data(
         data=b"SL\xe3\x18\x03\x8b\xf2\x85V\x9ex\x1f\n&\xe8\xcc\xf5o\xac\x97\xe2c",
         dbsn=1,
-        crc9=225,
+        crc9=106,
     )
     r12c_bits = r12c.as_bits()
     assert r12c.crc9_ok
@@ -76,7 +76,7 @@ def test_rate12_data():
     assert Rate1Data.from_bits(r12cl_bits).as_bits() == r12cl_bits
 
 
-def test_rate12_data_types():
+def test_rate1_data_types():
     assert (
         Rate1DataTypes.resolve(confirmed=True, last=True)
         == Rate1DataTypes.ConfirmedLastBlock

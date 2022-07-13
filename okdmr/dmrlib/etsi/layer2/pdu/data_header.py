@@ -8,6 +8,9 @@ from okdmr.dmrlib.etsi.layer2.elements.crc_masks import CrcMasks
 from okdmr.dmrlib.etsi.layer2.elements.csbk_opcodes import CsbkOpcodes
 from okdmr.dmrlib.etsi.layer2.elements.data_packet_formats import DataPacketFormats
 from okdmr.dmrlib.etsi.layer2.elements.defined_data_formats import DefinedDataFormats
+from okdmr.dmrlib.etsi.layer2.elements.fragment_sequence_number import (
+    FragmentSequenceNumber,
+)
 from okdmr.dmrlib.etsi.layer2.elements.full_message_flag import FullMessageFlag
 from okdmr.dmrlib.etsi.layer2.elements.resynchronize_flag import ResynchronizeFlag
 from okdmr.dmrlib.etsi.layer2.elements.sap_identifier import SAPIdentifier
@@ -26,7 +29,7 @@ class DataHeader(BitsInterface):
     def __init__(
         self,
         dpf: DataPacketFormats,
-        crc: Optional[bitarray],
+        crc: Optional[bitarray] = None,
         # some common fields
         is_group: Union[int, bool] = False,
         is_response_requested: Union[int, bool] = False,
@@ -38,7 +41,7 @@ class DataHeader(BitsInterface):
         blocks_to_follow: int = 0,
         resynchronize_flag: Optional[ResynchronizeFlag] = None,
         send_sequence_number: int = 0,
-        fragment_sequence_number: int = 0,
+        fragment_sequence_number: Union[FragmentSequenceNumber, int] = 0,
         # Confirmed Response packet Header (C_RHEAD) PDU
         response_class: int = 0,
         response_type: int = 0,
@@ -57,7 +60,7 @@ class DataHeader(BitsInterface):
         supplementary_flag: Optional[SupplementaryFlag] = None,
     ):
         self.data_packet_format: DataPacketFormats = dpf
-        self.crc: bitarray = crc or bitarray()
+        self.crc: bitarray = crc or bitarray([0] * 16)
         self.is_group: bool = is_group in (True, 1)
         self.is_response_requested: bool = is_response_requested in (True, 1)
         self.pad_octet_count: int = pad_octet_count
@@ -68,7 +71,11 @@ class DataHeader(BitsInterface):
         self.blocks_to_follow: int = blocks_to_follow
         self.resynchronize_flag: Optional[ResynchronizeFlag] = resynchronize_flag
         self.send_sequence_number: int = send_sequence_number
-        self.fragment_sequence_number: int = fragment_sequence_number
+        self.fragment_sequence_number: FragmentSequenceNumber = (
+            FragmentSequenceNumber(fragment_sequence_number)
+            if isinstance(fragment_sequence_number, int)
+            else fragment_sequence_number
+        )
         # Confirmed Response packet Header (C_RHEAD) PDU
         self.response_class: int = response_class
         self.response_type: int = response_type
@@ -86,7 +93,7 @@ class DataHeader(BitsInterface):
         self.udt_opcode: Optional[CsbkOpcodes] = udt_opcode
         self.supplementary_flag: Optional[SupplementaryFlag] = supplementary_flag
 
-        if len(self.crc) < 16 or ba2int(self.crc) <= 0:
+        if len(self.crc) != 16 or ba2int(self.crc) <= 0:
             self.crc_ok: bool = True
             self.crc = int2ba(
                 CRC16.calculate(self.as_bits()[:-16].tobytes(), CrcMasks.DataHeader),
@@ -117,7 +124,7 @@ class DataHeader(BitsInterface):
                 + f"[PAD OCTETS: {self.pad_octet_count}] "
                 + f"[SOURCE: {self.llid_source}] [DESTINATION: {self.llid_destination}] [{self.full_message_flag}] "
                 + f"[BTF: {self.blocks_to_follow}] [{self.resynchronize_flag}] [N(S): {self.send_sequence_number}] "
-                + f"[FSN: {self.fragment_sequence_number}]"
+                + f"{repr(self.fragment_sequence_number)}"
             )
         elif self.data_packet_format == DataPacketFormats.DataPacketUnconfirmed:
             descr += (
@@ -128,7 +135,7 @@ class DataHeader(BitsInterface):
                 + f"[PAD OCTETS: {self.pad_octet_count}] "
                 + f"[SOURCE: {self.llid_source}] [DESTINATION: {self.llid_destination}] [{self.full_message_flag}] "
                 + f"[BTF: {self.blocks_to_follow}] "
-                + f"[FSN: {self.fragment_sequence_number}]"
+                + f"{repr(self.fragment_sequence_number)}"
             )
         elif self.data_packet_format == DataPacketFormats.ResponsePacket:
             descr += (
@@ -175,7 +182,7 @@ class DataHeader(BitsInterface):
                 + int2ba(self.blocks_to_follow, length=7)
                 + bitarray([self.resynchronize_flag.value])
                 + int2ba(self.send_sequence_number, length=3)
-                + int2ba(self.fragment_sequence_number, length=4)
+                + self.fragment_sequence_number.as_bits()
                 + self.crc
             )
         elif self.data_packet_format == DataPacketFormats.DataPacketUnconfirmed:
@@ -190,7 +197,7 @@ class DataHeader(BitsInterface):
                 + bitarray([self.full_message_flag.value])
                 + int2ba(self.blocks_to_follow, length=7)
                 + bitarray([0] * 4)
-                + int2ba(self.fragment_sequence_number, length=4)
+                + self.fragment_sequence_number.as_bits()
                 + self.crc
             )
         elif self.data_packet_format == DataPacketFormats.ResponsePacket:
@@ -244,7 +251,9 @@ class DataHeader(BitsInterface):
                 + self.udt_opcode.as_bits()
                 + self.crc
             )
-        raise ValueError(f"as_bits not implemented for {self.data_packet_format}")
+        raise NotImplementedError(
+            f"as_bits not implemented for {self.data_packet_format}"
+        )
 
     @staticmethod
     def from_bits(bits: bitarray) -> "DataHeader":
@@ -326,4 +335,4 @@ class DataHeader(BitsInterface):
                 udt_opcode=CsbkOpcodes.from_bits(bits[74:80]),
             )
         else:
-            raise KeyError(f"from_bits not implemented for {dpf}")
+            raise NotImplementedError(f"from_bits not implemented for {dpf}")

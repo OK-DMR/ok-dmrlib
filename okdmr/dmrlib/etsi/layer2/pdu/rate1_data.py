@@ -65,9 +65,11 @@ class Rate1Data(BitsInterface):
             crc32 if isinstance(crc32, int) else int.from_bytes(crc32, byteorder="big")
         )
 
-        self.crc9: int = self.calculate_crc9()
-        crc9 = crc9 if isinstance(crc9, int) else ba2int(crc9)
-        self.crc9_ok: bool = self.crc9 == crc9 if crc9 > 0 else False
+        self.crc9: int = crc9 if isinstance(crc9, int) else ba2int(crc9[::-1])
+        calculated_crc9 = self.calculate_crc9()
+        if self.crc9 <= 0:
+            self.crc9 = calculated_crc9
+        self.crc9_ok: bool = self.crc9 == calculated_crc9
 
     @staticmethod
     def validate_packet_type(packet_type: Rate1DataTypes, data_length: int) -> bool:
@@ -155,7 +157,7 @@ class Rate1Data(BitsInterface):
             # R_1_DATA PDU content for confirmed data
             return (
                 int2ba(self.dbsn, length=7)
-                + int2ba(self.crc9, length=9)
+                + int2ba(self.crc9, length=9, endian="little")
                 + bytes_to_bits(self.data)
             )
         elif self.packet_type == Rate1DataTypes.UnconfirmedLastBlock:
@@ -165,7 +167,7 @@ class Rate1Data(BitsInterface):
             # R_1_LDATA PDU content for confirmed data
             return (
                 int2ba(self.dbsn, length=7)
-                + int2ba(self.calculate_crc9(), length=9)
+                + int2ba(self.crc9, length=9, endian="little")
                 + bytes_to_bits(self.data)
                 + int2ba(self.crc32, length=32)
             )
