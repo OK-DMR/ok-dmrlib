@@ -1,8 +1,6 @@
 from typing import List
 from unittest import TestCase
 
-from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
-
 from okdmr.dmrlib.etsi.layer2.burst import Burst
 from okdmr.dmrlib.etsi.layer2.elements.burst_types import BurstTypes
 from okdmr.dmrlib.etsi.layer2.elements.csbk_opcodes import CsbkOpcodes
@@ -12,7 +10,6 @@ from okdmr.dmrlib.etsi.layer2.elements.fragment_sequence_number import (
     FragmentSequenceNumber,
 )
 from okdmr.dmrlib.etsi.layer2.elements.full_message_flag import FullMessageFlag
-from okdmr.dmrlib.etsi.layer2.elements.resynchronize_flag import ResynchronizeFlag
 from okdmr.dmrlib.etsi.layer2.elements.sap_identifier import SAPIdentifier
 from okdmr.dmrlib.etsi.layer2.elements.sync_patterns import SyncPatterns
 from okdmr.dmrlib.etsi.layer2.pdu.csbk import CSBK
@@ -43,8 +40,11 @@ SMS_BURST: List[str] = [
     "4583053dbd6824040849303094fdff57d75df5dcae0a5600a7b879c1b65f2b9265",
     "45c305bfbc74261c0a78bc7094fdff57d75df5dcae7a7630e7587a61b39f229253",
     "45c20575bd60262c0a49b8f294fdff57d75df5dcae2e17a067f87ae1bfdb229270",
+    # header
     "7abc3520240678e3a3436a8b55bdff57d75df5d55ed179b2304122624d0589a7bc",
+    # rate 1/2 unconfirmed data
     "430d22106233407c00b0219a55ddff57d75df5d6f1492a46d43d20c20b8291214b",
+    # rate 1/2 unconfirmed data last fragment
     "008a00da01b401400330180015ddff57d75df5d6f104025802700ae0250010001e",
 ]
 
@@ -123,7 +123,6 @@ class TestWatcher(TestCase, TransmissionObserverInterface):
 
     def transmission_started(self, transmission_type: TransmissionTypes):
         self.started += 1
-        print(f"transmission_started {transmission_type}")
         assert transmission_type == (
             TransmissionTypes.DataTransmission
             if not self.transmission_ended
@@ -139,8 +138,6 @@ class TestWatcher(TestCase, TransmissionObserverInterface):
             transmission_header.data_packet_format
             == DataPacketFormats.DataPacketUnconfirmed
         )
-        print(f"data transmission ended, blocks {len(blocks)}")
-        print(f"header {repr(transmission_header)}")
         self.transmission_ended = True
 
     def test_watcher(self):

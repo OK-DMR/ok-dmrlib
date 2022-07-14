@@ -70,7 +70,7 @@ def test_hytera_ipsc_sync():
     for binstr in csbks:
         _bits = bytes_to_bits(bytes.fromhex(binstr))
         csbk = CSBK.from_bits(_bits)
-        assert csbk.feature_set == FeatureSetIDs.HyteraFID
+        assert csbk.feature_set == FeatureSetIDs.MotorolaLtd
         assert csbk.as_bits() == _bits
         assert len(repr(csbk))
 

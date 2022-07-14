@@ -3,6 +3,8 @@ from typing import Dict, Optional, List
 from scapy.layers.inet import IP
 
 from okdmr.dmrlib.etsi.layer2.burst import Burst
+from okdmr.dmrlib.hytera.hytera_ipsc_sync import HyteraIPSCSync
+from okdmr.dmrlib.hytera.hytera_ipsc_wakeup import HyteraIPSCWakeup
 from okdmr.dmrlib.transmission.terminal import Terminal
 from okdmr.dmrlib.transmission.transmission_observer_interface import (
     TransmissionObserverInterface,
@@ -48,9 +50,11 @@ class TransmissionWatcher(LoggingTrait, WithObservers):
 
     def process_burst(self, burst: Burst) -> Optional[Burst]:
         if not burst.target_radio_id:
-            # print(
-            #     f"TransmissionWatcher.process_burst ignoring {burst.__class__.__name__} with target radio id {burst.target_radio_id}"
-            # )
+            if type(burst) not in (HyteraIPSCSync, HyteraIPSCWakeup):
+                print(
+                    f"TransmissionWatcher.process_burst ignoring {burst.__class__.__name__} with target radio id {burst.target_radio_id}"
+                )
+                print(repr(burst))
             return None
         self.ensure_terminal(burst.target_radio_id)
         return self.terminals[burst.target_radio_id].process_incoming_burst(
