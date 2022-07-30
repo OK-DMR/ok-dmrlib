@@ -1,5 +1,4 @@
 import enum
-from typing import Any
 
 from bitarray import bitarray
 from bitarray.util import int2ba, ba2int
@@ -23,7 +22,7 @@ class SLCOs(BitsInterface, enum.Enum):
     ManufacturerSelectable = 0b1100
 
     @classmethod
-    def _missing_(cls, value: int) -> Any:
+    def _missing_(cls, value: int) -> "SLCOs":
         assert 0b0000 <= value <= 0b1111, f"SLCO value out of range, got {value}"
 
         if 0b0100 <= value <= 0b1011:

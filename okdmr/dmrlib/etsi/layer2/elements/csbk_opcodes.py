@@ -1,5 +1,4 @@
 import enum
-from typing import Any
 
 from bitarray import bitarray
 from bitarray.util import int2ba, ba2int
@@ -113,7 +112,7 @@ class CsbkOpcodes(BitsInterface, enum.Enum):
     """P_MAINT"""
 
     @classmethod
-    def _missing_(cls, value: object) -> Any:
+    def _missing_(cls, value: object) -> "CsbkOpcodes":
         raise ValueError(f"CsbkOpcodes value {value} is undefined")
 
     def as_bits(self) -> bitarray:

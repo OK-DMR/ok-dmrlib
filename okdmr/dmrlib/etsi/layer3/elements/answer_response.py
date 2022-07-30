@@ -1,5 +1,4 @@
 import enum
-from typing import Any
 
 from bitarray import bitarray
 from bitarray.util import int2ba, ba2int
@@ -17,7 +16,7 @@ class AnswerResponse(BitsInterface, enum.Enum):
     Deny = 0b00100001
 
     @classmethod
-    def _missing_(cls, value: object) -> Any:
+    def _missing_(cls, value: object) -> "AnswerResponse":
         # no fallback defined in standard
         raise ValueError(f"AnswerResponse value {value} is unknown")
 

@@ -1,5 +1,4 @@
 import enum
-from typing import Any
 
 from bitarray import bitarray
 from bitarray.util import int2ba, ba2int
@@ -30,5 +29,5 @@ class PositionError(BitsInterface, enum.Enum):
         return PositionError(ba2int(bits[0:3]))
 
     @classmethod
-    def _missing_(cls, value: int) -> Any:
+    def _missing_(cls, value: int) -> "PositionError":
         raise ValueError(f"Value for PositionError out of range, got {value}")

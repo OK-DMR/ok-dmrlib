@@ -187,7 +187,7 @@ class MBXMLToken:
         path: Optional[str] = None,
         value: Optional[any] = None,
         constant_position: Optional[int] = None,
-    ):
+    ) -> None:
         self.name: str = name
         self.token_type: GlobalToken = _type
         self.token_id: int = token_id
@@ -198,7 +198,7 @@ class MBXMLToken:
         self.value: Optional[any] = value
         self.constant_position: Optional[int] = constant_position
 
-    def get_value(self, doc: "MBXMLDocument") -> any:
+    def get_value(self, doc: "MBXMLDocument") -> Union[str, int, float, tuple]:
         if self.token_type in (GlobalToken.STR8_ST, GlobalToken.OPAQUE_T):
             (val, idx) = MBXML.read_opaque(doc.constants_table, self.value)
             return val.decode("ascii")
@@ -309,10 +309,10 @@ class MBXMLToken:
 
         parent.appendChild(part_element)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"[{self.name} is {self.token_type.name} ({hex(self.token_id)})]"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         repre: str = f"[{self.token_type.name} {self.name} ({hex(self.token_id)})]"
         if self.value:
             repre += f" [VAL: {self.value.hex() if isinstance(self.value, bytes) else self.value}]"

@@ -1,5 +1,4 @@
 import enum
-from typing import Any
 
 from bitarray import bitarray
 from bitarray.util import int2ba, ba2int
@@ -16,7 +15,7 @@ class ReasonCode(BitsInterface, enum.Enum):
     MSDoesNotSupportThisFeatureOrService = 0b00100001
 
     @classmethod
-    def _missing_(cls, value: object) -> Any:
+    def _missing_(cls, value: object) -> "ReasonCode":
         raise ValueError(f"ReasonCode value {value} is undefined")
 
     def as_bits(self) -> bitarray:

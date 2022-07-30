@@ -1,5 +1,4 @@
 import enum
-from typing import Any
 
 from bitarray import bitarray
 from bitarray.util import ba2int, int2ba
@@ -55,7 +54,7 @@ class FeatureSetIDs(BitsInterface, enum.Enum):
     ReservedForFutureMFID = 0x80
 
     @classmethod
-    def _missing_(cls, value: int) -> Any:
+    def _missing_(cls, value: int) -> "FeatureSetIDs":
         assert (
             0x00 <= value <= 0xFF
         ), f"FID (Feature Set ID) value out of range, got {value}"

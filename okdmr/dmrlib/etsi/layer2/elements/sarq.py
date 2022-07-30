@@ -1,5 +1,4 @@
 import enum
-from typing import Any
 
 
 @enum.unique
@@ -12,5 +11,5 @@ class SARQ(enum.Enum):
     Required = 1
 
     @classmethod
-    def _missing_(cls, value: object) -> Any:
+    def _missing_(cls, value: object) -> "SARQ":
         raise ValueError(f"SARQ undefined for value {value}")

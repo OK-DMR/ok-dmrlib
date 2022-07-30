@@ -1,5 +1,4 @@
 import enum
-from typing import Any
 
 
 @enum.unique
@@ -12,5 +11,5 @@ class SourceType(enum.Enum):
     MSSourced = 0b1
 
     @classmethod
-    def _missing_(cls, value: object) -> Any:
+    def _missing_(cls, value: object) -> "SourceType":
         raise ValueError(f"SourceType value {value} is undefined")

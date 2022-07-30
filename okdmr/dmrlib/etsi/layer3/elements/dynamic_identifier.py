@@ -1,5 +1,4 @@
 import enum
-from typing import Any
 
 from bitarray import bitarray
 from bitarray.util import int2ba, ba2int
@@ -19,7 +18,7 @@ class DynamicIdentifier(BitsInterface, enum.Enum):
     LeaderPreferenceHigh = 0b11
 
     @classmethod
-    def _missing_(cls, value: object) -> Any:
+    def _missing_(cls, value: object) -> "DynamicIdentifier":
         raise ValueError(f"DynamicIdentifier value {value} is undefined")
 
     def as_bits(self) -> bitarray:

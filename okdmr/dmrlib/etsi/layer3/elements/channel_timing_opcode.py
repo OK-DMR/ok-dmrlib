@@ -1,5 +1,4 @@
 import enum
-from typing import Any
 
 from bitarray import bitarray
 from bitarray.util import int2ba, ba2int
@@ -19,7 +18,7 @@ class ChannelTimingOpcode(BitsInterface, enum.Enum):
     AlignedChannelTimingPush = 0b11
 
     @classmethod
-    def _missing_(cls, value: object) -> Any:
+    def _missing_(cls, value: object) -> "ChannelTimingOpcode":
         raise ValueError(f"CTO (Channel Timing Opcode) value {value} is undefined")
 
     def as_bits(self) -> bitarray:

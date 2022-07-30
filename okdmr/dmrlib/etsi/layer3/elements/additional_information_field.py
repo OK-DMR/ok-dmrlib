@@ -1,5 +1,4 @@
 import enum
-from typing import Any
 
 
 @enum.unique
@@ -12,5 +11,5 @@ class AdditionalInformationField(enum.Enum):
     Valid = 0b1
 
     @classmethod
-    def _missing_(cls, value: object) -> Any:
+    def _missing_(cls, value: object) -> "AdditionalInformationField":
         raise ValueError(f"AdditionalInformationField value {value} is undefined")
