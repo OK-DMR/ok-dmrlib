@@ -1,5 +1,5 @@
 import traceback
-from typing import List
+from typing import List, Optional
 
 from okdmr.dmrlib.etsi.layer2.pdu.data_header import DataHeader
 from okdmr.dmrlib.etsi.layer2.pdu.full_link_control import FullLinkControl
@@ -43,13 +43,19 @@ class TransmissionObserverInterface:
 
 
 class WithObservers(TransmissionObserverInterface):
-    def __init__(self, observers: List[TransmissionObserverInterface] = ()):
-        self.observers: List[TransmissionObserverInterface] = list(observers)
+    def __init__(self, observers: Optional[List[TransmissionObserverInterface]]):
+        self.observers: List[TransmissionObserverInterface] = list()
+        for observer in observers or []:
+            self.add_observer(observer)
 
     def add_observer(self, observer: TransmissionObserverInterface) -> "WithObservers":
         """
         Add observer, if not already added
         """
+        if not isinstance(observer, TransmissionObserverInterface):
+            raise ValueError(
+                f'observer is not TransmissionObserverInterface, got "{type(observer)}" instead'
+            )
         if observer not in self.observers:
             self.observers.append(observer)
         return self

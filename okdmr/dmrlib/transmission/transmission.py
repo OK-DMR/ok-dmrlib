@@ -23,8 +23,12 @@ from okdmr.dmrlib.utils.logging_trait import LoggingTrait
 
 
 class Transmission(WithObservers, LoggingTrait):
-    def __init__(self, observer: TransmissionObserverInterface = ()):
-        super().__init__(observers=[observer])
+    def __init__(self, observer: Optional[TransmissionObserverInterface] = None):
+        super().__init__(
+            observers=[observer]
+            if isinstance(observer, TransmissionObserverInterface)
+            else []
+        )
         self.type = TransmissionTypes.Idle
         self.blocks_expected: int = 0
         self.blocks_received: int = 0
