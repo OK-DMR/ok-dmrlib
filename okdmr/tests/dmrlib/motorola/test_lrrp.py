@@ -1,5 +1,8 @@
+from copy import copy
 from typing import List
+from unittest import TestCase
 
+from okdmr.dmrlib.motorola.lrrp import LRRP
 from okdmr.dmrlib.motorola.mbxml import MBXML, MBXMLDocument, MBXMLDocumentIdentifier
 
 
@@ -8,7 +11,7 @@ def lrrp_asserts(
 ) -> None:
     assert msg[1] == (
         len(msg) - 2
-    ), f"single message document length should be {len(msg)-2} got {msg[1]}"
+    ), f"single message document length should be {len(msg) - 2} got {msg[1]}"
     docs: List[MBXMLDocument] = MBXML.from_bytes(data=msg, debug=debug)
     assert len(docs) == 1
     doc: MBXMLDocument = docs[0]
@@ -16,6 +19,12 @@ def lrrp_asserts(
     assert MBXML.as_bytes(doc) == msg
     if len(xml) > 1:
         assert doc.as_xml() == xml
+        assert len(str(doc))
+        assert len(repr(doc))
+
+        for part in doc.parts:
+            assert len(repr(part))
+            assert len(str(part))
     else:
         print()
         print(repr(doc))
@@ -49,6 +58,42 @@ def test_example_report():
         docid=MBXMLDocumentIdentifier.LRRP_ImmediateLocationReport_NCDT,
     )
 
+    # assemble document from parts
+    doc = LRRP(document_id=MBXMLDocumentIdentifier.LRRP_ImmediateLocationReport_NCDT)
+    doc.parts.append(
+        doc.get_token(
+            name="request-id",
+            value=bytes.fromhex("2468ACE0"),
+            attributes={},
+            is_request=False,
+        )
+    )
+    doc.parts.append(
+        doc.get_token(
+            name="info-time",
+            value=MBXML.write_infotime(20030630073000),
+            attributes={},
+            is_request=False,
+        )
+    )
+    doc.parts.append(
+        doc.get_token(
+            name="circle-2d",
+            value=(
+                MBXML.write_latitude(12.345345),
+                MBXML.write_longitude(24.668866),
+                # see test_mbxml.py::test_ufloatvar_example for explanation
+                0.7734375,
+            ),
+            attributes={},
+            is_request=False,
+        )
+    )
+    doc.parts.append(
+        doc.get_token("speed-hor", value=0.04688, attributes={}, is_request=False)
+    )
+    assert MBXML.as_bytes(doc) == msg_bytes
+
 
 def test_example_report_with_error():
     xml: str = """<?xml version="1.0" ?>
@@ -64,7 +109,29 @@ def test_example_report_with_error():
         xml=xml,
         msg=msg_bytes,
         docid=MBXMLDocumentIdentifier.LRRP_ImmediateLocationReport_NCDT,
+        debug=True,
     )
+
+    # assemble document from parts
+    doc = LRRP(document_id=MBXMLDocumentIdentifier.LRRP_ImmediateLocationReport_NCDT)
+    doc.parts.append(
+        doc.get_token(
+            name="request-id",
+            value=bytes.fromhex("2468ACE0"),
+            attributes={},
+            is_request=False,
+        )
+    )
+    # using 0x39 instead of "result" since only this one is "operation-error" information element
+    doc.parts.append(
+        doc.get_token(
+            name=0x39,
+            value=bytes.fromhex("515355"),
+            attributes={"result-code": 5},
+            is_request=False,
+        )
+    )
+    assert MBXML.as_bytes(doc) == msg_bytes
 
 
 def test_example_triggered_request():
@@ -82,6 +149,22 @@ def test_example_triggered_request():
         msg=msg_bytes,
         docid=MBXMLDocumentIdentifier.LRRP_TriggeredLocationRequest_NCDT,
     )
+
+    # assemble document from parts
+    doc = LRRP(document_id=MBXMLDocumentIdentifier.LRRP_TriggeredLocationRequest_NCDT)
+    doc.parts.append(
+        doc.get_token(
+            name="request-id",
+            value=bytes.fromhex("2468ACE0"),
+            attributes={},
+            is_request=True,
+        )
+    )
+    doc.parts.append(doc.get_token(name="periodic-trigger", value=None, attributes={}))
+    doc.parts.append(
+        doc.get_token(name="interval", value=60, attributes={}, is_request=True)
+    )
+    assert msg_bytes == MBXML.as_bytes(doc)
 
 
 def test_example_triggered_report():
@@ -105,6 +188,26 @@ def test_example_triggered_report():
         docid=MBXMLDocumentIdentifier.LRRP_TriggeredLocationReport_NCDT,
     )
 
+    # assemble document from parts
+    doc = LRRP(document_id=MBXMLDocumentIdentifier.LRRP_TriggeredLocationReport_NCDT)
+    doc.parts.append(
+        doc.get_token(
+            name="request-id",
+            value=bytes.fromhex("2468ACE0"),
+            attributes={},
+            is_request=False,
+        )
+    )
+    doc.parts.append(
+        doc.get_token(
+            name="point-2d",
+            value=(MBXML.write_latitude(12.345345), MBXML.write_longitude(24.668866)),
+            attributes={},
+            is_request=False,
+        )
+    )
+    assert msg == MBXML.as_bytes(doc)
+
 
 def test_example_triggered_stop_request():
     xml: str = """<?xml version="1.0" ?>
@@ -118,6 +221,15 @@ def test_example_triggered_stop_request():
         msg=msg,
         docid=MBXMLDocumentIdentifier.LRRP_TriggeredLocationStopRequest_NCDT,
     )
+
+    # assemble document from parts
+    doc = LRRP(
+        document_id=MBXMLDocumentIdentifier.LRRP_TriggeredLocationStopRequest_NCDT
+    )
+    doc.parts.append(
+        doc.get_token(name="request-id", value=bytes.fromhex("2468ACE0"), attributes={})
+    )
+    assert MBXML.as_bytes(doc) == msg
 
 
 def test_example_triggered_stop_answer():
@@ -134,6 +246,40 @@ def test_example_triggered_stop_answer():
         docid=MBXMLDocumentIdentifier.LRRP_TriggeredLocationStopAnswer_NCDT,
     )
 
+    # working manual way of assembly
+    doc = MBXMLDocument(
+        document_id=MBXMLDocumentIdentifier.LRRP_TriggeredLocationStopAnswer_NCDT
+    )
+
+    rid = copy(LRRP.COMMON_ELEMENT_TOKENS[0x22])
+    rid.value = bytes.fromhex("2468ACE0")
+    rid.token_id = 0x22
+    doc.parts.append(rid)
+
+    rc = copy(LRRP.ANSWER_AND_REPORT_MESSAGES_ELEMENT_TOKENS[0x38])
+    rc.value = b""
+    rc.token_id = 0x38
+    doc.parts.append(rc)
+
+    assert MBXML.as_bytes(doc) == msg
+
+    # assemble document from parts
+    doc = LRRP(
+        document_id=MBXMLDocumentIdentifier.LRRP_TriggeredLocationStopAnswer_NCDT
+    )
+    doc.parts.append(
+        doc.get_token(
+            name="request-id",
+            value=bytes.fromhex("2468ACE0"),
+            attributes={},
+            is_request=False,
+        )
+    )
+    doc.parts.append(
+        doc.get_token(name="result", value=b"", attributes={0x23: 0}, is_request=False)
+    )
+    assert MBXML.as_bytes(doc) == msg
+
 
 def test_random_samples():
     samples: List[str] = [
@@ -148,3 +294,17 @@ def test_random_samples():
             debug=True,
             docid=MBXMLDocumentIdentifier.LRRP_UnsolicitedLocationReport_NCDT,
         )
+
+
+class RaisingTests(TestCase):
+    def test_raising_token(self):
+        with self.assertRaises(ModuleNotFoundError):
+            LRRP(
+                document_id=MBXMLDocumentIdentifier.LRRP_ImmediateLocationReport_NCDT
+            ).get_token(name="nonexistant", value=None, attributes={})
+
+    def test_raising_attribute(self):
+        with self.assertRaises(ModuleNotFoundError):
+            LRRP(
+                document_id=MBXMLDocumentIdentifier.LRRP_ImmediateLocationReport_NCDT
+            ).get_attribute(name="nonexistant", value=None)

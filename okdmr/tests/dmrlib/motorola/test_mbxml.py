@@ -1,9 +1,10 @@
+import math
 from typing import List, Tuple
 
 from bitarray import bitarray
 from bitarray.util import ba2int
 
-from okdmr.dmrlib.motorola.mbxml import MBXML, MBXMLDocumentIdentifier
+from okdmr.dmrlib.motorola.mbxml import MBXML, MBXMLDocumentIdentifier, GlobalToken
 from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits
 from okdmr.tests.dmrlib.motorola.test_lrrp import lrrp_asserts
 
@@ -127,3 +128,30 @@ def test_infotime():
         f"{ba2int(bits[-12:-6]):02}"
         f"{ba2int(bits[-6:]):02}"
     )
+    assert MBXML.write_infotime(value=as_string) == as_bytes
+
+
+def test_lat_lon():
+    assert MBXML.write_latitude(12.345345) == b"\x11\x8e\xcd\x8d"
+    assert MBXML.write_longitude(24.668866) == b"\x11\x8a\xd4{"
+    # special case of encoding latitude equal sharp 90
+    assert MBXML.write_latitude(90.0) == b"\x7f\xff\xff\xff"
+
+
+def test_ufloatvar_example():
+    as_bytes: bytes = bytes.fromhex("0063")
+    (as_float, idx) = MBXML.read_ufloatvar(data=as_bytes, idx=0)
+    assert math.isclose(as_float, 0.77, rel_tol=2**10)
+    # basically 0.77 with 1-byte precision is [0x00 0x62]
+    # to get [0x00 0x63] we need to provide number, that will round up
+    assert MBXML.write_ufloatvar(value=0.7734375, precision=1) == as_bytes
+
+
+def test_globaltokens():
+    assert GlobalToken(0x1A) == GlobalToken.RESERVED
+    assert GlobalToken(0x1E) == GlobalToken.DOCUMENT_SPECIFIC
+    assert GlobalToken(-0xFF) == GlobalToken.UNKNOWN
+
+
+def test_docid_resolve():
+    assert MBXMLDocumentIdentifier.resolve(0x28) == None

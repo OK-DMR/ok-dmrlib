@@ -1,12 +1,15 @@
 import enum
 import math
 from copy import copy
+from datetime import datetime
 from typing import List, Optional, Tuple, Dict, Type, Union
 from xml.dom import minidom
 
 from bitarray.util import ba2int
 
 from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits
+
+MBXMLToken_Value: Type = Union[str, int, float, tuple, bytes, None]
 
 
 @enum.unique
@@ -136,24 +139,24 @@ class MBXMLDocumentIdentifier(enum.Enum):
     LRRP_LocationProtocolRequest_NCDT = (0x14, True, "Location-Protocol-Request")
     LRRP_LocationProtocolReport_NCDT = (0x15, True, "Location-Protocol-Report")
     # ARRP = Accessories Request/Response Protocol
-    ARRP_ImmediateInformationRequest = (0x16, False)
-    ARRP_ImmediateInformationRequest_NCDT = (0x17, True)
-    ARRP_ImmediateInformationReport = (0x18, False)
-    ARRP_ImmediateInformationReport_NCDT = (0x19, True)
-    ARRP_TriggeredInformationRequest = (0x1A, False)
-    ARRP_TriggeredInformationRequest_NCDT = (0x1B, True)
-    ARRP_TriggeredInformationAnswer = (0x1C, False)
-    ARRP_TriggeredInformationAnswer_NCDT = (0x1D, True)
-    ARRP_TriggeredInformationReport = (0x1E, False)
-    ARRP_TriggeredInformationReport_NCDT = (0x1F, True)
-    ARRP_TriggeredInformationStopRequest = (0x20, False)
-    ARRP_TriggeredInformationStopRequest_NCDT = (0x21, True)
-    ARRP_TriggeredInformationStopAnswer = (0x22, False)
-    ARRP_TriggeredInformationStopAnswer_NCDT = (0x23, True)
-    ARRP_UnsolicitedInformationReport = (0x24, False)
-    ARRP_UnsolicitedInformationReport_NCDT = (0x25, True)
-    ARRP_InformationProtocolRequest_NCDT = (0x26, True)
-    ARRP_InformationProtocolReport_NCDT = (0x27, True)
+    ARRP_ImmediateInformationRequest = (0x16, False, "")
+    ARRP_ImmediateInformationRequest_NCDT = (0x17, True, "")
+    ARRP_ImmediateInformationReport = (0x18, False, "")
+    ARRP_ImmediateInformationReport_NCDT = (0x19, True, "")
+    ARRP_TriggeredInformationRequest = (0x1A, False, "")
+    ARRP_TriggeredInformationRequest_NCDT = (0x1B, True, "")
+    ARRP_TriggeredInformationAnswer = (0x1C, False, "")
+    ARRP_TriggeredInformationAnswer_NCDT = (0x1D, True, "")
+    ARRP_TriggeredInformationReport = (0x1E, False, "")
+    ARRP_TriggeredInformationReport_NCDT = (0x1F, True, "")
+    ARRP_TriggeredInformationStopRequest = (0x20, False, "")
+    ARRP_TriggeredInformationStopRequest_NCDT = (0x21, True, "")
+    ARRP_TriggeredInformationStopAnswer = (0x22, False, "")
+    ARRP_TriggeredInformationStopAnswer_NCDT = (0x23, True, "")
+    ARRP_UnsolicitedInformationReport = (0x24, False, "")
+    ARRP_UnsolicitedInformationReport_NCDT = (0x25, True, "")
+    ARRP_InformationProtocolRequest_NCDT = (0x26, True, "")
+    ARRP_InformationProtocolReport_NCDT = (0x27, True, "")
 
     # fmt:on
 
@@ -185,7 +188,7 @@ class MBXMLToken:
         attributes: Optional[List[int]] = None,
         length: Optional[int] = None,
         path: Optional[str] = None,
-        value: Optional[any] = None,
+        value: Optional[MBXMLToken_Value] = None,
         constant_position: Optional[int] = None,
     ) -> None:
         self.name: str = name
@@ -195,10 +198,10 @@ class MBXMLToken:
         self.attributes: List[Union[int, MBXMLToken]] = attributes or []
         self.length: Optional[int] = length
         self.path: Optional[str] = path
-        self.value: Optional[any] = value
+        self.value: Optional[MBXMLToken_Value] = value
         self.constant_position: Optional[int] = constant_position
 
-    def get_value(self, doc: "MBXMLDocument") -> Union[str, int, float, tuple]:
+    def get_value(self, doc: "MBXMLDocument") -> MBXMLToken_Value:
         if self.token_type in (GlobalToken.STR8_ST, GlobalToken.OPAQUE_T):
             (val, idx) = MBXML.read_opaque(doc.constants_table, self.value)
             return val.decode("ascii")
@@ -282,7 +285,7 @@ class MBXMLToken:
                 )
             )
         else:
-            val: Optional[any] = self.get_value(mbxml_document)
+            val: Optional[MBXMLToken_Value] = self.get_value(mbxml_document)
             if val:
                 part_value: minidom.Text = document.createTextNode(str(val))
                 part_element.appendChild(part_value)
@@ -374,7 +377,6 @@ class MBXMLDocument:
           MBXMLTokenType.ATTRIBUTE_TOKEN: Dict[int, MBXMLToken]
         }
         """
-        raise NotImplementedError
 
     def as_xml(self) -> str:
         document: minidom.Document = minidom.Document()
@@ -388,6 +390,104 @@ class MBXMLDocument:
             part.as_xml(root=root, document=document, mbxml_document=self)
 
         return document.toprettyxml(indent="\t")
+
+    @classmethod
+    def get_known_tokens(cls, is_request: bool = True) -> List[Dict[int, MBXMLToken]]:
+        """
+        Return list of dictionaries of known tokens, reflecting on whether those are meant for request or response (is_request)
+        """
+
+    @classmethod
+    def get_known_attributes(
+        cls, is_request: bool = True
+    ) -> List[Dict[int, MBXMLToken]]:
+        """
+        Returns list of dictionaries of known attributes, reflecting on whether those are meant for request or response (is_request)
+        """
+
+    @classmethod
+    def get_token(
+        cls,
+        name: Union[str, int],
+        value: Optional[MBXMLToken_Value],
+        attributes: Dict[Union[int, str], MBXMLToken_Value],
+        is_request: bool = True,
+    ) -> MBXMLToken:
+        """
+        attributes can be specified as name=>value or id=>value
+        """
+        tokens = cls.get_known_tokens(is_request=is_request)
+        for tokenset in tokens:
+            for (tokendef_id, tokendef_setting) in tokenset.items():
+
+                valid_candidate: bool = (
+                    tokendef_setting.name == name
+                    if isinstance(name, str)
+                    else tokendef_id == name
+                )
+                attributes_to_set: List[MBXMLToken] = list()
+
+                if valid_candidate:
+                    # verify found token has required attributes
+                    for (attr_key, attr_val) in attributes.items():
+                        (attr_copy, value_changed) = cls.get_attribute(
+                            name=attr_key, value=attr_val
+                        )
+                        if attr_copy.token_id not in tokendef_setting.attributes:
+                            valid_candidate = False
+                            break
+                        elif value_changed:
+                            attributes_to_set.append(attr_copy)
+
+                if valid_candidate:
+                    t: MBXMLToken = copy(tokendef_setting)
+                    t.token_id = tokendef_id
+                    t.value = value
+
+                    for attr_inst in attributes_to_set:
+                        # remove attr id from list
+                        t.attributes.remove(attr_inst.token_id)
+                        # put attr instance
+                        t.attributes.append(attr_inst)
+
+                    return t
+
+        raise ModuleNotFoundError(
+            f"MBXMLToken (get_token) {name} with attributes {attributes.keys()} not found"
+        )
+
+    @classmethod
+    def get_attribute(
+        cls,
+        name: Union[str, int],
+        value: Optional[MBXMLToken_Value],
+        is_request: bool = True,
+    ) -> (MBXMLToken, bool):
+        """
+        Returns token (if found, otherwise raises ModuleNotFoundError) and bool indication, whether the value is different from default (implied) one
+        """
+        attrs = cls.get_known_attributes(is_request=is_request)
+        for attrset in attrs:
+            for (attrdef_id, attrdef_setting) in attrset.items():
+                if (
+                    attrdef_setting.name == name
+                    if isinstance(name, str)
+                    else attrdef_id == name
+                ):
+                    if (
+                        attrdef_setting.value is not None
+                        and attrdef_setting.value != value
+                    ):
+                        # skip attributes when they have pre-set value, and it does not match the expected value
+                        continue
+                    a: MBXMLToken = copy(attrdef_setting)
+                    a.token_id = attrdef_id
+                    a.value = value
+                    return a, (value is not None and value != attrdef_setting.value)
+
+        raise ModuleNotFoundError(
+            f"MBXMLToken (get_attribute) {name} with value {value} not found"
+        )
 
 
 class MBXML:
@@ -543,6 +643,55 @@ class MBXML:
         Just read number of bytes and move the pointer
         """
         return data[idx : idx + size], idx + size
+
+    @classmethod
+    def write_latitude(cls, value: float) -> bytes:
+        """
+        Results in 4 bytes of opaque data for Latitude token
+        """
+        if math.isclose(value, 90.0):
+            value = int(2**31 - 1)
+        else:
+            value = int((round(value, 6) * (2**31)) / 90)
+
+        return value.to_bytes(length=4, byteorder="big")
+
+    @classmethod
+    def write_longitude(cls, value: float) -> bytes:
+        """
+        Results in 4 bytes of opaque data for Longitude token
+        """
+        return int((round(value, 6) * (2**32)) / 360).to_bytes(
+            length=4, byteorder="big"
+        )
+
+    @classmethod
+    def write_infotime(cls, value: Union[datetime, str, int]) -> bytes:
+        """
+        Results in 5 bytes of opaque data for date+time information
+        """
+        # if provided int, get string value
+        if isinstance(value, int):
+            value = str(value)
+
+        if isinstance(value, str):
+            assert (
+                len(value) == 14
+            ), f"formatted infotime value shall be 14 numbers (eg. 20030630073000) got {value} of len {len(value)}"
+            value = datetime.strptime(value, "%Y%m%d%H%M%S")
+
+        assert isinstance(
+            value, datetime
+        ), f"datetime.datetime expected at this point, got {type(value)}"
+
+        return int(
+            value.year * 2**26
+            + value.month * 2**22
+            + value.day * 2**17
+            + value.hour * 2**12
+            + value.minute * 2**6
+            + value.second
+        ).to_bytes(byteorder="big", length=5)
 
     @classmethod
     def read_document(

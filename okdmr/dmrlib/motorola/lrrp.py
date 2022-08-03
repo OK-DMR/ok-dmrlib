@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List
 
 from okdmr.dmrlib.motorola.mbxml import (
     MBXMLToken,
@@ -104,6 +104,25 @@ class LRRP(MBXMLDocument):
         0x55: MBXMLToken("ret-info-time", GlobalToken.STR8_ST, value=0x49, last_attribute=False),
         # fmt:on
     }
+
+    @classmethod
+    def get_known_attributes(
+        cls, is_request: bool = True
+    ) -> List[Dict[int, MBXMLToken]]:
+        return [cls.ATTRIBUTE_TOKENS]
+
+    @classmethod
+    def get_known_tokens(cls, is_request: bool = True) -> List[Dict[int, MBXMLToken]]:
+        if is_request:
+            return [
+                cls.COMMON_ELEMENT_TOKENS,
+                cls.QUERY_REQUEST_MESSAGES_ELEMENT_TOKENS,
+            ]
+        else:
+            return [
+                cls.COMMON_ELEMENT_TOKENS,
+                cls.ANSWER_AND_REPORT_MESSAGES_ELEMENT_TOKENS,
+            ]
 
     @staticmethod
     def get_configuration(
