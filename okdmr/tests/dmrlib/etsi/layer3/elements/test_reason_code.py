@@ -1,11 +1,10 @@
-from unittest import TestCase
-
+import pytest
 from bitarray import bitarray
 
 from okdmr.dmrlib.etsi.layer3.elements.reason_code import ReasonCode
 
 
-class TestReasonCode(TestCase):
+class TestReasonCode:
     def test_bits(self):
         rc: ReasonCode = ReasonCode.MSDoesNotSupportThisFeatureOrService
         assert rc.as_bits() == bitarray("00100001")
@@ -14,5 +13,5 @@ class TestReasonCode(TestCase):
     def test_raises(self):
         for i in range(0, 1 << 8):
             if i != ReasonCode.MSDoesNotSupportThisFeatureOrService.value:
-                with self.assertRaises(ValueError):
+                with pytest.raises(ValueError):
                     ReasonCode(i)

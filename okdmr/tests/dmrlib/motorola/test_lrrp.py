@@ -1,6 +1,7 @@
 from copy import copy
 from typing import List
-from unittest import TestCase
+
+import pytest
 
 from okdmr.dmrlib.motorola.lrrp import LRRP
 from okdmr.dmrlib.motorola.mbxml import MBXML, MBXMLDocument, MBXMLDocumentIdentifier
@@ -296,15 +297,15 @@ def test_random_samples():
         )
 
 
-class RaisingTests(TestCase):
+class TestRaising:
     def test_raising_token(self):
-        with self.assertRaises(ModuleNotFoundError):
+        with pytest.raises(ModuleNotFoundError):
             LRRP(
                 document_id=MBXMLDocumentIdentifier.LRRP_ImmediateLocationReport_NCDT
             ).get_token(name="nonexistant", value=None, attributes={})
 
     def test_raising_attribute(self):
-        with self.assertRaises(ModuleNotFoundError):
+        with pytest.raises(ModuleNotFoundError):
             LRRP(
                 document_id=MBXMLDocumentIdentifier.LRRP_ImmediateLocationReport_NCDT
             ).get_attribute(name="nonexistant", value=None)

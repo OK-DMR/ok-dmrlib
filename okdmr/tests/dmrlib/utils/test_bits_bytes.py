@@ -1,6 +1,5 @@
-from unittest import TestCase
-
 import numpy
+import pytest
 from bitarray import bitarray
 from numpy import array_equal
 
@@ -21,9 +20,9 @@ def test_byteswap_odd():
     assert testdata[-1] == swap[-1]
 
 
-class BitsBytesTest(TestCase):
+class TestBitsBytes:
     def test_shape(self):
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             numpy_array_to_bitarray(numpy.array([[0, 1], [1, 0]]))
 
     @staticmethod

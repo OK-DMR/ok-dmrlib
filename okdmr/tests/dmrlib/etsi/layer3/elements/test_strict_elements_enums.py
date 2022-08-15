@@ -1,5 +1,4 @@
-from unittest import TestCase
-
+import pytest
 from bitarray import bitarray
 
 from okdmr.dmrlib.etsi.layer2.elements.csbk_opcodes import CsbkOpcodes
@@ -35,64 +34,64 @@ from okdmr.dmrlib.etsi.layer3.elements.talker_alias_data_format import (
 from okdmr.dmrlib.etsi.layer3.elements.udt_option_flag import UDTOptionFlag
 
 
-class RaisingElements(TestCase):
+class TestRaisingElements:
     def test_raising_elements(self):
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             AdditionalInformationField(0b10)
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             AnswerResponse(0b00000000)
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             ChannelTimingOpcode(0b111)
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             DynamicIdentifier(0b110)
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             ReasonCode(0b01010101)
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             SourceType(0b10)
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             CsbkOpcodes(0b001001)
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             TalkerAliasDataFormat(0b100)
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             PositionError(0b1000)
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             ActivityID(0b10000)
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             FLCOs(0b001001)
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             FullMessageFlag(0b10)
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             ResynchronizeFlag(0b10)
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             SARQ(0b10)
-        with self.assertRaises(AssertionError):
+        with pytest.raises(AssertionError):
             SLCOs(0b10000)
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             SupplementaryFlag(0b10)
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             UDTOptionFlag(0b10)
-        with self.assertRaises(AssertionError):
+        with pytest.raises(AssertionError):
             ChannelTimingOpcode.from_bits(bitarray("1"))
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             Rate12DataTypes(-1)
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             Rate34DataTypes(-1)
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             Rate1DataTypes(-1)
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             # unknown CSBKO test
             CSBK.from_bits(
                 bitarray(
                     "100010010001000000000000000010001111110100100011001101111111110111110000001000001110011010001011"
                 )
             )
-        with self.assertRaises(AssertionError):
+        with pytest.raises(AssertionError):
             FragmentSequenceNumber(0b10101)
-        with self.assertRaises(AssertionError):
+        with pytest.raises(AssertionError):
             VoiceBursts(5)
-        with self.assertRaises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             DataHeader(dpf=DataPacketFormats.ProprietaryDataPacket).as_bits()
-        with self.assertRaises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             DataHeader.from_bits(
                 bits=bitarray([0] * 4)
                 + DataPacketFormats.ProprietaryDataPacket.as_bits()

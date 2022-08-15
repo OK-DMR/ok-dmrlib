@@ -1,11 +1,11 @@
-from unittest import TestCase
+import pytest
 
 from okdmr.dmrlib.etsi.layer2.elements.access_types import AccessTypes
 
 
-class TestAccessTypes(TestCase):
+class TestAccessTypes:
     def test_raises(self):
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             AccessTypes(-1)
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             AccessTypes(0b10)

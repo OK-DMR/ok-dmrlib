@@ -1,12 +1,10 @@
-from unittest import TestCase
-
 from bitarray import bitarray
 from bitarray.util import int2ba
 
 from okdmr.dmrlib.etsi.layer3.elements.position_error import PositionError
 
 
-class TestPositionError(TestCase):
+class TestPositionError:
     def test_values(self):
         for i in range(0, 0b1000):
             PositionError(i)

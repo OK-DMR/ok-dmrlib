@@ -1,5 +1,4 @@
-from unittest import TestCase
-
+import pytest
 from bitarray import bitarray
 
 from okdmr.dmrlib.etsi.layer2.elements.feature_set_ids import FeatureSetIDs
@@ -15,13 +14,13 @@ def test_missing():
         FeatureSetIDs(i)
 
 
-class RaisingFID(TestCase):
+class TestRaisingFID:
     def test_fid_raising(self):
-        with self.assertRaises(AssertionError):
+        with pytest.raises(AssertionError):
             FeatureSetIDs(-1)
-        with self.assertRaises(AssertionError):
+        with pytest.raises(AssertionError):
             FeatureSetIDs(1 << 9)
         for val in range(1 << 8, 1 << 9):
             # tests that any values 1<<8 through 1<<9 raise Assert not ValueError
-            with self.assertRaises(AssertionError):
+            with pytest.raises(AssertionError):
                 FeatureSetIDs(val)

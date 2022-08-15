@@ -1,5 +1,5 @@
 from typing import List
-from unittest import TestCase
+import pytest
 
 from bitarray import bitarray
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
@@ -75,9 +75,9 @@ def test_hytera_ipsc_sync():
         assert len(repr(csbk))
 
 
-class CSBKOTest(TestCase):
+class TestCSBKOs:
     def test_unknown_csbkos(self):
-        with self.assertRaises(NotImplementedError):
+        with pytest.raises(NotImplementedError):
             bits = (
                 bitarray([1, 0])
                 + CsbkOpcodes.AcknowledgementResponseInboundTSCC.as_bits()
