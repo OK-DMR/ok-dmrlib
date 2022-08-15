@@ -99,8 +99,8 @@ class Transmission(WithObservers, LoggingTrait):
         if csbk.csbko == CsbkOpcodes.PreambleCSBK:
             if self.blocks_expected == 0:
                 self.blocks_expected = csbk.blocks_to_follow + 1
-            elif (
-                self.blocks_expected - self.blocks_received != csbk.blocks_to_follow + 1
+            elif self.blocks_expected - self.blocks_received != (
+                csbk.blocks_to_follow + 1
             ):
                 self.log_warning(
                     f"CSBK not setting expected to {self.blocks_expected} - {self.blocks_received} != {csbk.blocks_to_follow + 1}"

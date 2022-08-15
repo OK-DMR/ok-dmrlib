@@ -109,7 +109,7 @@ def test_example_report_with_error():
         xml=xml,
         msg=msg_bytes,
         docid=MBXMLDocumentIdentifier.LRRP_ImmediateLocationReport_NCDT,
-        debug=True,
+        debug=False,
     )
 
     # assemble document from parts

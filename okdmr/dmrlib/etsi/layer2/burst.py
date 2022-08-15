@@ -1,6 +1,9 @@
 from typing import Optional
 
 from bitarray import bitarray
+from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
+from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
+
 from okdmr.dmrlib.etsi.fec.bptc_196_96 import BPTC19696
 from okdmr.dmrlib.etsi.fec.trellis import Trellis34
 from okdmr.dmrlib.etsi.layer2.elements.burst_types import BurstTypes
@@ -20,8 +23,7 @@ from okdmr.dmrlib.hytera.hytera_constants import IPSC_KAITAI_VOICE_SLOTS
 from okdmr.dmrlib.transmission.transmission_types import TransmissionTypes
 from okdmr.dmrlib.utils.bits_bytes import bits_to_bytes, bytes_to_bits, byteswap_bytes
 from okdmr.dmrlib.utils.bits_interface import BitsInterface
-from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
-from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
+from okdmr.tests.dmrlib.tests_utils import prettyprint
 
 
 class Burst:
@@ -98,13 +100,37 @@ class Burst:
         # variables not standardized in ETSI, used for various DMR protocols processing
         self.timeslot: int = 1
         self.source_radio_id: int = 0
-        self.target_radio_id: int = 0
+        self._target_radio_id: int = 0
+        self._target_radio_id_resolve_attempt: bool = False
         self.sequence_no: int = 0
         self.stream_no: bytes = bytes(4)
         self.transmission_type: TransmissionTypes = TransmissionTypes.Idle
         self.data: Optional[BitsInterface] = (
             self.extract_data() if self.is_data_or_control else None
         )
+
+    @property
+    def target_radio_id(self) -> int:
+        if self._target_radio_id == 0 and not self._target_radio_id_resolve_attempt:
+            self._target_radio_id = self.guess_target_radio_id()
+            self._target_radio_id_resolve_attempt = True
+        return self._target_radio_id
+
+    @target_radio_id.setter
+    def target_radio_id(self, target_radio_id: int) -> None:
+        self._target_radio_id = target_radio_id
+
+    def guess_target_radio_id(self) -> int:
+        """
+        Will return 0 if target cannot be guessed from contents of burst
+        """
+        if isinstance(self.data, CSBK):
+            return int(self.data.target_address or 0)
+        elif isinstance(self.data, DataHeader):
+            print(f"header llid destination {self.data.llid_destination}")
+            return int(self.data.llid_destination or 0)
+
+        return 0
 
     def extract_data(self) -> Optional[BitsInterface]:
         if self.data_type == DataTypes.CSBK:
@@ -220,6 +246,8 @@ class Burst:
         b.set_sequence_no(mmdvm.sequence_no)
         b.source_radio_id = mmdvm.source_id
         b.target_radio_id = mmdvm.target_id
+        if b.target_radio_id == 0:
+            print(f"mmdvm radio id 0")
         b.timeslot = 1 if mmdvm.slot_no == Mmdvm2020.Timeslots.timeslot_1 else 2
         return b
 
@@ -233,12 +261,16 @@ class Burst:
             # prevent circular dependency
             from okdmr.dmrlib.hytera.hytera_ipsc_sync import HyteraIPSCSync
 
-            return HyteraIPSCSync(full_bits=fullbits)
+            return HyteraIPSCSync.from_bits(
+                bits=fullbits, burst_type=BurstTypes.Undefined
+            )
         elif ipsc.slot_type == IpSiteConnectProtocol.SlotTypes.slot_type_wakeup_request:
             # prevent circular dependency
             from okdmr.dmrlib.hytera.hytera_ipsc_wakeup import HyteraIPSCWakeup
 
-            return HyteraIPSCWakeup(full_bits=fullbits)
+            return HyteraIPSCWakeup.from_bits(
+                bits=fullbits, burst_type=BurstTypes.Undefined
+            )
 
         b = Burst(
             full_bits=fullbits,
@@ -251,6 +283,9 @@ class Burst:
         b.set_sequence_no(ipsc.sequence_number)
         b.source_radio_id = ipsc.source_radio_id
         b.target_radio_id = ipsc.destination_radio_id
+        if b.target_radio_id == 0:
+            print("ipsc radio id 0")
+            prettyprint(ipsc)
         b.timeslot = (
             1 if ipsc.timeslot_raw == IpSiteConnectProtocol.Timeslots.timeslot_1 else 2
         )

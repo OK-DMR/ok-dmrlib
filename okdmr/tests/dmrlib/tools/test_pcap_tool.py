@@ -9,6 +9,7 @@ from scapy.layers.inet import IP
 from okdmr.dmrlib.etsi.layer2.elements.flcos import FLCOs
 from okdmr.dmrlib.etsi.layer2.pdu.full_link_control import FullLinkControl
 from okdmr.dmrlib.tools.pcap_tool import PcapTool, EmbeddedExtractor
+from okdmr.dmrlib.transmission.transmission_watcher import TransmissionWatcher
 
 
 class PcapCounterHelper:
@@ -102,7 +103,14 @@ def test_pcap_tool(capsys: CaptureFixture):
         # only two packets should be now whitelisted
         assert helper.counter == 2
 
+        # extract embedded lc
         stats = PcapTool.main(["-q", "-e", tmpfile.name], return_stats=True)
+        assert len(stats) == 4
+
+        # observe transmissions
+        stats = PcapTool.main(
+            ["-q", "-o", "--debug-vocoder-bytes", tmpfile.name], return_stats=True
+        )
         assert len(stats) == 4
 
         # this will test that providing no arguments, will gather arguments from sys.argv and fail

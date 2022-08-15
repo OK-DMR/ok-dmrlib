@@ -1,5 +1,6 @@
 from typing import List
-from unittest import TestCase
+
+import pytest
 
 from okdmr.dmrlib.etsi.layer2.burst import Burst
 from okdmr.dmrlib.etsi.layer2.elements.burst_types import BurstTypes
@@ -112,11 +113,9 @@ def test_sms():
         print(repr(b))
 
 
-class TestWatcher(TestCase, TransmissionObserverInterface):
-    # pep8 ignored since the name is defined in unittest
-    # noinspection PyPep8Naming
-    def __init__(self, methodName: str):
-        super().__init__(methodName=methodName)
+class TestWatcher(TransmissionObserverInterface):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         self.transmission_ended: bool = False
         self.started: int = 0
         self.ended: int = 0
@@ -140,7 +139,7 @@ class TestWatcher(TestCase, TransmissionObserverInterface):
         )
         self.transmission_ended = True
 
-    def test_watcher(self):
+    def test_watcher(self, capsys):
         watcher: TransmissionWatcher = TransmissionWatcher()
         # check observer added
         watcher.add_observer(observer=self)
@@ -167,3 +166,11 @@ class TestWatcher(TestCase, TransmissionObserverInterface):
 
         assert self.started == 1
         assert self.ended == 1
+
+        for terminal_id, terminal in watcher.terminals.items():
+            # returns
+            assert len(terminal.debug(printout=False))
+            # prints
+            capsys.readouterr()
+            terminal.debug(printout=True)
+            assert len(capsys.readouterr().out)

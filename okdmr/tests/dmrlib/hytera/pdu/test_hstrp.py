@@ -26,3 +26,6 @@ def test_hstrp():
         # gives (2+4 + 2+1)
         assert len(msg.options) == 9
         assert msg.as_bytes() == bytemsg
+
+    # content less than necessary minimum of HSTRP PDU
+    assert HSTRP.from_bytes(b"") is None
