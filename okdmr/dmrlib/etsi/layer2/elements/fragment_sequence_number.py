@@ -23,7 +23,6 @@ class FragmentSequenceNumber(BitsInterface):
         )
 
     def __repr__(self) -> str:
-        desc: str = ""
         if self.value == FragmentSequenceNumber.SINGLE_UNCONFIRMED_FRAGMENT_VALUE:
             desc = "Unconfirmed data single fragment"
         elif self.value == FragmentSequenceNumber.SINGLE_CONFIRMED_FRAGMENT_VALUE:

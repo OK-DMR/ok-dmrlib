@@ -148,4 +148,4 @@ class HRNP(BytesInterface):
             ) & 0xFFFF
         check = (check ^ 0xFFFF) & 0xFFFF
 
-        return (check == checksum, check.to_bytes(length=2, byteorder="big"))
+        return check == checksum, check.to_bytes(length=2, byteorder="big")

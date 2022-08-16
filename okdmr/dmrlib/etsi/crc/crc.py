@@ -51,7 +51,7 @@ class AbstractBitCrcRegister(metaclass=abc.ABCMeta):
         """
         Calculates the reversed value of the crc register.
 
-        :return: the the reversed value of the crc register.
+        :return: the reversed value of the crc register.
         """
 
 

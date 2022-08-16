@@ -272,7 +272,6 @@ class VBPTC6828:
         """
         if len(bits_deinterleaved) == 36:
             # cut out crc8
-            cut_crc8 = bits_deinterleaved[28:]
             bits_deinterleaved = bits_deinterleaved[:28]
         elif len(bits_deinterleaved) == 68:
             # full deinterleaved data including crc8, hamming and parity

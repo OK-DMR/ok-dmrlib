@@ -117,7 +117,6 @@ class PcapTool:
     ) -> Optional[Burst]:
         pkt = try_parse_packet(udpdata=data)
         burst: Optional[Burst] = None
-        ip_str: str = f"{packet.src}:{packet.getlayer(UDP).sport}\t-> {packet.dst}:{packet.getlayer(UDP).dport}\t"
         if isinstance(pkt, IpSiteConnectProtocol):
             burst: Burst = Burst.from_hytera_ipsc(pkt)
         elif isinstance(pkt, Mmdvm2020):

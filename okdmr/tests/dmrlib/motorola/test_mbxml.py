@@ -155,4 +155,4 @@ def test_globaltokens():
 
 
 def test_docid_resolve():
-    assert MBXMLDocumentIdentifier.resolve(0x28) == None
+    assert MBXMLDocumentIdentifier.resolve(0x28) is None

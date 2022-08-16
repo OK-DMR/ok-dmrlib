@@ -9,7 +9,6 @@ from scapy.layers.inet import IP
 from okdmr.dmrlib.etsi.layer2.elements.flcos import FLCOs
 from okdmr.dmrlib.etsi.layer2.pdu.full_link_control import FullLinkControl
 from okdmr.dmrlib.tools.pcap_tool import PcapTool, EmbeddedExtractor
-from okdmr.dmrlib.transmission.transmission_watcher import TransmissionWatcher
 
 
 class PcapCounterHelper:

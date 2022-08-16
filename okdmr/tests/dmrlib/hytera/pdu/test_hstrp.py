@@ -1,6 +1,5 @@
 from typing import List, Tuple
 
-from okdmr.dmrlib.hytera.pdu.hdap import HDAP
 from okdmr.dmrlib.hytera.pdu.hstrp import HSTRP, HSTRPPacketType
 
 

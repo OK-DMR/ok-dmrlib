@@ -1,7 +1,6 @@
 from typing import List
 
 from okdmr.dmrlib.hytera.pdu.hdap import HDAP
-from okdmr.tests.dmrlib.tests_utils import prettyprint
 
 
 def test_hdap_frombytes():

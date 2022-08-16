@@ -1,7 +1,7 @@
 from typing import Dict
 
 from okdmr.dmrlib.hytera.pdu.hrnp import HRNP, HRNPOpcodes
-from okdmr.tests.dmrlib.tests_utils import prettyprint, assert_expected_attribute_values
+from okdmr.tests.dmrlib.tests_utils import assert_expected_attribute_values
 
 
 def test_defaults():

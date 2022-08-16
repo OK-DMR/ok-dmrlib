@@ -1,8 +1,6 @@
 import secrets
 from typing import List, Optional, Union
 
-from scapy.layers.inet import IP
-
 from okdmr.dmrlib.etsi.fec.bptc_196_96 import BPTC19696
 from okdmr.dmrlib.etsi.layer2.burst import Burst
 from okdmr.dmrlib.etsi.layer2.elements.csbk_opcodes import CsbkOpcodes
