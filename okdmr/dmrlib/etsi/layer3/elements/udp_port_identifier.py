@@ -42,4 +42,4 @@ class UDPPortIdentifier(BitsInterface, enum.Enum):
         return UDPPortIdentifier(ba2int(bits[:7]))
 
     def as_bits(self) -> bitarray:
-        return int2ba(self.value)
+        return int2ba(self.value, length=7)

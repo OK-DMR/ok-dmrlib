@@ -120,19 +120,9 @@ class PcapTool:
         ip_str: str = f"{packet.src}:{packet.getlayer(UDP).sport}\t-> {packet.dst}:{packet.getlayer(UDP).dport}\t"
         if isinstance(pkt, IpSiteConnectProtocol):
             burst: Burst = Burst.from_hytera_ipsc(pkt)
-            if not silent:
-                print(
-                    f"{ip_str} IPSC TS:{1 if pkt.timeslot_raw == IpSiteConnectProtocol.Timeslots.timeslot_1 else 2} "
-                    f"SEQ: {pkt.sequence_number} {repr(burst)}"
-                )
         elif isinstance(pkt, Mmdvm2020):
             if isinstance(pkt.command_data, Mmdvm2020.TypeDmrData):
                 burst: Burst = Burst.from_mmdvm(pkt.command_data)
-                if not silent:
-                    print(
-                        f"{ip_str} MMDVM TS:{1 if pkt.command_data.slot_no == Mmdvm2020.Timeslots.timeslot_1 else 2} "
-                        f"SEQ: {pkt.command_data.sequence_no} {repr(burst)}"
-                    )
         elif isinstance(pkt, IpSiteConnectHeartbeat):
             pass
         elif not hide_unknown and not silent:

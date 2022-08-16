@@ -242,6 +242,12 @@ class TestWatcher(TransmissionObserverInterface):
             terminal.debug(printout=True)
             assert len(capsys.readouterr().out)
 
+            for ts_no, ts in terminal.timeslots.items():
+                assert len(ts.debug(printout=False))
+                capsys.readouterr()
+                ts.debug(printout=True)
+                assert len(capsys.readouterr().out)
+
         watcher.end_all_transmissions()
 
 

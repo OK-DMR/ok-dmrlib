@@ -1,5 +1,5 @@
-import sys
-from typing import Optional, Union
+import socket
+from typing import Optional, Union, Literal
 
 from okdmr.dmrlib.utils.bytes_interface import BytesInterface
 
@@ -10,11 +10,7 @@ class RadioIP(BytesInterface):
     Hytera limits subnet to single byte (first IP octet)
     """
 
-    def __init__(
-        self,
-        radio_id: Union[int, bytes],
-        subnet: int = 0x0A,
-    ):
+    def __init__(self, radio_id: Union[int, bytes], subnet: int = 0x0A):
         self.subnet: int = subnet
         self.radio_id: int = (
             radio_id
@@ -23,19 +19,31 @@ class RadioIP(BytesInterface):
         )
 
     @staticmethod
-    def from_bytes(data: bytes, endian: str = "big") -> Optional["RadioIP"]:
-        print(f"RadioIP from_bytes {data.hex()} endian {endian}", file=sys.stderr)
+    def from_bytes(
+        data: bytes, endian: Literal["big", "little"] = "big"
+    ) -> Optional["RadioIP"]:
         assert len(data) >= 4, f"4 bytes required to construct RadioIP"
-        return RadioIP(subnet=data[3], radio_id=data[0:3])
+        if endian == "little":
+            data = data[::-1]
+        return RadioIP(subnet=data[0], radio_id=data[1:4])
 
     def as_bytes(self, endian: str = "big") -> bytes:
-        return self.radio_id.to_bytes(length=3, byteorder="big") + bytes([self.subnet])
+        raw: bytes = bytes([self.subnet]) + self.radio_id.to_bytes(
+            length=3, byteorder="big"
+        )
+        return raw if endian == "big" else raw[::-1]
 
     def as_ip(self) -> str:
-        return f"{self.subnet}."
+        return str(self)
+
+    @staticmethod
+    def from_ip(ip: str, endian: Literal["big", "little"] = "big") -> "RadioIP":
+        return RadioIP.from_bytes(data=socket.inet_aton(ip), endian=endian)
 
     def __str__(self):
-        return f"{self.subnet}.{self.radio_id}"
+        return socket.inet_ntoa(
+            bytes([self.subnet]) + self.radio_id.to_bytes(length=3, byteorder="big")
+        )
 
     def __repr__(self):
         return f"[RadioIP subnet:{self.subnet} id:{self.radio_id}]"

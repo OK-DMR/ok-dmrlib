@@ -33,4 +33,4 @@ class IPAddressIdentifier(BitsInterface, enum.Enum):
         return IPAddressIdentifier(ba2int(bits[0:4]))
 
     def as_bits(self) -> bitarray:
-        return int2ba(self.value)
+        return int2ba(self.value, length=4)

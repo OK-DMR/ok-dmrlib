@@ -81,6 +81,9 @@ class UDPIPv4CompressedHeader(BitsInterface):
             spid == UDPPortIdentifier.InExtendedHeader
             and dpid == UDPPortIdentifier.InExtendedHeader
         ):
+            assert (
+                len(bits) >= 72
+            ), f"With both UDP ports in extended header, we need at least 72 bits, got {len(bits)}"
             # both udp port numbers are in extended headers
             e1 = ba2int(bits[data_start : data_start + 16])
             e2 = ba2int(bits[data_start + 16 : data_start + 32])
@@ -89,6 +92,9 @@ class UDPIPv4CompressedHeader(BitsInterface):
             spid == UDPPortIdentifier.InExtendedHeader
             or dpid == UDPPortIdentifier.InExtendedHeader
         ):
+            assert (
+                len(bits) >= 56
+            ), f"With single UDP port in extended header, we need at least 56 bits, got {len(bits)}"
             # single udp port id is in extended header
             e1 = ba2int(bits[data_start : data_start + 16])
             data_start += 16
