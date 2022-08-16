@@ -1,13 +1,13 @@
 dmr-kaitai>=0.9
-bitarray>=2.4.0
-numpy>=1.21.4
+bitarray==2.6.0
+numpy==1.23.2
+# required for test tools and working with pcap/pcapng (eg. cli dmrlib-pcap-tool)
+scapy>=2.4.5
 # for testing
 pytest>=7.0.1
 pytest-cov>=3.0.0
-pytest-asyncio>=0.18.2
+pytest-asyncio==0.19.0
 # required only to run test_crc (comparing crc and bit-crc implementations)
 crc>=1.1.2
-# required for test tools working with pcap/pcapng
-scapy>=2.4.5
 # for repo contributors
 pre-commit

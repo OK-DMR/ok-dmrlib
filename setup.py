@@ -43,11 +43,11 @@ setup(
         ],
     },
     keywords="dmr etsi ham mmdvm homebrew radio hytera motorola",
-    python_requires="~=3.8",
+    python_requires=">=3.8",
     install_requires=[
-        "dmr-kaitai>=0.9",
-        "bitarray>=2.4.0",
-        "numpy>=1.21.4",
+        "dmr-kaitai>=1.0",
+        "bitarray>=2.6.0",
+        "numpy>=1.23.2",
         "scapy>=2.4.5",
     ],
     classifiers=[
