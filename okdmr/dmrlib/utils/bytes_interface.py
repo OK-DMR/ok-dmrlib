@@ -7,17 +7,19 @@ class BytesInterface:
     """
 
     @staticmethod
-    def from_bytes(data: bytes) -> Optional["BytesInterface"]:
+    def from_bytes(data: bytes, endian: str = "big") -> Optional["BytesInterface"]:
         """
         Deserialize from bytes, if no bytes provided or data cannot be deserialized on that interface, return None
         :param data:
+        :param endian:
         :return:
         """
         pass
 
-    def as_bytes(self) -> bytes:
+    def as_bytes(self, endian: str = "big") -> bytes:
         """
         Serialize to bytes
+        :param endian:
         :return:
         """
         pass

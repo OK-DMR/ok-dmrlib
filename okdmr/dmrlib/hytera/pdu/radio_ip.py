@@ -1,3 +1,4 @@
+import sys
 from typing import Optional, Union
 
 from okdmr.dmrlib.utils.bytes_interface import BytesInterface
@@ -22,12 +23,16 @@ class RadioIP(BytesInterface):
         )
 
     @staticmethod
-    def from_bytes(data: bytes) -> Optional["RadioIP"]:
+    def from_bytes(data: bytes, endian: str = "big") -> Optional["RadioIP"]:
+        print(f"RadioIP from_bytes {data.hex()} endian {endian}", file=sys.stderr)
         assert len(data) >= 4, f"4 bytes required to construct RadioIP"
-        return RadioIP(subnet=data[0], radio_id=data[1:4])
+        return RadioIP(subnet=data[3], radio_id=data[0:3])
 
-    def as_bytes(self) -> bytes:
-        return bytes([self.subnet]) + self.radio_id.to_bytes(length=3, byteorder="big")
+    def as_bytes(self, endian: str = "big") -> bytes:
+        return self.radio_id.to_bytes(length=3, byteorder="big") + bytes([self.subnet])
+
+    def as_ip(self) -> str:
+        return f"{self.subnet}."
 
     def __str__(self):
         return f"{self.subnet}.{self.radio_id}"

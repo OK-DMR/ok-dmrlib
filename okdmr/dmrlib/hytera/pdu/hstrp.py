@@ -2,6 +2,7 @@ import enum
 from typing import Optional, Tuple, List
 
 from bitarray import bitarray
+
 from okdmr.dmrlib.hytera.pdu.hdap import HDAP
 from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits
 from okdmr.dmrlib.utils.bytes_interface import BytesInterface
@@ -30,7 +31,7 @@ class HSTRPPacketType(BytesInterface):
         self.is_ack: bool = is_ack
 
     @staticmethod
-    def from_bytes(data: bytes) -> Optional["HSTRPPacketType"]:
+    def from_bytes(data: bytes, endian: str = "big") -> Optional["HSTRPPacketType"]:
         assert len(data) > 0, f"HSTRP Option Byte needs at least one byte"
         bits = bytes_to_bits(data[0:1])
         return HSTRPPacketType(
@@ -42,15 +43,26 @@ class HSTRPPacketType(BytesInterface):
             is_ack=bits[7] == 1,
         )
 
+    def __repr__(self) -> str:
+        return (
+            "HSTRPPacketType "
+            + ("IS_OPTION " if self.is_option else "")
+            + ("IS_REJECT " if self.is_reject else "")
+            + ("IS_CLOSE " if self.is_close else "")
+            + ("IS_CONNECT " if self.is_connect else "")
+            + ("IS_HEARTBEAT " if self.is_heartbeat else "")
+            + ("IS_ACK " if self.is_ack else "")
+        ).strip()
+
     @property
     def has_options(self):
-        return not self.is_heartbeat
+        return not self.is_heartbeat and self.is_option
 
     @property
     def has_data(self):
         return self.is_option or self.is_ack
 
-    def as_bytes(self) -> bytes:
+    def as_bytes(self, endian: str = "big") -> bytes:
         return bitarray(
             [
                 False,
@@ -95,7 +107,7 @@ class HSTRPOptions(BytesInterface):
         self.options.append((command, data))
         return self
 
-    def as_bytes(self) -> bytes:
+    def as_bytes(self, endian: str = "big") -> bytes:
         options_count: int = len(self.options)
         current_option: int = 0
         rtn = b""
@@ -109,14 +121,20 @@ class HSTRPOptions(BytesInterface):
             )
         return rtn
 
-    def __len__(self):
+    def __len__(self) -> int:
         length: int = 0
         for (command, data) in self.options:
             length += 2 + len(data)
         return length
 
+    def __repr__(self) -> str:
+        r: str = ""
+        for (command, data) in self.options:
+            r += f"[{command}: {int.from_bytes(data, byteorder='little') if command != HSTRPOptionType.RTP else ''}] "
+        return r
+
     @staticmethod
-    def from_bytes(data: bytes) -> "HSTRPOptions":
+    def from_bytes(data: bytes, endian: str = "big") -> "HSTRPOptions":
         options = HSTRPOptions()
         has_next: bool = len(data) > 0
         idx: int = 0
@@ -182,7 +200,7 @@ class HSTRP(LoggingTrait, BytesInterface):
         self.version: int = version
 
     @staticmethod
-    def from_bytes(data: bytes) -> Optional["HSTRP"]:
+    def from_bytes(data: bytes, endian: str = "big") -> Optional["HSTRP"]:
         if len(data) < 6:
             # minimum of 6 bytes in general is required for HSTRP PDU
             return None
@@ -191,9 +209,16 @@ class HSTRP(LoggingTrait, BytesInterface):
         ), f"HSTRP packet got wrong prefix, expected b'2B' got {data[0:2]}"
 
         pkt_type: HSTRPPacketType = HSTRPPacketType.from_bytes(data[3:4])
-        options = HSTRPOptions.from_bytes(data[6:]) if pkt_type.has_options else None
+        options = (
+            HSTRPOptions.from_bytes(data[6:])
+            if pkt_type.has_options
+            else HSTRPOptions()
+        )
+        # payload might be there even if the options is_option=False
         payload = (
-            HDAP.from_bytes(data[6 + len(options) :]) if pkt_type.has_data else None
+            HDAP.from_bytes(data[6 + len(options) :])
+            if pkt_type.has_data or len(data) > 6 + len(options)
+            else None
         )
 
         return HSTRP(
@@ -204,7 +229,7 @@ class HSTRP(LoggingTrait, BytesInterface):
             payload=payload,
         )
 
-    def as_bytes(self) -> bytes:
+    def as_bytes(self, endian: str = "big") -> bytes:
         return (
             HSTRP.HEADER
             + self.version.to_bytes(length=1, byteorder="big")
@@ -221,3 +246,11 @@ class HSTRP(LoggingTrait, BytesInterface):
                 else b""
             )
         )
+
+    def __repr__(self) -> str:
+        label = f"[{self.pkt_type}] [S/N: {self.sn}]"
+        if isinstance(self.options, HSTRPOptions):
+            label += "\n\tOPTIONS: " + repr(self.options)
+        if isinstance(self.payload, BytesInterface):
+            label += "\n\tPAYLOAD: " + repr(self.payload)
+        return label

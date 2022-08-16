@@ -1,5 +1,6 @@
-from typing import List
+from typing import List, Tuple
 
+from okdmr.dmrlib.hytera.pdu.hdap import HDAP
 from okdmr.dmrlib.hytera.pdu.hstrp import HSTRP, HSTRPPacketType
 
 
@@ -14,18 +15,26 @@ def test_hstrp_option_byte():
 
 
 def test_hstrp():
-    hexmessages: List[str] = [
+    # fmt:off
+    hexmessages: List[Tuple[str, int, int]] = [
         # RRS registration
-        "32420020000183040001869f04010211000300040a000064bd03",
+        ("32420020000183040001869f04010211000300040a000064bd03", 2, 9),
+        # RCP call request
+        ("324200000001024108050000d20400000e03", 0, 12),
+        # RCP call reply
+        ("32420020001383040001869f0401010241880100006803", 2, 9)
     ]
-    for hexmsg in hexmessages:
+    # fmt:on
+    for hexmsg, num_of_options, len_of_options in hexmessages:
         bytemsg = bytes.fromhex(hexmsg)
         msg = HSTRP.from_bytes(bytemsg)
-        assert len(msg.options.options) == 2
-        # 2 options, one payload 4 bytes (device id), second 1 byte (channel id)
-        # gives (2+4 + 2+1)
-        assert len(msg.options) == 9
+        assert len(repr(msg))
+        if num_of_options > 0:
+            assert len(msg.options.options) == num_of_options
+            # 2 options, one payload 4 bytes (device id), second 1 byte (channel id)
+            # gives (2+4 + 2+1)
+            assert len(msg.options) == len_of_options
         assert msg.as_bytes() == bytemsg
 
-    # content less than necessary minimum of HSTRP PDU
+    # content less than necessary-minimum of HSTRP PDU
     assert HSTRP.from_bytes(b"") is None

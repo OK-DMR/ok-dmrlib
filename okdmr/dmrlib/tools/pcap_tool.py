@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import logging
 import sys
 import traceback
 from argparse import ArgumentParser
@@ -7,14 +7,6 @@ from typing import Callable, List, Dict, Optional, Tuple
 
 from bitarray import bitarray
 from kaitaistruct import KaitaiStruct
-from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
-from okdmr.kaitai.hytera.ip_site_connect_heartbeat import IpSiteConnectHeartbeat
-from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
-from scapy.data import UDP_SERVICES
-from scapy.layers.inet import UDP, IP
-from scapy.layers.l2 import Ether
-from scapy.utils import PcapReader
-
 from okdmr.dmrlib.etsi.fec.vbptc_128_72 import VBPTC12873
 from okdmr.dmrlib.etsi.layer2.burst import Burst
 from okdmr.dmrlib.etsi.layer2.elements.lcss import LCSS
@@ -24,7 +16,14 @@ from okdmr.dmrlib.etsi.layer2.elements.preemption_power_indicator import (
 from okdmr.dmrlib.etsi.layer2.pdu.full_link_control import FullLinkControl
 from okdmr.dmrlib.transmission.transmission_watcher import TransmissionWatcher
 from okdmr.dmrlib.utils.parsing import try_parse_packet
+from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
+from okdmr.kaitai.hytera.ip_site_connect_heartbeat import IpSiteConnectHeartbeat
+from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
 from okdmr.tests.dmrlib.tests_utils import prettyprint
+from scapy.data import UDP_SERVICES
+from scapy.layers.inet import UDP, IP
+from scapy.layers.l2 import Ether
+from scapy.utils import PcapReader
 
 
 class EmbeddedExtractor:
@@ -295,7 +294,7 @@ class PcapTool:
                                 raise e
                             print("=" * 30, file=sys.stderr)
                             print(
-                                f"Callback raised exception {e} for data {udp_layer.load.hex()}",
+                                f'Callback raised exception "{e}" for data {udp_layer.load.hex()}',
                                 file=sys.stderr,
                             )
                             traceback.print_exc()
@@ -386,6 +385,14 @@ class PcapTool:
             dest="debug_vocoder_bytes",
             help="Effective only with --observe-transmissions, will print voice bytes in format ready for vocoder decode",
         )
+        parser.add_argument(
+            "--verbose",
+            "-v",
+            action="store_true",
+            default=False,
+            dest="verbose",
+            help="Verbose logging",
+        )
         return parser
 
     @staticmethod
@@ -404,6 +411,8 @@ class PcapTool:
             arguments = sys.argv[1:]
 
         args = PcapTool._arguments().parse_args(arguments)
+
+        logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO)
 
         callback = PcapTool.debug_packet
         if args.extract_embedded_lc:

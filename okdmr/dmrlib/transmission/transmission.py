@@ -1,11 +1,14 @@
 import secrets
 from typing import List, Optional, Union
 
+from scapy.layers.inet import IP
+
 from okdmr.dmrlib.etsi.fec.bptc_196_96 import BPTC19696
 from okdmr.dmrlib.etsi.layer2.burst import Burst
 from okdmr.dmrlib.etsi.layer2.elements.csbk_opcodes import CsbkOpcodes
 from okdmr.dmrlib.etsi.layer2.elements.data_types import DataTypes
 from okdmr.dmrlib.etsi.layer2.elements.flcos import FLCOs
+from okdmr.dmrlib.etsi.layer2.elements.sap_identifier import SAPIdentifier
 from okdmr.dmrlib.etsi.layer2.elements.voice_bursts import VoiceBursts
 from okdmr.dmrlib.etsi.layer2.pdu.csbk import CSBK
 from okdmr.dmrlib.etsi.layer2.pdu.data_header import DataHeader
@@ -13,11 +16,15 @@ from okdmr.dmrlib.etsi.layer2.pdu.full_link_control import FullLinkControl
 from okdmr.dmrlib.etsi.layer2.pdu.rate12_data import Rate12Data, Rate12DataTypes
 from okdmr.dmrlib.etsi.layer2.pdu.rate1_data import Rate1Data, Rate1DataTypes
 from okdmr.dmrlib.etsi.layer2.pdu.rate34_data import Rate34Data, Rate34DataTypes
+from okdmr.dmrlib.etsi.layer3.pdu.udp_ipv4_compressed_header import (
+    UDPIPv4CompressedHeader,
+)
 from okdmr.dmrlib.transmission.transmission_observer_interface import (
     TransmissionObserverInterface,
     WithObservers,
 )
 from okdmr.dmrlib.transmission.transmission_types import TransmissionTypes
+from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits
 from okdmr.dmrlib.utils.bits_interface import BitsInterface
 from okdmr.dmrlib.utils.logging_trait import LoggingTrait
 
@@ -159,6 +166,25 @@ class Transmission(WithObservers, LoggingTrait):
         )
 
         self.data_transmission_ended(self.header, self.blocks)
+
+        user_data: bytes = b""
+        for block in self.blocks:
+            if (
+                isinstance(block, Rate12Data)
+                or isinstance(block, Rate34Data)
+                or isinstance(block, Rate1Data)
+            ):
+                user_data += block.data
+
+        if (
+            self.header.sap_identifier == SAPIdentifier.UDP_IP_compression
+            and len(user_data) >= 5
+        ):
+            print(f"udp/ipv4 compressed {user_data.hex()}")
+            udp_ip = UDPIPv4CompressedHeader.from_bits(bits=bytes_to_bits(user_data))
+            print(repr(udp_ip))
+
+        print("\n" * 3)
 
         self.new_transmission(TransmissionTypes.Idle)
 

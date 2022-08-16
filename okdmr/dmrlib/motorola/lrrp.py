@@ -81,7 +81,7 @@ class LRRP(MBXMLDocument):
         0x65: MBXMLToken("lev-conf", GlobalToken.UINT8, path="info-data"),
         0x66: MBXMLToken("point-2d", GlobalToken.POINT_2D, path="info-data.shape"),
         0x69: MBXMLToken("point-3d", GlobalToken.POINT_3D, path="info-data.shape"),
-        0x6A: MBXMLToken("point-3d", GlobalToken.POINT_3D, path="info-data.shape"),
+        0x6A: MBXMLToken("point-3d", GlobalToken.POINT_3D_WITH_ACC, path="info-data.shape"),
         0x36: MBXMLToken("protocol-version", GlobalToken.UINTVAR),
         0x37: MBXMLToken("result", GlobalToken.OPAQUE_I, length=0, attributes=[0x22]),
         0x38: MBXMLToken("result", GlobalToken.OPAQUE_I, length=0, attributes=[0x23]),

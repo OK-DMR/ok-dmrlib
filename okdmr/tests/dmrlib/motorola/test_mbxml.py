@@ -36,7 +36,7 @@ def test_sintvar():
     ]
     for (sint_hex, sint_val) in sintvars:
         sint_bytes = bytes.fromhex(sint_hex)
-        (sint, idx) = MBXML.read_sintvar(sint_bytes, 0)
+        (sint, idx, sign) = MBXML.read_sintvar(sint_bytes, 0)
         assert sint == sint_val
         assert idx == len(sint_bytes)
         assert MBXML.write_sintvar(sint_val) == sint_bytes
@@ -65,6 +65,7 @@ def test_sfloatvar():
         # (float value, hex encoded sfloatvar, precision)
         (-37 - (64 / 128), "6540", 1),
         (-160 - (983 / (128**2)), "C1208757", 2),
+        (-0.078125, "400a", 1),
     ]
     for (sfloat_val, sfloat_hex, expected_precision) in sfloatvars:
         sfloat_bytes = bytes.fromhex(sfloat_hex)

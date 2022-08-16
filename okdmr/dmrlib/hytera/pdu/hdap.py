@@ -60,7 +60,7 @@ class HDAP(BytesInterface, LoggingTrait):
     def get_endianness(self) -> Literal["big", "little"]:
         return "big"
 
-    def as_bytes(self) -> bytes:
+    def as_bytes(self, endian: str = "big") -> bytes:
         payload = self.get_payload()
         checked_data = (
             self.get_opcode()
@@ -98,7 +98,7 @@ class HDAP(BytesInterface, LoggingTrait):
         )
 
     @staticmethod
-    def from_bytes(data: bytes) -> Optional["HDAP"]:
+    def from_bytes(data: bytes, endian: str = "big") -> Optional["HDAP"]:
         if len(data) < 1:
             return None
         (is_reliable, service_type) = HDAP.get_reliable_and_service(data[0])

@@ -282,7 +282,7 @@ def test_example_triggered_stop_answer():
     assert MBXML.as_bytes(doc) == msg
 
 
-def test_random_samples():
+def test_unknown_samples():
     samples: List[str] = [
         "1315232F341F4AD07B2E66474326660A4D56E46B0B5620",
         "1313232F341F99B20E87664728A1C70A38D29F561A",
@@ -294,6 +294,30 @@ def test_random_samples():
             msg=msg,
             debug=True,
             docid=MBXMLDocumentIdentifier.LRRP_UnsolicitedLocationReport_NCDT,
+        )
+
+
+def test_triggered_report_samples():
+    samples: List[str] = [
+        "0d162204c00000005148610c340ad0ecf70c126c003656a2",
+        "0d1a22047fffffff69486109950ad0ecd28338156c000856a270400a",
+        "0d162204c00000005148610be00ad0ecaa0b5b6c000956a2",
+        "0d162204c00000005148610e0c0ad0ec0d0a736c001056a2",
+        "0d1a22047fffffff6948610e0c0ad0ec0d8337606c001056a2704001",
+        "0d162204c00000005148610b2b0ad0eca109796c000256a2",
+        "0d1a22047fffffff6948610b4a0ad0ec9d833c516c000656a2704007",
+        "0d162204c00000005148610b430ad0ec78083e6c000456a2",
+        "0d162204c000000051486109b90ad0eb120a4e6c002556a2",
+        "0d1a22047fffffff69486109b90ad0eb12833f656c002556a2704009",
+        "0d162204c0000000514861096a0ad0ebdb091c6c000756a2",
+        "0d1a22047fffffff69486108d70ad0ec15833f546c000456a2704005",
+    ]
+    for sample in samples:
+        lrrp_asserts(
+            xml="",
+            msg=bytes.fromhex(sample),
+            debug=False,
+            docid=MBXMLDocumentIdentifier.LRRP_TriggeredLocationReport_NCDT,
         )
 
 

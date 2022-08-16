@@ -72,7 +72,7 @@ class HRNP(BytesInterface):
         ) = self.verify_checksum(checksum=checksum)
 
     @staticmethod
-    def from_bytes(data: bytes) -> "HRNP":
+    def from_bytes(data: bytes, endian: str = "big") -> "HRNP":
         assert (
             len(data) >= 12
         ), f"At least 12-bytes for HRNP required, got {len(data)} bytes instead"
@@ -89,7 +89,7 @@ class HRNP(BytesInterface):
             data=data[12:hrnp_packet_len],
         )
 
-    def as_bytes(self) -> bytes:
+    def as_bytes(self, endian: str = "big") -> bytes:
         return (
             self.header
             + self.version

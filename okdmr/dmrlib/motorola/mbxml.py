@@ -93,7 +93,11 @@ class GlobalToken(enum.Enum):
     """
     POINT_3D = -0x07
     """
-    Special structure [lat 4 octets | lon 4 octets | altitude ufloatvar ]
+    Special structure [lat 4 octets | lon 4 octets | altitude sfloatvar ]
+    """
+    POINT_3D_WITH_ACC = -0x08
+    """
+    Special structure [lat 4 octets | lon 4 octets | altitude sfloatvar | altitude-acc ufloatvar ]
     """
 
     @classmethod
@@ -271,6 +275,28 @@ class MBXMLToken:
 
             part_element.appendChild(lat_el)
             part_element.appendChild(long_el)
+
+        elif self.token_type == GlobalToken.POINT_3D:
+            (_lat, _long, _altitude) = self.value
+
+            lat_el: minidom.Element = document.createElement("lat")
+            long_el: minidom.Element = document.createElement("long")
+            alt_el: minidom.Element = document.createElement("altitude")
+
+            _lat = int.from_bytes(_lat, byteorder="big")
+            _long = int.from_bytes(_long, byteorder="big")
+
+            lat_el.appendChild(
+                document.createTextNode(str(round((_lat * 90) / 2**31, 6)))
+            )
+            long_el.appendChild(
+                document.createTextNode(str(round((_long * 360) / 2**32, 6)))
+            )
+            alt_el.appendChild(document.createTextNode(str(_altitude)))
+
+            part_element.appendChild(lat_el)
+            part_element.appendChild(long_el)
+            part_element.appendChild(alt_el)
 
         elif self.token_type == GlobalToken.INFO_TIME:
             bits = bytes_to_bits(self.value)
@@ -541,7 +567,7 @@ class MBXML:
         return uintvar[::-1]
 
     @classmethod
-    def read_sintvar(cls, data: bytes, idx: int) -> Tuple[int, int]:
+    def read_sintvar(cls, data: bytes, idx: int) -> Tuple[int, int, int]:
         """
         Start at data[idx] and read sintvar, return read sint value and new idx
         """
@@ -563,10 +589,10 @@ class MBXML:
             if this & 0x80 == 0:
                 break
 
-        return (sintvar * sign), idx
+        return (sintvar * sign), idx, sign
 
     @classmethod
-    def write_sintvar(cls, value: int) -> bytes:
+    def write_sintvar(cls, value: int, negative_zero: bool = False) -> bytes:
         """
         write sintvar and return bytes representation
         """
@@ -575,7 +601,11 @@ class MBXML:
             f"(or smaller than -{cls.SINTVAR_MAX}"
         )
         sintvar: bytes = cls.write_uintvar(abs(value))
-        return sintvar if value >= 0 else (bytes([sintvar[0] | 0x40]) + sintvar[1:])
+        return (
+            sintvar
+            if value >= 0 and not negative_zero
+            else (bytes([sintvar[0] | 0x40]) + sintvar[1:])
+        )
 
     @classmethod
     def read_ufloatvar(cls, data: bytes, idx: int) -> Tuple[float, int]:
@@ -611,10 +641,10 @@ class MBXML:
         """
         read sfloatvar from data[idx] on, return (float value, new idx)
         """
-        (integer, idx) = cls.read_sintvar(data, idx)
+        (integer, idx, sign) = cls.read_sintvar(data, idx)
         (decimal, idx_2) = cls.read_uintvar(data, idx)
         return (
-            math.copysign((abs(integer) + (decimal / 128 ** (idx_2 - idx))), integer),
+            math.copysign((abs(integer) + (decimal / 128 ** (idx_2 - idx))), sign),
             idx_2,
         )
 
@@ -623,7 +653,7 @@ class MBXML:
         assert precision >= 1, f"write_sfloatvar precision must be at least 1 decimal"
         int_part = int(value)
         dec_part = int(abs(value % (1 if value >= 0 else -1)) * 128**precision)
-        integer = cls.write_sintvar(int_part)
+        integer = cls.write_sintvar(int_part, negative_zero=value < 0)
         decimal = cls.write_uintvar(dec_part)
         return integer + decimal
 
@@ -763,6 +793,8 @@ class MBXML:
                 pass
             elif token_config.token_type == GlobalToken.UFLOATVAR:
                 (token_config.value, idx) = cls.read_ufloatvar(data, idx)
+            elif token_config.token_type == GlobalToken.SFLOATVAR:
+                (token_config.value, idx) = cls.read_sfloatvar(data, idx)
             elif token_config.token_type == GlobalToken.UINTVAR:
                 (token_config.value, idx) = cls.read_uintvar(data, idx)
             elif token_config.token_type == GlobalToken.CIRCLE_2D:
@@ -774,6 +806,11 @@ class MBXML:
                 (lat, idx) = cls.read_opaque_defined_size(data, idx, 4)
                 (long, idx) = cls.read_opaque_defined_size(data, idx, 4)
                 token_config.value = (lat, long)
+            elif token_config.token_type == GlobalToken.POINT_3D:
+                (lat, idx) = cls.read_opaque_defined_size(data, idx, 4)
+                (long, idx) = cls.read_opaque_defined_size(data, idx, 4)
+                (altitude, idx) = cls.read_sfloatvar(data, idx)
+                token_config.value = (lat, long, altitude)
             else:
                 raise NotImplementedError(
                     f"read_document not implemented for config {token_config}"
@@ -810,6 +847,9 @@ class MBXML:
         elif part.token_type == GlobalToken.POINT_2D:
             (lat, lon) = part.value
             return bytes([part.token_id]) + lat + lon
+        elif part.token_type == GlobalToken.POINT_3D:
+            (lat, lon, alt) = part.value
+            return bytes([part.token_id]) + lat + lon + cls.write_sfloatvar(alt, 1)
         elif part.token_type == GlobalToken.NO_VALUE:
             return bytes([part.token_id])
         elif part.token_type == GlobalToken.UINT8:
@@ -824,6 +864,8 @@ class MBXML:
             )
         elif part.token_type == GlobalToken.UFLOATVAR:
             return bytes([part.token_id]) + cls.write_ufloatvar(part.value, 1)
+        elif part.token_type == GlobalToken.SFLOATVAR:
+            return bytes([part.token_id]) + cls.write_sfloatvar(part.value, 1)
         elif part.token_type == GlobalToken.CIRCLE_2D:
             (lat, long, radius) = part.value
             return bytes([part.token_id]) + lat + long + cls.write_ufloatvar(radius, 1)

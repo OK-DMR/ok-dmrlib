@@ -1,12 +1,18 @@
 from typing import List
 
 import pytest
+from bitarray import bitarray
+from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
+from scapy.layers.inet import IP, UDP
+from scapy.packet import Raw
 
 from okdmr.dmrlib.etsi.layer2.burst import Burst
 from okdmr.dmrlib.etsi.layer2.elements.burst_types import BurstTypes
 from okdmr.dmrlib.etsi.layer2.elements.csbk_opcodes import CsbkOpcodes
 from okdmr.dmrlib.etsi.layer2.elements.data_packet_formats import DataPacketFormats
 from okdmr.dmrlib.etsi.layer2.elements.data_types import DataTypes
+from okdmr.dmrlib.etsi.layer2.elements.feature_set_ids import FeatureSetIDs
+from okdmr.dmrlib.etsi.layer2.elements.flcos import FLCOs
 from okdmr.dmrlib.etsi.layer2.elements.fragment_sequence_number import (
     FragmentSequenceNumber,
 )
@@ -15,10 +21,12 @@ from okdmr.dmrlib.etsi.layer2.elements.sap_identifier import SAPIdentifier
 from okdmr.dmrlib.etsi.layer2.elements.sync_patterns import SyncPatterns
 from okdmr.dmrlib.etsi.layer2.pdu.csbk import CSBK
 from okdmr.dmrlib.etsi.layer2.pdu.data_header import DataHeader
+from okdmr.dmrlib.etsi.layer2.pdu.full_link_control import FullLinkControl
 from okdmr.dmrlib.etsi.layer2.pdu.slot_type import SlotType
 from okdmr.dmrlib.transmission.transmission_generator import TransmissionGenerator
 from okdmr.dmrlib.transmission.transmission_observer_interface import (
     TransmissionObserverInterface,
+    WithObservers,
 )
 from okdmr.dmrlib.transmission.transmission_types import TransmissionTypes
 from okdmr.dmrlib.transmission.transmission_watcher import TransmissionWatcher
@@ -113,6 +121,65 @@ def test_sms():
         print(repr(b))
 
 
+def test_process_burst(capsys):
+    tw: TransmissionWatcher = TransmissionWatcher()
+    assert tw.process_burst(Burst()) is None
+    captured = capsys.readouterr()
+    assert len(captured.out)
+    assert not len(captured.err)
+
+
+def test_voice_bytes(capsys):
+    ipsc_in: bytes = bytes.fromhex(
+        "5a5a5a5a2003000041000501020000002222777755550000807325ef402209df1b7f9caf6575e774fd55f77d795f9f41364a68ca604641ec96a400b3402201006f000000fa372300"
+    )
+    ip_pkt: IP = IP() / UDP() / Raw(ipsc_in)
+    tw: TransmissionWatcher = TransmissionWatcher()
+    tw.set_debug_voice_bytes(do_debug=True)
+    tw.process_packet(data=ipsc_in, packet=ip_pkt)
+    captured = capsys.readouterr()
+    assert "[FROM 2308090]" in captured.out
+    assert "[TO 111]" in captured.out
+    # first 9 bytes of vocoder data
+    assert "[239, 37, 34, 64, 223, 9, 127, 27, 175]" in captured.out
+    # second 9 bytes
+    assert "[156, 117, 101, 116, 233, 65, 159, 74, 54]" in captured.out
+    # last 9 bytes of vocoder data
+    assert "[202, 104, 70, 96, 236, 65, 164, 150, 179]" in captured.out
+
+
+def test_voice_transmission(capsys):
+    voice_pkts: List[str] = [
+        # voice lc header
+        "5a5a5a5a610400004100050102000000222211115555000040b970078009fc078821205220655d5457ff5dd7d8f57854d004d03e003e012a036500f3800901006f000000fc372300",
+        # burst A
+        "5a5a5a5a6204000041000501020000002222777755550000401a4abacd1c74706c3af98a7a2957affd55f77d735f8e1e002cd30912a74156e68600c0cd1c01006f000000fc372300",
+        # burst B
+        "5a5a5a5a63040000410005010200000022228888555500004031369242a379718a59ca2ad74055daa020f030f3f889fe8a6c99d641c55111ae3b000a42a301006f000000fc372300",
+        # burst C
+        "5a5a5a5a64040000410005010200000022229999555500004003ce9167a6a153e49cf648c7997505a06060a0a0667e356eca60c823c0d0234000008267a601006f000000fc372300",
+        # burst D
+        "5a5a5a5a6504000041000501020000002222aaaa555500004007858e30e61d73a2dfce6481d4557591607042a5c60e53cea2968c11c71833e4df004430e601006f000000fc372300",
+        # burst E
+        "5a5a5a5a6604000041000501020000002222bbbb55550000401568bb16c47955c40abc8ce05e15362341b35290312a9400c829076d9b5157e290008416c401006f000000fc372300",
+        # burst F
+        "5a5a5a5a6704000041000501020000002222cccc55550000401325b026a21c13ca5ee10cc5467522c10964d1c13fde50a2ae37b024a23c33ee59000826a201006f000000fc372300",
+        # terminator with LC
+        "5a5a5a5ab00400004300050102000000222222225555000040b91f0754094c07f021505280659d5457ff5dd7dff56c01e807b03940320122037c00c0540901006f000000fc372300",
+    ]
+    tw: TransmissionWatcher = TransmissionWatcher()
+    for voice_pkt in voice_pkts:
+        tw.process_burst(
+            Burst.from_hytera_ipsc(
+                IpSiteConnectProtocol.from_bytes(bytes.fromhex(voice_pkt))
+            )
+        )
+
+    for terminal_id, terminal in tw.terminals.items():
+        for ts_num, ts in terminal.timeslots.items():
+            ts.transmission.end_voice_transmission()
+
+
 class TestWatcher(TransmissionObserverInterface):
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -174,3 +241,69 @@ class TestWatcher(TransmissionObserverInterface):
             capsys.readouterr()
             terminal.debug(printout=True)
             assert len(capsys.readouterr().out)
+
+        watcher.end_all_transmissions()
+
+
+class TestTransmissionObserverInterface(TransmissionObserverInterface):
+    def voice_transmission_ended(
+        self, voice_header: FullLinkControl, blocks: List[BitsInterface]
+    ):
+        """
+        Just for test_raising_observer
+        """
+        raise ModuleNotFoundError()
+
+    def data_transmission_ended(
+        self, transmission_header: DataHeader, blocks: List[BitsInterface]
+    ):
+        """
+        Just for test_raising_observer
+        """
+        raise ModuleNotFoundError()
+
+    def transmission_started(self, transmission_type: TransmissionTypes):
+        """
+        Just for test_raising_observer
+        """
+        raise ModuleNotFoundError()
+
+    def test_add_observer(self) -> None:
+        with pytest.raises(ValueError):
+            WithObservers(observers=[]).add_observer(observer=None)
+
+    def test_raising_observer(self, caplog) -> None:
+        WithObservers(observers=[self]).voice_transmission_ended(
+            blocks=[],
+            voice_header=FullLinkControl(
+                protect_flag=0,
+                flco=FLCOs.UnitToUnitVoiceChannelUser,
+                fid=FeatureSetIDs.StandardizedFID,
+                crc=bitarray(),
+            ),
+        )
+        assert len(caplog.records) == 1
+        assert caplog.records[0].levelname == "ERROR"
+        assert caplog.records[0].exc_info[0] == ModuleNotFoundError
+        caplog.clear()
+
+        WithObservers(observers=[self]).data_transmission_ended(
+            transmission_header=DataHeader(
+                dpf=DataPacketFormats.DataPacketUnconfirmed,
+                sap_identifier=SAPIdentifier.UDP_IP_compression,
+                full_message_flag=FullMessageFlag.FirstTryToCompletePacket,
+            ),
+            blocks=[],
+        )
+        assert len(caplog.records) == 1
+        assert caplog.records[0].levelname == "ERROR"
+        assert caplog.records[0].exc_info[0] == ModuleNotFoundError
+        caplog.clear()
+
+        WithObservers(observers=[self]).transmission_started(
+            transmission_type=TransmissionTypes.Idle
+        )
+        assert len(caplog.records) == 1
+        assert caplog.records[0].levelname == "ERROR"
+        assert caplog.records[0].exc_info[0] == ModuleNotFoundError
+        caplog.clear()

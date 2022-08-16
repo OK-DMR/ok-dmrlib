@@ -1,7 +1,6 @@
 from typing import Dict
 
 from okdmr.dmrlib.hytera.pdu.location_protocol import LocationProtocol
-from okdmr.tests.dmrlib.tests_utils import prettyprint
 
 
 def test_location_protocol():
@@ -13,3 +12,4 @@ def test_location_protocol():
         lp = LocationProtocol.from_bytes(msg_bytes)
         assert lp.as_bytes() == msg_bytes
         assert len(repr(lp)) > 0
+        print(repr(lp))

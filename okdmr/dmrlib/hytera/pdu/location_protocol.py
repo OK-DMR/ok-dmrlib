@@ -111,7 +111,7 @@ class GPSData(BytesInterface):
         self.direction: int = int(direction)
 
     @staticmethod
-    def from_bytes(data: bytes) -> Optional["GPSData"]:
+    def from_bytes(data: bytes, endian: str = "big") -> Optional["GPSData"]:
         assert (
             len(data) == 40
         ), f"GPS Data expects 40 bytes of payload, got {len(data)} value {data.hex()}"
@@ -127,7 +127,7 @@ class GPSData(BytesInterface):
             direction=data[37:40],
         )
 
-    def as_bytes(self) -> bytes:
+    def as_bytes(self, endian: str = "big") -> bytes:
         return (
             self.data_valid
             + self.greenwich_time.strftime("%H%M%S")
@@ -139,6 +139,22 @@ class GPSData(BytesInterface):
             + f"{self.speed_knots:03}"
             + f"{self.direction:03}"
         ).encode("ascii")
+
+    def __repr__(self) -> str:
+        _lat: str = f"{self.latitude:09.4f}"
+        _lon: str = f"{self.longitude:010.4f}"
+
+        return (
+            ("VALID " if self.data_valid else "INVALID ")
+            + self.greenwich_date.strftime("%H:%M:%S ")
+            + self.greenwich_time.strftime("%d.%m.%Y ")
+            + self.north_south
+            + f"{round(float(_lat[:2]) + float(_lat[2:])/60.0, 8)} "
+            + self.east_west
+            + f"{round(float(_lon[:3]) + float(_lon[3:])/60.0, 8)} "
+            + f"speed:{round(self.speed_knots * 1.852, 5)} km/h "
+            + f"direction:{self.direction}°"
+        )
 
 
 class LocationProtocol(HDAP):
@@ -202,7 +218,7 @@ class LocationProtocol(HDAP):
         )
 
     @staticmethod
-    def from_bytes(data: bytes) -> "LocationProtocol":
+    def from_bytes(data: bytes, endian: str = "big") -> "LocationProtocol":
         (is_reliable, service_type) = HDAP.get_reliable_and_service(data[0:1])
         assert service_type == HyteraServiceType.LP, f"Expected LP got {service_type}"
 

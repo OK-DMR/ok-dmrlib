@@ -2,10 +2,11 @@ import enum
 from typing import Optional, Union, Literal
 
 from okdmr.dmrlib.hytera.pdu.hdap import HDAP, HyteraServiceType
+from okdmr.dmrlib.utils.bytes_interface import BytesInterface
 
 
 @enum.unique
-class RCPOpcode(enum.Enum):
+class RCPOpcode(BytesInterface, enum.Enum):
     # [+] Non-standardized services
     UnknownService = 0x0000
     # [+] Call control services
@@ -128,7 +129,7 @@ class RCPOpcode(enum.Enum):
     def _missing_(cls, value: object) -> "RCPOpcode":
         return RCPOpcode.UnknownService
 
-    def as_bytes(self) -> bytes:
+    def as_bytes(self, endian: str = "big") -> bytes:
         return self.value.to_bytes(length=2, byteorder="big")
 
 
@@ -143,6 +144,12 @@ class RCPCallType(enum.Enum):
     PriorityPrivateCall = 0x06
     PriorityGroupcall = 0x07
     PriorityAllCall = 0x08
+
+
+@enum.unique
+class RCPResult(enum.Enum):
+    Success = 0x00
+    Failure = 0x01
 
 
 class RadioControlProtocol(HDAP):
@@ -160,6 +167,8 @@ class RadioControlProtocol(HDAP):
         call_type: Optional[Union[int, RCPCallType]] = None,
         target_id: Optional[Union[int, bytes]] = None,
         is_reliable: bool = False,
+        # call reply
+        result: Optional[Union[int, RCPResult]] = 0,
     ):
         super().__init__(is_reliable=is_reliable)
         self.opcode: RCPOpcode = RCPOpcode(
@@ -177,6 +186,9 @@ class RadioControlProtocol(HDAP):
             if (not target_id or isinstance(target_id, int))
             else int.from_bytes(target_id, byteorder="little")
         )
+        self.result: RCPResult = (
+            result if isinstance(result, RCPResult) else RCPResult(result)
+        )
 
     def get_endianness(self) -> Literal["big", "little"]:
         return "little"
@@ -190,11 +202,13 @@ class RadioControlProtocol(HDAP):
         return HyteraServiceType.RCP
 
     @staticmethod
-    def from_bytes(data: bytes) -> Optional["RadioControlProtocol"]:
+    def from_bytes(
+        data: bytes, endian: str = "big"
+    ) -> Optional["RadioControlProtocol"]:
         (is_reliable, service_type) = HDAP.get_reliable_and_service(data[0:1])
         assert service_type == HyteraServiceType.RCP, f"Expected RCP got {service_type}"
 
-        opcode = RCPOpcode(int.from_bytes(data[1:3], byteorder="big"))
+        opcode = RCPOpcode(int.from_bytes(data[1:3], byteorder="little"))
         if opcode == RCPOpcode.UnknownService:
             return RadioControlProtocol(
                 opcode=opcode,
@@ -212,6 +226,10 @@ class RadioControlProtocol(HDAP):
                 call_type=data[5],
                 target_id=data[6:10],
                 is_reliable=is_reliable,
+            )
+        elif opcode == RCPOpcode.CallReply:
+            return RadioControlProtocol(
+                opcode=opcode, is_reliable=is_reliable, result=data[5]
             )
         else:
             raise NotImplementedError(
@@ -231,6 +249,8 @@ class RadioControlProtocol(HDAP):
             return bytes([self.call_type.value]) + self.target_id.to_bytes(
                 length=4, byteorder="little"
             )
+        elif self.opcode == RCPOpcode.CallReply:
+            return bytes([self.result.value])
 
         raise NotImplementedError(f"get_payload not implemented for {self.opcode}")
 
@@ -242,4 +262,6 @@ class RadioControlProtocol(HDAP):
             represented += f"[Configure {self.raw_payload[0]} broadcast functions]"
         elif self.opcode == RCPOpcode.CallRequest:
             represented += f"[{self.call_type}] [TO: {self.target_id}]"
+        elif self.opcode == RCPOpcode.CallReply:
+            represented += f"[{self.result}]"
         return represented

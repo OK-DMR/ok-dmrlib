@@ -1,4 +1,4 @@
-import traceback
+import logging
 from typing import List, Optional
 
 from okdmr.dmrlib.etsi.layer2.pdu.data_header import DataHeader
@@ -79,7 +79,9 @@ class WithObservers(TransmissionObserverInterface):
                     voice_header=voice_header, blocks=blocks
                 )
             except:
-                traceback.print_exc()
+                logging.getLogger(self.__class__.__name__).exception(
+                    "voice_transmission_ended observer raised following exception"
+                )
 
     def data_transmission_ended(
         self, transmission_header: DataHeader, blocks: List[BitsInterface]
@@ -91,7 +93,9 @@ class WithObservers(TransmissionObserverInterface):
                     transmission_header=transmission_header, blocks=blocks
                 )
             except:
-                traceback.print_exc()
+                logging.getLogger(self.__class__.__name__).exception(
+                    "data_transmission_ended observer raised following exception"
+                )
 
     def transmission_started(self, transmission_type: TransmissionTypes):
         for observer in self.observers:
@@ -99,4 +103,6 @@ class WithObservers(TransmissionObserverInterface):
             try:
                 observer.transmission_started(transmission_type=transmission_type)
             except:
-                traceback.print_exc()
+                logging.getLogger(self.__class__.__name__).exception(
+                    "transmission_started observer raised following exception"
+                )
