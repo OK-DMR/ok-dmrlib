@@ -65,9 +65,37 @@ describing data (discovery):
 Access Types (AT), CRC Mask, CSBKO (CSBK Opcode), DPF (Data Packet Format), DT (Data Type), FID (Feature Set ID), FLCO (
 Full LC Opcode), LCSS (LC Start/Stop), PI (Pre-emption and power control indicator), SLCO (Short LC Opcode), SYNC (
 Synchronization pattern), Activity ID, Additional Information Field, Answer/Response, CTO (Channel Timing Opcode), DI (
-Dynamic Identifier), Position Error, Reason Code, Service Options, Talker Alias Data Format, Defined Data Format (DD), Selective Automatic Repeat reQuest (SARQ),
-Re-Synchronize Flag (S), Send sequence number (N(S)), SAP identifier (SAP), Supplementary Flag (SF), Unified Data Transport Format (UDT Format)
+Dynamic Identifier), Position Error, Reason Code, Service Options, Talker Alias Data Format, Defined Data Format (DD),
+Selective Automatic Repeat reQuest (SARQ),
+Re-Synchronize Flag (S), Send sequence number (N(S)), SAP identifier (SAP), Supplementary Flag (SF), Unified Data
+Transport Format (UDT Format)
 
+### Hytera
+
+| Protocol Name                                        | Encoding / Decoding | 
+|------------------------------------------------------|:-------------------:|
+| Hytera Simple Transport Reliability Protocol (HSTRP) |          ✅          |
+| Hytera Radio Network Protocol (HRNP)                 |          ✅          |
+| Hytera DMR Application Protocol (HDAP)               |          ✅          |
+| Radio Registration Service (RRS)                     |          ✅          |
+| Location Protocol (LP)                               |          ✅          |
+| Radio Control Protocol (RCP)                         |          ✅          |
+
+- Not all opcodes in all protocols are implemented, however it will fail with descriptive message, which opcode is
+  missing in particular operation (decoding, description, encoding)
+
+### Motorola
+
+| Protocol Name                             | Encoding / Decoding | 
+|-------------------------------------------|:-------------------:|
+| Location Request Response Protocol (LRRP) |          ✅          |
+
+- Motorola has MBXML (Motorola Binary XML) which is used to represent LRRP/ARRP documents, ok-dmrlib contains abstract
+  MBXML implementation with various tools, LRRP implementation tested with both examples and real-world data
+- LRRP is supported as `[bytes] <-> [mbxml document(s)] -> [xml representation]`, currently serialization of xml
+  document to bytes is not supported
+- There are some catches, when you want to serialize MBXML token with common name, look through the test_mbxml and
+  test_lrrp modules, to see how to select specific (correct) token programatically
 
 ### Additional notes
 
@@ -75,7 +103,10 @@ Re-Synchronize Flag (S), Send sequence number (N(S)), SAP identifier (SAP), Supp
 - Every FEC/CRC implemented supports both calculation, verification and (if possible) also self-correction
 - Working with Vocoder and Data/Control Bursts is supported, along with handling rates 1, 1/2 and 3/4
 - CRCs interface classes may require appropriate CRC Mask to be provided when generating or verifying
-- Through [dmr-kaitai](https://github.com/ok-dmr/dmr-kaitai) handling of ETSI, Hytera and MMDVM/Homebrew UDP data is supported 
+- Through [dmr-kaitai](https://github.com/ok-dmr/dmr-kaitai) handling of ETSI, Hytera and MMDVM/Homebrew UDP data is
+  supported
 - To inspect on-wire traffic PcapTool (provided in cli as `dmrlib-pcap-tool` script) supports PCAP/PCAPNG files with
   various functions on describing bursts, port/data filtering, data extraction, ...
 - Everything is tested, specifically now we have 95% pytest coverage for whole ok-dmrlib codebase
+- Not everything is probably documented as it should be, but the usage should always be very clear, when you look at
+  tests of particular component
