@@ -1,9 +1,6 @@
 import sys
 from typing import List, Tuple
 
-from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
-from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
-
 from okdmr.dmrlib.etsi.layer2.burst import Burst
 from okdmr.dmrlib.etsi.layer2.elements.burst_types import BurstTypes
 from okdmr.dmrlib.etsi.layer2.elements.data_types import DataTypes
@@ -13,6 +10,8 @@ from okdmr.dmrlib.hytera.hytera_ipsc_sync import HyteraIPSCSync
 from okdmr.dmrlib.hytera.hytera_ipsc_wakeup import HyteraIPSCWakeup
 from okdmr.dmrlib.transmission.transmission import Transmission
 from okdmr.dmrlib.transmission.transmission_types import TransmissionTypes
+from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
+from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
 
 
 def test_burst_info(capsys):
@@ -102,6 +101,25 @@ def test_burst_info_hytera():
         if burst.has_emb or burst.has_slot_type:
             assert burst.colour_code == ipsc.color_code
         assert len(repr(burst))
+
+
+def test_guess_target_radio_id():
+    bursts: List[Tuple[str, int]] = [
+        (
+            "5a5a5a5a570300004100050102000000222233335555000040f5c545f705e8bd0c26080850b4fd9457ff5dd7dcf5e6ae3877796501781fbb1a330046f7050000fc372300fe372300",
+            2308092,
+        ),
+        (
+            "5a5a5a5a50030000410005010200000022224444555500004091613a89349c25697b03a66368bd5557ff5dd7d5f5785db87af534662b1d4a3794000989340000fc372300fe372300",
+            2308092,
+        ),
+    ]
+    for ipsc_burst, expected_id in bursts:
+        ipsc: IpSiteConnectProtocol = IpSiteConnectProtocol.from_bytes(
+            bytes.fromhex(ipsc_burst)
+        )
+        burst: Burst = Burst.from_hytera_ipsc(ipsc)
+        assert burst.guess_target_radio_id() == expected_id
 
 
 def test_burst_as_bits():

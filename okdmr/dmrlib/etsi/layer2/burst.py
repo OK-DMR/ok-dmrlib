@@ -246,8 +246,6 @@ class Burst:
         b.set_sequence_no(mmdvm.sequence_no)
         b.source_radio_id = mmdvm.source_id
         b.target_radio_id = mmdvm.target_id
-        if b.target_radio_id == 0:
-            print(f"mmdvm radio id 0")
         b.timeslot = 1 if mmdvm.slot_no == Mmdvm2020.Timeslots.timeslot_1 else 2
         return b
 
@@ -283,9 +281,6 @@ class Burst:
         b.set_sequence_no(ipsc.sequence_number)
         b.source_radio_id = ipsc.source_radio_id
         b.target_radio_id = ipsc.destination_radio_id
-        if b.target_radio_id == 0:
-            print("ipsc radio id 0")
-            prettyprint(ipsc)
         b.timeslot = (
             1 if ipsc.timeslot_raw == IpSiteConnectProtocol.Timeslots.timeslot_1 else 2
         )

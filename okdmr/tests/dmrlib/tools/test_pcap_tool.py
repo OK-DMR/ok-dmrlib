@@ -4,11 +4,11 @@ from argparse import ArgumentParser
 from typing import Tuple, List, Optional
 
 from _pytest.capture import CaptureFixture
-from scapy.layers.inet import IP
-
 from okdmr.dmrlib.etsi.layer2.elements.flcos import FLCOs
 from okdmr.dmrlib.etsi.layer2.pdu.full_link_control import FullLinkControl
-from okdmr.dmrlib.tools.pcap_tool import PcapTool, EmbeddedExtractor
+from okdmr.dmrlib.tools.pcap_tool import PcapTool, EmbeddedExtractor, IPSCAnalyze
+from scapy.layers.inet import IP, UDP
+from scapy.packet import Raw
 
 
 class PcapCounterHelper:
@@ -162,3 +162,26 @@ def test_embedded_extractor(capsys: CaptureFixture):
     assert full_lc.group_address == 9
     assert full_lc.source_address == 2623266
     assert full_lc.full_link_control_opcode == FLCOs.GroupVoiceChannelUser
+
+
+def test_ipsc_analyze(capsys):
+    ia: IPSCAnalyze = IPSCAnalyze()
+    pkts: List[str] = [
+        "5a5a5a5a660000004100050101000000111111111111000040b951018849a00b381b4016806c6dc457ff5dd7def5993218016020a005412310390033884901000900000022072800",
+        "5a5a5a5a670000004100050101000000111111111111000040b951018849a00b381b4016806c6dc457ff5dd7def5993218016020a005412310390033884901000900000022072800",
+        "5a5a5a5a690000004100050101000000111100001111000040905b1219a4cc30a1d92317220a0d8457ff5dd7ddf53f9dc071c040a5085f0b1d1c001919a401000900000022072800",
+        "5a5a5a5a0000000042000501010000001111eeee11111111400000001000400000000000090028000700220000000000000000000000000030305032503801000900000022072800",
+    ]
+    for pkt in pkts:
+        pkt_bytes: bytes = bytes.fromhex(pkt)
+        ia.process_packet(
+            data=pkt_bytes,
+            packet=IP(src="192.168.0.1")
+            / UDP(sport="123", dport="123")
+            / Raw(_pkt=pkt_bytes),
+        )
+
+    ia.print_stats()
+    captured = capsys.readouterr()
+    assert len(captured.out)
+    assert not len(captured.err)

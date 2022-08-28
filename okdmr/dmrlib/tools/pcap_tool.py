@@ -70,6 +70,35 @@ class EmbeddedExtractor:
         return full_lc
 
 
+class IPSCAnalyze:
+    def __init__(self):
+        self.map: Dict[
+            Tuple[IpSiteConnectProtocol.SlotTypes, IpSiteConnectProtocol.FrameTypes],
+            Dict[str, int],
+        ] = dict()
+
+    def process_packet(self, data: bytes, packet: IP) -> None:
+        kaitai_pkt: Optional[KaitaiStruct] = try_parse_packet(udpdata=data)
+        burst: Optional[Burst] = PcapTool.debug_packet(
+            data=data, packet=packet, hide_unknown=True, silent=True
+        )
+        if isinstance(kaitai_pkt, IpSiteConnectProtocol) and burst:
+            rowkey = (kaitai_pkt.slot_type, kaitai_pkt.frame_type)
+            data = burst.extract_data()
+            if not data:
+                return
+            prettyprint(kaitai_pkt)
+            row = self.map.get(rowkey, dict())
+            row[data.__class__.__name__] = row.get(data.__class__.__name__, 0) + 1
+            self.map[rowkey] = row
+
+    def print_stats(self):
+        for ((slot, frame), dt_stats) in self.map.items():
+            print(f"SLOT: {slot} FRAME: {frame}")
+            for (dt, dt_count) in dt_stats.items():
+                print(f"COUNT: {dt_count}\tDT: {dt}")
+
+
 # noinspection PyDefaultArgument
 class PcapTool:
     """
@@ -117,11 +146,22 @@ class PcapTool:
     ) -> Optional[Burst]:
         pkt = try_parse_packet(udpdata=data)
         burst: Optional[Burst] = None
+        ip_str: str = f"{packet.src}:{packet.getlayer(UDP).sport}\t-> {packet.dst}:{packet.getlayer(UDP).dport}\t"
         if isinstance(pkt, IpSiteConnectProtocol):
             burst: Burst = Burst.from_hytera_ipsc(pkt)
+            if not silent:
+                print(
+                    f"{ip_str} IPSC TS:{1 if pkt.timeslot_raw == IpSiteConnectProtocol.Timeslots.timeslot_1 else 2} "
+                    f"SEQ: {pkt.sequence_number} {repr(burst)}"
+                )
         elif isinstance(pkt, Mmdvm2020):
             if isinstance(pkt.command_data, Mmdvm2020.TypeDmrData):
                 burst: Burst = Burst.from_mmdvm(pkt.command_data)
+                if not silent:
+                    print(
+                        f"{ip_str} MMDVM TS:{1 if pkt.command_data.slot_no == Mmdvm2020.Timeslots.timeslot_1 else 2} "
+                        f"SEQ: {pkt.command_data.sequence_no} {repr(burst)}"
+                    )
         elif isinstance(pkt, IpSiteConnectHeartbeat):
             pass
         elif not hide_unknown and not silent:
@@ -176,6 +216,7 @@ class PcapTool:
         files: List[str],
         ports_whitelist: List[int] = [],
         ports_blacklist: List[int] = [],
+        ip_whitelist: List[str] = [],
         print_statistics: bool = True,
         print_raw: bool = False,
         callback: Optional[Callable] = None,
@@ -186,6 +227,7 @@ class PcapTool:
         :param files:
         :param ports_whitelist:
         :param ports_blacklist:
+        :param ip_whitelist:
         :param print_raw:
         :param print_statistics: whether statistics should be printed directly to stdout
         :return: port statistics (dict [key=sport/dport number] [value=number of packets encountered])
@@ -194,6 +236,7 @@ class PcapTool:
             files=files,
             ports_whitelist=ports_whitelist,
             ports_blacklist=ports_blacklist,
+            ip_whitelist=ip_whitelist,
             print_raw=print_raw,
             callback=PcapTool.debug_packet if callback is None else callback,
         )
@@ -211,6 +254,7 @@ class PcapTool:
         callback: Optional[Callable] = None,
         ports_whitelist: List[int] = [],
         ports_blacklist: List[int] = [],
+        ip_whitelist: List[str] = [],
         print_raw: bool = False,
     ) -> Dict[int, int]:
         """
@@ -221,6 +265,7 @@ class PcapTool:
         :param ports_blacklist:
         :param callback:
         :param ports_whitelist:
+        :param ip_whitelist:
         :return: port statistics (dict [key=sport/dport number] [value=number of packets encountered])
         """
         assert isinstance(ports_blacklist, list)
@@ -246,6 +291,11 @@ class PcapTool:
                         statistics[udp_layer.dport] = (
                             statistics.get(udp_layer.dport, 0) + 1
                         )
+
+                        if len(ip_whitelist):
+                            # if no whitelisted ips, do not filter
+                            if ip_layer.src not in ip_whitelist:
+                                continue
 
                         if len(ports_whitelist):
                             # if no ports whitelisted, do not filter
@@ -382,6 +432,21 @@ class PcapTool:
             dest="verbose",
             help="Verbose logging",
         )
+        parser.add_argument(
+            "--ipsc",
+            action="store_true",
+            default=False,
+            dest="analyze_ipsc",
+            help="Analyze IPSC traffic (map between slot-type, frame-type and data-type)",
+        )
+        parser.add_argument(
+            "--filter-ip",
+            dest="filter_ip",
+            type=str,
+            nargs="+",
+            default=[],
+            help="Filter traffic by origin IP address(es)",
+        )
         return parser
 
     @staticmethod
@@ -404,6 +469,7 @@ class PcapTool:
         logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO)
 
         callback = PcapTool.debug_packet
+        ipsc_analyze = IPSCAnalyze()
         if args.extract_embedded_lc:
             callback = EmbeddedExtractor().process_packet
         elif args.observe_transmissions:
@@ -412,15 +478,22 @@ class PcapTool:
                 .set_debug_voice_bytes(do_debug=args.debug_vocoder_bytes)
                 .process_packet
             )
+        elif args.analyze_ipsc:
+            callback = ipsc_analyze.process_packet
 
         stats = PcapTool.print_pcap(
             files=args.files,
             ports_whitelist=args.whitelist_ports,
             ports_blacklist=args.blacklist_ports,
+            ip_whitelist=args.filter_ip,
             print_statistics=not args.no_statistics,
             print_raw=args.print_raw,
             callback=callback,
         )
+
+        if args.analyze_ipsc:
+            ipsc_analyze.print_stats()
+
         if return_stats:
             return stats
 

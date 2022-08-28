@@ -49,6 +49,7 @@ def parse_hytera_data(bytedata: bytes) -> KaitaiStruct:
 def try_parse_packet(udpdata: bytes) -> Optional[KaitaiStruct]:
 
     try:
+        # known unsupported, that incidentally gets decoded as Hytera IPSC packet
         if udpdata[:4] == b"USRP":
             return None
     finally:
@@ -58,6 +59,7 @@ def try_parse_packet(udpdata: bytes) -> Optional[KaitaiStruct]:
     try:
         mmdvm = Mmdvm2020.from_bytes(udpdata)
         if hasattr(mmdvm, "command_data"):
+            # packets with unknown/invalid/unsupported prefixes, won't have command_data attribute
             return mmdvm
     except BaseException as e:
         if (

@@ -56,6 +56,8 @@ This package provides way to parse and assemble various DMR ETSI protocols and f
 | Rate&nbsp;1&nbsp;Data   |          ✅          | Rate 1 data (confirmed and unconfirmed) and last block data (confirmed and unconfirmed)                                    |
 | Rate&nbsp;1/2&nbsp;Data |          ✅          | Rate 1/2 data (confirmed and unconfirmed) and last block data (confirmed and unconfirmed)                                  |
 | Rate&nbsp;3/4&nbsp;Data |          ✅          | Rate 3/4 data (confirmed and unconfirmed) and last block data (confirmed and unconfirmed)                                  |
+| Full/Short Link Control |          ✅          | FLC/SLC PDUs                                                                                                               |
+| UDP/IPv4                |          ✅          | UDP/IPv4 compressed header/packet                                                                                          |
 
 ### ETSI Information Elements
 
@@ -68,7 +70,7 @@ Synchronization pattern), Activity ID, Additional Information Field, Answer/Resp
 Dynamic Identifier), Position Error, Reason Code, Service Options, Talker Alias Data Format, Defined Data Format (DD),
 Selective Automatic Repeat reQuest (SARQ),
 Re-Synchronize Flag (S), Send sequence number (N(S)), SAP identifier (SAP), Supplementary Flag (SF), Unified Data
-Transport Format (UDT Format)
+Transport Format (UDT Format), UDP Port Identifier (SPID/DPID), IP Address Identifier (SAID/DAID)
 
 ### Hytera
 
@@ -100,6 +102,7 @@ Transport Format (UDT Format)
 ### Additional notes
 
 - Almost every class/enum supports BitsInterface (de-serialization from on-air bits, serialization to transmission bits)
+  , or for byte-aligned protocols (Hytera, Motorola) BytesInterface (with explicit endianness support)
 - Every FEC/CRC implemented supports both calculation, verification and (if possible) also self-correction
 - Working with Vocoder and Data/Control Bursts is supported, along with handling rates 1, 1/2 and 3/4
 - CRCs interface classes may require appropriate CRC Mask to be provided when generating or verifying
