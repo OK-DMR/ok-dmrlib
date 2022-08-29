@@ -19,7 +19,7 @@ from okdmr.dmrlib.utils.parsing import try_parse_packet
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 from okdmr.kaitai.hytera.ip_site_connect_heartbeat import IpSiteConnectHeartbeat
 from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
-from okdmr.tests.dmrlib.tests_utils import prettyprint
+from okdmr.kaitai.tools.prettyprint import prettyprint
 from scapy.data import UDP_SERVICES
 from scapy.layers.inet import UDP, IP
 from scapy.layers.l2 import Ether
