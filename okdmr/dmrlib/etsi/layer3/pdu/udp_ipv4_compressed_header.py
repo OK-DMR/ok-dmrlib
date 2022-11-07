@@ -2,7 +2,7 @@ from typing import Union, Optional
 
 from bitarray import bitarray
 from bitarray.util import ba2int, int2ba
-from build.lib.okdmr.dmrlib.utils.bytes_interface import BytesInterface
+from okdmr.dmrlib.utils.bytes_interface import BytesInterface
 
 from okdmr.dmrlib.etsi.layer3.elements.ip_address_identifier import IPAddressIdentifier
 from okdmr.dmrlib.etsi.layer3.elements.udp_port_identifier import UDPPortIdentifier
