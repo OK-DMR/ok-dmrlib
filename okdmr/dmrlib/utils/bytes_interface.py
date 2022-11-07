@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Literal
 
 
 class BytesInterface:
@@ -7,7 +7,9 @@ class BytesInterface:
     """
 
     @staticmethod
-    def from_bytes(data: bytes, endian: str = "big") -> Optional["BytesInterface"]:
+    def from_bytes(
+        data: bytes, endian: Literal["big", "little"] = "big"
+    ) -> Optional["BytesInterface"]:
         """
         Deserialize from bytes, if no bytes provided or data cannot be deserialized on that interface, return None
         :param data:
@@ -16,7 +18,7 @@ class BytesInterface:
         """
         pass
 
-    def as_bytes(self, endian: str = "big") -> bytes:
+    def as_bytes(self, endian: Literal["big", "little"] = "big") -> bytes:
         """
         Serialize to bytes
         :param endian:

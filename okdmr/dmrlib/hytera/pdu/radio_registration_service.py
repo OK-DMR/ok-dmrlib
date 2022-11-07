@@ -1,5 +1,5 @@
 import enum
-from typing import Optional, Union
+from typing import Optional, Union, Literal
 
 from okdmr.dmrlib.hytera.pdu.hdap import HDAP, HyteraServiceType
 from okdmr.dmrlib.hytera.pdu.radio_ip import RadioIP
@@ -14,7 +14,7 @@ class RRSTypes(BytesInterface, enum.Enum):
     RegistrationStatusCheckRequest = 0x02
     RegistrationStatusCheckAnswer = 0x82
 
-    def as_bytes(self, endian: str = "big") -> bytes:
+    def as_bytes(self, endian: Literal["big", "little"] = "big") -> bytes:
         return bytes([self.value])
 
 
@@ -24,7 +24,7 @@ class RRSResult(BytesInterface, enum.Enum):
     PasswordError = 0x02
     OtherFailure = 0x01
 
-    def as_bytes(self, endian: str = "big") -> bytes:
+    def as_bytes(self, endian: Literal["big", "little"] = "big") -> bytes:
         return bytes([self.value])
 
 
@@ -33,7 +33,7 @@ class RRSRadioState(BytesInterface, enum.Enum):
     Online = 0x00
     Offline = 0x01
 
-    def as_bytes(self, endian: str = "big") -> bytes:
+    def as_bytes(self, endian: Literal["big", "little"] = "big") -> bytes:
         return bytes([self.value])
 
 
@@ -90,11 +90,11 @@ class RadioRegistrationService(HDAP):
             )
         elif self.opcode == RRSTypes.RegistrationStatusCheckAnswer:
             return self.radio_ip.as_bytes() + self.radio_state.as_bytes()
-        raise NotImplementedError(f"{self.opcode} not yet implemented")
+        raise ValueError(f"{self.opcode} not yet implemented")
 
     @staticmethod
     def from_bytes(
-        data: bytes, endian: str = "big"
+        data: bytes, endian: Literal["big", "little"] = "big"
     ) -> Optional["RadioRegistrationService"]:
         (is_reliable, service_type) = HDAP.get_reliable_and_service(data[0:1])
         assert service_type == HyteraServiceType.RRS, f"Expected RRS got {service_type}"

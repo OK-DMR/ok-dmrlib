@@ -1,5 +1,5 @@
 import enum
-from typing import Optional, Union, Tuple
+from typing import Optional, Union, Tuple, Literal
 
 from okdmr.dmrlib.hytera.pdu.hdap import HDAP
 from okdmr.dmrlib.utils.bytes_interface import BytesInterface
@@ -72,7 +72,7 @@ class HRNP(BytesInterface):
         ) = self.verify_checksum(checksum=checksum)
 
     @staticmethod
-    def from_bytes(data: bytes, endian: str = "big") -> "HRNP":
+    def from_bytes(data: bytes, endian: Literal["big", "little"] = "big") -> "HRNP":
         assert (
             len(data) >= 12
         ), f"At least 12-bytes for HRNP required, got {len(data)} bytes instead"
@@ -89,7 +89,7 @@ class HRNP(BytesInterface):
             data=data[12:hrnp_packet_len],
         )
 
-    def as_bytes(self, endian: str = "big") -> bytes:
+    def as_bytes(self, endian: Literal["big", "little"] = "big") -> bytes:
         return (
             self.header
             + self.version

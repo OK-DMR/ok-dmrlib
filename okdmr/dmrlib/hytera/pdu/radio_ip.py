@@ -27,7 +27,7 @@ class RadioIP(BytesInterface):
             data = data[::-1]
         return RadioIP(subnet=data[0], radio_id=data[1:4])
 
-    def as_bytes(self, endian: str = "big") -> bytes:
+    def as_bytes(self, endian: Literal["big", "little"] = "big") -> bytes:
         raw: bytes = bytes([self.subnet]) + self.radio_id.to_bytes(
             length=3, byteorder="big"
         )

@@ -111,7 +111,9 @@ class GPSData(BytesInterface):
         self.direction: int = int(direction)
 
     @staticmethod
-    def from_bytes(data: bytes, endian: str = "big") -> Optional["GPSData"]:
+    def from_bytes(
+        data: bytes, endian: Literal["big", "little"] = "big"
+    ) -> Optional["GPSData"]:
         assert (
             len(data) == 40
         ), f"GPS Data expects 40 bytes of payload, got {len(data)} value {data.hex()}"
@@ -127,7 +129,7 @@ class GPSData(BytesInterface):
             direction=data[37:40],
         )
 
-    def as_bytes(self, endian: str = "big") -> bytes:
+    def as_bytes(self, endian: Literal["big", "little"] = "big") -> bytes:
         return (
             self.data_valid
             + self.greenwich_time.strftime("%H%M%S")
@@ -213,12 +215,12 @@ class LocationProtocol(HDAP):
                 + self.result.value.to_bytes(length=2, byteorder="big")
                 + self.gpsdata.as_bytes()
             )
-        raise NotImplementedError(
-            f"LP get_payload not implemented for {self.specific_service}"
-        )
+        raise ValueError(f"LP get_payload not implemented for {self.specific_service}")
 
     @staticmethod
-    def from_bytes(data: bytes, endian: str = "big") -> "LocationProtocol":
+    def from_bytes(
+        data: bytes, endian: Literal["big", "little"] = "big"
+    ) -> "LocationProtocol":
         (is_reliable, service_type) = HDAP.get_reliable_and_service(data[0:1])
         assert service_type == HyteraServiceType.LP, f"Expected LP got {service_type}"
 
@@ -235,7 +237,7 @@ class LocationProtocol(HDAP):
                 is_reliable=is_reliable,
             )
 
-        raise NotImplementedError(f"LP {opcode} not yet implemented")
+        raise ValueError(f"LP {opcode} not yet implemented")
 
     def __repr__(self):
         repre: str = f"[LP {self.general_service} {self.specific_service}] "

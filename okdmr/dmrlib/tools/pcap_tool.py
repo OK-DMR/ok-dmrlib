@@ -85,10 +85,11 @@ class IPSCAnalyze:
         if isinstance(kaitai_pkt, IpSiteConnectProtocol) and burst:
             rowkey = (kaitai_pkt.slot_type, kaitai_pkt.frame_type)
             data = burst.extract_data()
-            if not data:
+            if not data and burst.is_vocoder:
                 return
-            prettyprint(kaitai_pkt)
+            # prettyprint(kaitai_pkt)
             row = self.map.get(rowkey, dict())
+            subrowkey = f"voice" if burst.is_vocoder else data.__class__.__name__
             row[data.__class__.__name__] = row.get(data.__class__.__name__, 0) + 1
             self.map[rowkey] = row
 
@@ -96,7 +97,7 @@ class IPSCAnalyze:
         for ((slot, frame), dt_stats) in self.map.items():
             print(f"SLOT: {slot} FRAME: {frame}")
             for (dt, dt_count) in dt_stats.items():
-                print(f"COUNT: {dt_count}\tDT: {dt}")
+                print(f"\tCOUNT: {dt_count}\tDT: {dt}")
 
 
 # noinspection PyDefaultArgument
@@ -445,7 +446,7 @@ class PcapTool:
             type=str,
             nargs="+",
             default=[],
-            help="Filter traffic by origin IP address(es)",
+            help='Filter traffic by "ORIGIN" IP address(es)',
         )
         return parser
 

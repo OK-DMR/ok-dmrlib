@@ -141,7 +141,7 @@ class Rate12Data(BitsInterface):
         elif data_type == Rate12DataTypes.UnconfirmedLastBlock:
             return Rate12Data(data=bits[0:64], crc32=bits[64:96], packet_type=data_type)
 
-    def convert(self, new_type: Rate12DataTypes):
+    def convert(self, new_type: Rate12DataTypes) -> "Rate12Data":
         return Rate12Data.from_bits_typed(bits=self.as_bits(), data_type=new_type)
 
     def as_bits(self):

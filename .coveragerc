@@ -9,3 +9,4 @@ exclude_lines =
     continue
     traceback.print_exc()
     raise KeyError
+    raise ValueError

@@ -119,7 +119,7 @@ class DataHeader(BitsInterface):
             descr += (
                 f"{'[CRC INVALID] ' if not self.crc_ok else ''}"
                 + f"[{self.sap_identifier}] "
-                + ("[GROUP] " if self.is_group else "[INDIVIDUAL] ")
+                + ("[TARGET IS GROUP] " if self.is_group else "[TARGET IS INDIVIDUAL] ")
                 + ("[RESPONSE REQUESTED] " if self.is_response_requested else "")
                 + f"[PAD OCTETS: {self.pad_octet_count}] "
                 + f"[SOURCE: {self.llid_source}] [DESTINATION: {self.llid_destination}] [{self.full_message_flag}] "
@@ -130,7 +130,7 @@ class DataHeader(BitsInterface):
             descr += (
                 f"{'[CRC INVALID] ' if not self.crc_ok else ''}"
                 + f"[{self.sap_identifier}] "
-                + ("[GROUP] " if self.is_group else "[INDIVIDUAL] ")
+                + ("[TARGET IS GROUP] " if self.is_group else "[TARGET IS INDIVIDUAL] ")
                 + ("[RESPONSE REQUESTED] " if self.is_response_requested else "")
                 + f"[PAD OCTETS: {self.pad_octet_count}] "
                 + f"[SOURCE: {self.llid_source}] [DESTINATION: {self.llid_destination}] [{self.full_message_flag}] "
@@ -150,7 +150,7 @@ class DataHeader(BitsInterface):
             descr += (
                 f"{'[CRC INVALID] ' if not self.crc_ok else ''}"
                 + f"[{self.sap_identifier}] [{self.defined_data_format}] [{self.sarq}] "
-                + ("[GROUP] " if self.is_group else "[INDIVIDUAL] ")
+                + ("[TARGET IS GROUP] " if self.is_group else "[TARGET IS INDIVIDUAL] ")
                 + ("[RESPONSE REQUESTED] " if self.is_response_requested else "")
                 + f"[SOURCE: {self.llid_source}] [DESTINATION: {self.llid_destination}] [{self.full_message_flag}] "
                 + f"[APPENDED BLOCKS: {self.appended_blocks}] "
@@ -159,7 +159,7 @@ class DataHeader(BitsInterface):
             descr += (
                 f"{'[CRC INVALID] ' if not self.crc_ok else ''}"
                 + f"[{self.sap_identifier}] [{self.udt_format}] [UDT Opcode: {self.udt_opcode}] "
-                + ("[GROUP] " if self.is_group else "[INDIVIDUAL] ")
+                + ("[TARGET IS GROUP] " if self.is_group else "[TARGET IS INDIVIDUAL] ")
                 + ("[RESPONSE REQUESTED] " if self.is_response_requested else "")
                 + f"[SOURCE: {self.llid_source}] [DESTINATION: {self.llid_destination}] [{self.supplementary_flag}] "
             )

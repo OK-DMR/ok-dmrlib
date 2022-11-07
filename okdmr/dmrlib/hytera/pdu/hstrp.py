@@ -1,5 +1,5 @@
 import enum
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Literal
 
 from bitarray import bitarray
 
@@ -31,7 +31,9 @@ class HSTRPPacketType(BytesInterface):
         self.is_ack: bool = is_ack
 
     @staticmethod
-    def from_bytes(data: bytes, endian: str = "big") -> Optional["HSTRPPacketType"]:
+    def from_bytes(
+        data: bytes, endian: Literal["big", "little"] = "big"
+    ) -> Optional["HSTRPPacketType"]:
         assert len(data) > 0, f"HSTRP Option Byte needs at least one byte"
         bits = bytes_to_bits(data[0:1])
         return HSTRPPacketType(
@@ -62,7 +64,7 @@ class HSTRPPacketType(BytesInterface):
     def has_data(self):
         return self.is_option or self.is_ack
 
-    def as_bytes(self, endian: str = "big") -> bytes:
+    def as_bytes(self, endian: Literal["big", "little"] = "big") -> bytes:
         return bitarray(
             [
                 False,
@@ -107,7 +109,7 @@ class HSTRPOptions(BytesInterface):
         self.options.append((command, data))
         return self
 
-    def as_bytes(self, endian: str = "big") -> bytes:
+    def as_bytes(self, endian: Literal["big", "little"] = "big") -> bytes:
         options_count: int = len(self.options)
         current_option: int = 0
         rtn = b""
@@ -134,7 +136,9 @@ class HSTRPOptions(BytesInterface):
         return r
 
     @staticmethod
-    def from_bytes(data: bytes, endian: str = "big") -> "HSTRPOptions":
+    def from_bytes(
+        data: bytes, endian: Literal["big", "little"] = "big"
+    ) -> "HSTRPOptions":
         options = HSTRPOptions()
         has_next: bool = len(data) > 0
         idx: int = 0
@@ -200,7 +204,9 @@ class HSTRP(LoggingTrait, BytesInterface):
         self.version: int = version
 
     @staticmethod
-    def from_bytes(data: bytes, endian: str = "big") -> Optional["HSTRP"]:
+    def from_bytes(
+        data: bytes, endian: Literal["big", "little"] = "big"
+    ) -> Optional["HSTRP"]:
         if len(data) < 6:
             # minimum of 6 bytes in general is required for HSTRP PDU
             return None
@@ -229,7 +235,7 @@ class HSTRP(LoggingTrait, BytesInterface):
             payload=payload,
         )
 
-    def as_bytes(self, endian: str = "big") -> bytes:
+    def as_bytes(self, endian: Literal["big", "little"] = "big") -> bytes:
         return (
             HSTRP.HEADER
             + self.version.to_bytes(length=1, byteorder="big")

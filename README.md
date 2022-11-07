@@ -91,6 +91,7 @@ Transport Format (UDT Format), UDP Port Identifier (SPID/DPID), IP Address Ident
 | Protocol Name                             | Encoding / Decoding | 
 |-------------------------------------------|:-------------------:|
 | Location Request Response Protocol (LRRP) |          ✅          |
+| Automatic Registration Service (ARS)      |          ✅          |
 
 - Motorola has MBXML (Motorola Binary XML) which is used to represent LRRP/ARRP documents, ok-dmrlib contains abstract
   MBXML implementation with various tools, LRRP implementation tested with both examples and real-world data

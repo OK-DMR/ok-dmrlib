@@ -22,7 +22,11 @@ from okdmr.dmrlib.etsi.layer2.elements.sync_patterns import SyncPatterns
 from okdmr.dmrlib.etsi.layer2.pdu.csbk import CSBK
 from okdmr.dmrlib.etsi.layer2.pdu.data_header import DataHeader
 from okdmr.dmrlib.etsi.layer2.pdu.full_link_control import FullLinkControl
+from okdmr.dmrlib.etsi.layer2.pdu.rate12_data import Rate12Data, Rate12DataTypes
 from okdmr.dmrlib.etsi.layer2.pdu.slot_type import SlotType
+from okdmr.dmrlib.etsi.layer3.pdu.udp_ipv4_compressed_header import (
+    UDPIPv4CompressedHeader,
+)
 from okdmr.dmrlib.transmission.transmission_generator import TransmissionGenerator
 from okdmr.dmrlib.transmission.transmission_observer_interface import (
     TransmissionObserverInterface,
@@ -30,6 +34,7 @@ from okdmr.dmrlib.transmission.transmission_observer_interface import (
 )
 from okdmr.dmrlib.transmission.transmission_types import TransmissionTypes
 from okdmr.dmrlib.transmission.transmission_watcher import TransmissionWatcher
+from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits
 from okdmr.dmrlib.utils.bits_interface import BitsInterface
 
 SMS_BURST: List[str] = [
@@ -114,11 +119,31 @@ def test_header():
 
 
 def test_sms():
+    udpdata: bytes = b""
+    cut: int = 0
+    touch: int = 0
+    expect: int = 0
     for i in range(0, len(SMS_BURST)):
         b = Burst.from_bytes(
             data=bytes.fromhex(SMS_BURST[i]), burst_type=BurstTypes.DataAndControl
         )
+        if isinstance(b.data, DataHeader):
+            cut = b.data.pad_octet_count
+            expect = b.data.blocks_to_follow
+        elif isinstance(b.data, Rate12Data):
+            touch += 1
+            udpdata += (
+                b.data.data
+                if touch == 1
+                else b.data.convert(Rate12DataTypes.UnconfirmedLastBlock).data
+            )
+            if touch == expect:
+                b.data = b.data.convert(Rate12DataTypes.UnconfirmedLastBlock)
         print(repr(b))
+
+    print(f"udpdata: {udpdata.hex()} {udpdata[0:len(udpdata)-cut].hex()}")
+    uip = UDPIPv4CompressedHeader.from_bytes(udpdata)
+    print(repr(uip))
 
 
 def test_process_burst(capsys):
@@ -216,10 +241,9 @@ class TestWatcher(TransmissionObserverInterface):
         assert len(watcher.observers) == 1
         watcher.set_debug_voice_bytes(do_debug=True)
 
-        for i in range(0, len(SMS_BURST)):
-            o: str = SMS_BURST[i]
+        for orig_burst in SMS_BURST:
             b = Burst.from_bytes(
-                data=bytes.fromhex(o), burst_type=BurstTypes.DataAndControl
+                data=bytes.fromhex(orig_burst), burst_type=BurstTypes.DataAndControl
             )
             # emulate on-air
             b.target_radio_id = 111
@@ -276,6 +300,7 @@ class TestTransmissionObserverInterface(TransmissionObserverInterface):
 
     def test_add_observer(self) -> None:
         with pytest.raises(ValueError):
+            # noinspection PyTypeChecker
             WithObservers(observers=[]).add_observer(observer=None)
 
     def test_raising_observer(self, caplog) -> None:

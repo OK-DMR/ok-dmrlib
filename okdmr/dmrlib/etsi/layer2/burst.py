@@ -181,7 +181,7 @@ class Burst:
             return self.emb.colour_code
         elif self.has_slot_type:
             return self.slot_type.colour_code
-        raise AssertionError("Cannot get colour code, no emb and no slot_type")
+        raise ValueError("Cannot get colour code, no emb and no slot_type")
 
     def __repr__(self) -> str:
         status: str = f"[{self.sync_or_embedded_signalling.name}] "

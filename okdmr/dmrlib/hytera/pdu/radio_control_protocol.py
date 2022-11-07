@@ -129,7 +129,7 @@ class RCPOpcode(BytesInterface, enum.Enum):
     def _missing_(cls, value: object) -> "RCPOpcode":
         return RCPOpcode.UnknownService
 
-    def as_bytes(self, endian: str = "big") -> bytes:
+    def as_bytes(self, endian: Literal["big", "little"] = "big") -> bytes:
         return self.value.to_bytes(length=2, byteorder="big")
 
 
@@ -203,7 +203,7 @@ class RadioControlProtocol(HDAP):
 
     @staticmethod
     def from_bytes(
-        data: bytes, endian: str = "big"
+        data: bytes, endian: Literal["big", "little"] = "big"
     ) -> Optional["RadioControlProtocol"]:
         (is_reliable, service_type) = HDAP.get_reliable_and_service(data[0:1])
         assert service_type == HyteraServiceType.RCP, f"Expected RCP got {service_type}"
@@ -232,7 +232,7 @@ class RadioControlProtocol(HDAP):
                 opcode=opcode, is_reliable=is_reliable, result=data[5]
             )
         else:
-            raise NotImplementedError(
+            raise ValueError(
                 f"Opcode {opcode} (0x{bytes(reversed(data[1:3])).hex().upper()}) not yet implemented"
             )
 
@@ -252,7 +252,7 @@ class RadioControlProtocol(HDAP):
         elif self.opcode == RCPOpcode.CallReply:
             return bytes([self.result.value])
 
-        raise NotImplementedError(f"get_payload not implemented for {self.opcode}")
+        raise ValueError(f"get_payload not implemented for {self.opcode}")
 
     def __repr__(self):
         represented = f"[RCP.{self.opcode.name}] "
