@@ -85,13 +85,12 @@ class IPSCAnalyze:
         if isinstance(kaitai_pkt, IpSiteConnectProtocol) and burst:
             rowkey = (kaitai_pkt.slot_type, kaitai_pkt.frame_type)
             data = burst.extract_data()
-            if not data and burst.is_vocoder:
-                return
-            # prettyprint(kaitai_pkt)
-            row = self.map.get(rowkey, dict())
-            subrowkey = f"voice" if burst.is_vocoder else data.__class__.__name__
-            row[data.__class__.__name__] = row.get(data.__class__.__name__, 0) + 1
-            self.map[rowkey] = row
+            if not burst.is_vocoder and data:
+                # prettyprint(kaitai_pkt)
+                row = self.map.get(rowkey, dict())
+                subrowkey = f"voice" if burst.is_vocoder else data.__class__.__name__
+                row[data.__class__.__name__] = row.get(data.__class__.__name__, 0) + 1
+                self.map[rowkey] = row
 
     def print_stats(self):
         for ((slot, frame), dt_stats) in self.map.items():
@@ -221,10 +220,12 @@ class PcapTool:
         print_statistics: bool = True,
         print_raw: bool = False,
         callback: Optional[Callable] = None,
+        finish_callback: Optional[Callable] = None,
     ) -> Dict[int, int]:
         """
 
         :param callback:
+        :param finish_callback:
         :param files:
         :param ports_whitelist:
         :param ports_blacklist:
@@ -241,6 +242,8 @@ class PcapTool:
             print_raw=print_raw,
             callback=PcapTool.debug_packet if callback is None else callback,
         )
+        if finish_callback:
+            finish_callback()
         if print_statistics:
             PcapTool.print_statistics(
                 statistics=stats,
@@ -469,16 +472,17 @@ class PcapTool:
 
         logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO)
 
-        callback = PcapTool.debug_packet
+        callback: Callable = PcapTool.debug_packet
+        finish_callback: Optional[Callable] = None
         ipsc_analyze = IPSCAnalyze()
+        watcher = TransmissionWatcher().set_debug_voice_bytes(
+            do_debug=args.debug_vocoder_bytes
+        )
         if args.extract_embedded_lc:
             callback = EmbeddedExtractor().process_packet
         elif args.observe_transmissions:
-            callback = (
-                TransmissionWatcher()
-                .set_debug_voice_bytes(do_debug=args.debug_vocoder_bytes)
-                .process_packet
-            )
+            callback = watcher.process_packet
+            finish_callback = watcher.end_all_transmissions
         elif args.analyze_ipsc:
             callback = ipsc_analyze.process_packet
 
@@ -490,6 +494,7 @@ class PcapTool:
             print_statistics=not args.no_statistics,
             print_raw=args.print_raw,
             callback=callback,
+            finish_callback=finish_callback,
         )
 
         if args.analyze_ipsc:

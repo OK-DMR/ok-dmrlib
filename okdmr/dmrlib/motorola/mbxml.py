@@ -812,7 +812,7 @@ class MBXML:
                 (altitude, idx) = cls.read_sfloatvar(data, idx)
                 token_config.value = (lat, long, altitude)
             else:
-                raise NotImplementedError(
+                raise ValueError(
                     f"read_document not implemented for config {token_config}"
                 )
 
@@ -870,7 +870,7 @@ class MBXML:
             (lat, long, radius) = part.value
             return bytes([part.token_id]) + lat + long + cls.write_ufloatvar(radius, 1)
 
-        raise NotImplementedError(f"write_part not implemented for {part.token_type}")
+        raise ValueError(f"write_part not implemented for {part.token_type}")
 
     @classmethod
     def get_implementation(

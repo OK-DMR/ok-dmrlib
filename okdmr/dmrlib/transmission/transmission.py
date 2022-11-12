@@ -85,18 +85,19 @@ class Transmission(WithObservers, LoggingTrait):
             elif self.blocks_expected != (
                 self.blocks_received + data_header.blocks_to_follow + 1
             ):
-                self.log_warning(
-                    f"[Blocks To Follow / Appended Blocks] DMR Data Header block count mismatch [{self.blocks_expected} - {self.blocks_received} != {data_header.blocks_to_follow}]"
-                )
+                pass
+                # self.log_warning(
+                #    f"[Blocks To Follow / Appended Blocks] DMR Data Header block count mismatch [{self.blocks_expected} - {self.blocks_received} != {data_header.blocks_to_follow}]"
+                # )
 
         self.header = data_header
         self.blocks_received += 1
         self.blocks.append(data_header)
         self.confirmed = data_header.is_response_requested
-        self.log_info(
-            f"[DATA HDR] received {self.blocks_received} / {self.blocks_expected} expected, {data_header.__class__.__name__}"
-        )
-        self.log_info(repr(data_header))
+        # self.log_info(
+        #    f"[DATA HDR] received {self.blocks_received} / {self.blocks_expected} expected, {data_header.__class__.__name__}"
+        # )
+        # self.log_info(repr(data_header))
 
     def process_csbk(self, csbk: CSBK):
         self.ensure_transmission(TransmissionTypes.DataTransmission)
@@ -107,15 +108,16 @@ class Transmission(WithObservers, LoggingTrait):
             elif self.blocks_expected - self.blocks_received != (
                 csbk.blocks_to_follow + 1
             ):
-                self.log_warning(
-                    f"CSBK not setting expected to {self.blocks_expected} - {self.blocks_received} != {csbk.blocks_to_follow + 1}"
-                )
+                pass
+                # self.log_warning(
+                #    f"CSBK not setting expected to {self.blocks_expected} - {self.blocks_received} != {csbk.blocks_to_follow + 1}"
+                # )
 
         self.blocks_received += 1
         self.blocks.append(csbk)
-        self.log_info(
-            f"[CSBK] received {self.blocks_received} / {self.blocks_expected} expected"
-        )
+        # self.log_info(
+        #    f"[CSBK] received {self.blocks_received} / {self.blocks_expected} expected"
+        # )
 
     def process_data(self, data: Union[Rate12Data, Rate34Data, Rate1Data]):
         self.blocks_received += 1
@@ -156,14 +158,18 @@ class Transmission(WithObservers, LoggingTrait):
         self.new_transmission(TransmissionTypes.Idle)
 
     def end_data_transmission(self):
-        if self.finished or self.type == TransmissionTypes.Idle:
+        if self.finished or not self.header or self.type == TransmissionTypes.Idle:
+            self.log_info(
+                f"end_data_transmission without effect is_finished:{self.finished} header:{type(self.header)} transmission_type:{self.type}"
+            )
             return
-        self.log_info(
-            f"\n[DATA CALL END] [CONFIRMED: {self.confirmed}] "
-            f"[Packets {self.blocks_received}/{self.blocks_expected} ({len(self.blocks)})] "
-        )
+        # self.log_info(
+        #    f"\n[DATA CALL END] [CONFIRMED: {self.confirmed}] "
+        #    f"[Packets {self.blocks_received}/{self.blocks_expected} ({len(self.blocks)})] "
+        # )
 
         self.data_transmission_ended(self.header, self.blocks)
+        self.log_info(repr(self.header))
 
         user_data: bytes = b""
         for block in self.blocks:
@@ -175,14 +181,15 @@ class Transmission(WithObservers, LoggingTrait):
                 user_data += block.data
 
         if (
-            self.header.sap_identifier == SAPIdentifier.UDP_IP_compression
+            hasattr(self.header, "sap_identifier")
+            and self.header.sap_identifier == SAPIdentifier.UDP_IP_compression
             and len(user_data) >= 5
         ):
-            print(f"udp/ipv4 compressed {user_data.hex()}")
+            # print(f"udp/ipv4 compressed {user_data.hex()}")
             udp_ip = UDPIPv4CompressedHeader.from_bits(bits=bytes_to_bits(user_data))
             print(repr(udp_ip))
 
-        print("\n" * 3)
+        # print("\n" * 3)
 
         self.new_transmission(TransmissionTypes.Idle)
 
