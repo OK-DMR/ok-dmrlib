@@ -17,7 +17,7 @@ setup(
     author="Marek Sebera",
     author_email="marek.sebera@gmail.com",
     license="AGPL-3.0",
-    version="0.6.1",
+    version="0.7",
     packages=[
         "okdmr.dmrlib",
         "okdmr.dmrlib.transmission",
@@ -47,7 +47,7 @@ setup(
     install_requires=[
         "dmr-kaitai>=1.0",
         "bitarray>=2.6.0",
-        "numpy>=1.23.2",
+        "numpy>=1.23.4",
         "scapy>=2.4.5",
     ],
     classifiers=[
@@ -60,6 +60,6 @@ setup(
         "Framework :: Pytest",
         "Intended Audience :: Telecommunications Industry",
         "Natural Language :: English",
-        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
     ],
 )
