@@ -107,6 +107,7 @@ class HDAP(BytesInterface, LoggingTrait):
 
         from okdmr.dmrlib.hytera.pdu.location_protocol import LocationProtocol
         from okdmr.dmrlib.hytera.pdu.radio_control_protocol import RadioControlProtocol
+        from okdmr.dmrlib.hytera.pdu.text_message_protocol import TextMessageProtocol
         from okdmr.dmrlib.hytera.pdu.radio_registration_service import (
             RadioRegistrationService,
         )
@@ -115,4 +116,5 @@ class HDAP(BytesInterface, LoggingTrait):
             HyteraServiceType.LP: LocationProtocol.from_bytes,
             HyteraServiceType.RCP: RadioControlProtocol.from_bytes,
             HyteraServiceType.RRS: RadioRegistrationService.from_bytes,
+            HyteraServiceType.TMP: TextMessageProtocol.from_bytes,
         }[service_type](data)

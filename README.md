@@ -82,6 +82,7 @@ Transport Format (UDT Format), UDP Port Identifier (SPID/DPID), IP Address Ident
 | Radio Registration Service (RRS)                     |          ✅          |
 | Location Protocol (LP)                               |          ✅          |
 | Radio Control Protocol (RCP)                         |          ✅          |
+| Text Message Protocol (TMP)                          |          ✅          |
 
 - Not all opcodes in all protocols are implemented, however it will fail with descriptive message, which opcode is
   missing in particular operation (decoding, description, encoding)
@@ -92,6 +93,7 @@ Transport Format (UDT Format), UDP Port Identifier (SPID/DPID), IP Address Ident
 |-------------------------------------------|:-------------------:|
 | Location Request Response Protocol (LRRP) |          ✅          |
 | Automatic Registration Service (ARS)      |          ✅          |
+| Text Messaging Service (TMS)              |          ✅          |
 
 - Motorola has MBXML (Motorola Binary XML) which is used to represent LRRP/ARRP documents, ok-dmrlib contains abstract
   MBXML implementation with various tools, LRRP implementation tested with both examples and real-world data
