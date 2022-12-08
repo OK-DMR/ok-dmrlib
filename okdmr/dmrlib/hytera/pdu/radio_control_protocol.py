@@ -321,11 +321,6 @@ class RadioControlProtocol(HDAP):
             return RadioControlProtocol(
                 opcode=opcode, is_reliable=is_reliable, result=RCPResult(data[5])
             )
-        elif opcode == RCPOpcode.StatusChangeNotificationRequest:
-            return RadioControlProtocol(
-                opcode=opcode,
-                is_reliable=is_reliable,
-            )
         else:
             raise ValueError(
                 f"Opcode {opcode} (0x{bytes(reversed(data[1:3])).hex().upper()}) not yet implemented"

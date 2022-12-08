@@ -1,3 +1,4 @@
+from okdmr.dmrlib.etsi.layer2.elements.data_types import DataTypes
 from okdmr.dmrlib.etsi.layer2.pdu.rate1_data import Rate1Data, Rate1DataTypes
 
 
@@ -5,6 +6,7 @@ def test_rate1_data():
     r12u: Rate1Data = Rate1Data(
         data=b"\xe9\xdf\x9e\x0b\xff\xd3\xf0Y\xd1\x91\xd2\xf1\\\xee\x93\x81\x13]\\\xce\xff\x95\xd5\\"
     )
+    assert r12u.get_data_type() == DataTypes.Rate1Data
     r12u_bits = r12u.as_bits()
     assert len(repr(r12u))
     assert (

@@ -2,6 +2,7 @@ from bitarray import bitarray
 
 from okdmr.dmrlib.etsi.crc.crc9 import CRC9
 from okdmr.dmrlib.etsi.layer2.elements.crc_masks import CrcMasks
+from okdmr.dmrlib.etsi.layer2.elements.data_types import DataTypes
 from okdmr.dmrlib.etsi.layer2.pdu.rate34_data import Rate34Data, Rate34DataTypes
 
 
@@ -10,6 +11,7 @@ def test_rate34_data():
     r34u: Rate34Data = Rate34Data(
         data=b"\xdd\xda\xe4\xa1\xaeT'oe\xc9\xf6\xe4\x97\x0e#\xed\x17s"
     )
+    assert r34u.get_data_type() == DataTypes.Rate34Data
     r34u_bits = r34u.as_bits()
     assert (
         Rate34Data.from_bits_typed(
