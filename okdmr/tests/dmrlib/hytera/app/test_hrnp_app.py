@@ -3,8 +3,6 @@ import sys
 from time import sleep
 from typing import List
 
-from serial import Serial
-
 from okdmr.dmrlib.hytera.pdu.hrnp import HRNP, HRNPOpcodes
 from okdmr.dmrlib.hytera.pdu.radio_control_protocol import (
     RadioControlProtocol,
@@ -15,6 +13,8 @@ from okdmr.dmrlib.utils.logging_trait import LoggingTrait
 
 class HRNPApp(LoggingTrait):
     def __init__(self):
+        from serial import Serial
+
         self.serial: Serial = Serial(port="/dev/ttyUSB0", baudrate=9600, timeout=2)
         self.counter: int = 0
         self.buffer_in: bytes = b""
