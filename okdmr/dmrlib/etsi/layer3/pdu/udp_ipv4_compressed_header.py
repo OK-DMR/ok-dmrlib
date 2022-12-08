@@ -1,13 +1,13 @@
-from typing import Union, Optional
+from typing import Union, Optional, Literal
 
 from bitarray import bitarray
 from bitarray.util import ba2int, int2ba
-from okdmr.dmrlib.utils.bytes_interface import BytesInterface
 
 from okdmr.dmrlib.etsi.layer3.elements.ip_address_identifier import IPAddressIdentifier
 from okdmr.dmrlib.etsi.layer3.elements.udp_port_identifier import UDPPortIdentifier
 from okdmr.dmrlib.utils.bits_bytes import bits_to_bytes, bytes_to_bits
 from okdmr.dmrlib.utils.bits_interface import BitsInterface
+from okdmr.dmrlib.utils.bytes_interface import BytesInterface
 
 
 class UDPIPv4CompressedHeader(BitsInterface, BytesInterface):
@@ -158,3 +158,6 @@ class UDPIPv4CompressedHeader(BitsInterface, BytesInterface):
         return UDPIPv4CompressedHeader.from_bits(
             bytes_to_bits(payload=data, endian=endian)
         )
+
+    def as_bytes(self, endian: Literal["big", "little"] = "big") -> bytes:
+        return bits_to_bytes(self.as_bits())

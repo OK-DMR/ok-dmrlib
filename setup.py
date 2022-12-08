@@ -39,7 +39,15 @@ setup(
     zip_safe=True,
     entry_points={
         "console_scripts": [
-            "dmrlib-pcap-tool=okdmr.dmrlib.tools.pcap_tool:PcapTool.main"
+            "dmrlib-pcap-tool=okdmr.dmrlib.tools.pcap_tool:PcapTool.main",
+            "dmrlib-hytera-hstrp=okdmr.dmrlib.tools.hytera_tool:HyteraTool.hstrp",
+            "dmrlib-hytera-hdap=okdmr.dmrlib.tools.hytera_tool:HyteraTool.hdap",
+            "dmrlib-hytera-hrnp=okdmr.dmrlib.tools.hytera_tool:HyteraTool.hrnp",
+            "dmrlib-hytera-lp=okdmr.dmrlib.tools.hytera_tool:HyteraTool.lp",
+            "dmrlib-hytera-rcp=okdmr.dmrlib.tools.hytera_tool:HyteraTool.rcp",
+            "dmrlib-hytera-rrs=okdmr.dmrlib.tools.hytera_tool:HyteraTool.rrs",
+            "dmrlib-hytera-tmp=okdmr.dmrlib.tools.hytera_tool:HyteraTool.tmp",
+            "dmrlib-dmr-burst=okdmr.dmrlib.tools.dmrlib_tool:DmrlibTool.burst",
         ],
     },
     keywords="dmr etsi ham mmdvm homebrew radio hytera motorola",

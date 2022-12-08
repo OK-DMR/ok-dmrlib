@@ -27,6 +27,7 @@ from okdmr.dmrlib.etsi.layer2.pdu.slot_type import SlotType
 from okdmr.dmrlib.etsi.layer3.pdu.udp_ipv4_compressed_header import (
     UDPIPv4CompressedHeader,
 )
+from okdmr.dmrlib.motorola.text_messaging_service import TextMessagingService
 from okdmr.dmrlib.transmission.transmission_generator import TransmissionGenerator
 from okdmr.dmrlib.transmission.transmission_observer_interface import (
     TransmissionObserverInterface,
@@ -34,7 +35,7 @@ from okdmr.dmrlib.transmission.transmission_observer_interface import (
 )
 from okdmr.dmrlib.transmission.transmission_types import TransmissionTypes
 from okdmr.dmrlib.transmission.transmission_watcher import TransmissionWatcher
-from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits
+from okdmr.dmrlib.utils.bits_bytes import bits_to_bytes, bytes_to_bits
 from okdmr.dmrlib.utils.bits_interface import BitsInterface
 
 SMS_BURST: List[str] = [
@@ -98,7 +99,7 @@ def test_all_preambles():
         assert gen_hex == expected_hex, f"burst {i} is different"
 
 
-def test_header():
+def test_header(do_return: bool = False):
     header: DataHeader = DataHeader(
         dpf=DataPacketFormats.DataPacketUnconfirmed,
         sap_identifier=SAPIdentifier.UDP_IP_compression,
@@ -110,40 +111,70 @@ def test_header():
         fragment_sequence_number=FragmentSequenceNumber.SINGLE_UNCONFIRMED_FRAGMENT_VALUE,
         full_message_flag=FullMessageFlag.FirstTryToCompletePacket,
     )
-    burst: Burst = Burst(burst_type=BurstTypes.DataAndControl)
-    burst.data = header
-    burst.sync_or_embedded_signalling = SyncPatterns.BsSourcedData
-    burst.slot_type = SlotType(colour_code=5, data_type=DataTypes.DataHeader)
-    burst.has_emb = False
+    burst: Burst = TransmissionGenerator.generate_data_header_burst(header)
     assert SMS_BURST[16] == burst.as_bits().tobytes().hex()
+    return header if do_return else None
+
+
+def test_construct_rate12():
+    from okdmr.tests.dmrlib.etsi.layer3.pdu.test_udp_ipv4_compressed_header import (
+        test_reconstruct,
+    )
+
+    payload: UDPIPv4CompressedHeader = test_reconstruct(do_return=True)
+    header: DataHeader = test_header(do_return=True)
+
+    full_transmission: List[
+        Burst
+    ] = TransmissionGenerator.generate_full_data_transmission(
+        data_header=header,
+        userdata=payload,
+        packet_type=Rate12Data,
+        csbk_count=16,
+        colour_code=5,
+    )
+
+    assert len(full_transmission) == len(
+        SMS_BURST
+    ), f"expected {len(SMS_BURST)} bursts, got {len(full_transmission)}"
+    for i in range(0, len(SMS_BURST)):
+        assert (
+            full_transmission[i].as_bytes().hex().lower() == SMS_BURST[i].lower()
+        ), f"burst {i} mismatch"
 
 
 def test_sms():
-    udpdata: bytes = b""
-    cut: int = 0
-    touch: int = 0
-    expect: int = 0
+    rawdata: bytes = b""
+    cut_padding_bytes: int = 0
+    touch_num_blocks: int = 0
+    expect_num_blocks: int = 0
+
     for i in range(0, len(SMS_BURST)):
         b = Burst.from_bytes(
             data=bytes.fromhex(SMS_BURST[i]), burst_type=BurstTypes.DataAndControl
         )
         if isinstance(b.data, DataHeader):
-            cut = b.data.pad_octet_count
-            expect = b.data.blocks_to_follow
+            cut_padding_bytes = b.data.pad_octet_count
+            expect_num_blocks = b.data.blocks_to_follow
         elif isinstance(b.data, Rate12Data):
-            touch += 1
-            udpdata += (
+            touch_num_blocks += 1
+            rawdata += (
                 b.data.data
-                if touch == 1
+                if touch_num_blocks == 1
                 else b.data.convert(Rate12DataTypes.UnconfirmedLastBlock).data
             )
-            if touch == expect:
+            if touch_num_blocks == expect_num_blocks:
                 b.data = b.data.convert(Rate12DataTypes.UnconfirmedLastBlock)
-        print(repr(b))
+            print(bytes.fromhex(SMS_BURST[i]).hex())
+            print(repr(b.data))
 
-    print(f"udpdata: {udpdata.hex()} {udpdata[0:len(udpdata)-cut].hex()}")
-    uip = UDPIPv4CompressedHeader.from_bytes(udpdata)
-    print(repr(uip))
+    assert expect_num_blocks == touch_num_blocks
+
+    uip_bytes: bytes = rawdata[: len(rawdata) - cut_padding_bytes]
+    uip = UDPIPv4CompressedHeader.from_bytes(uip_bytes)
+    uip_data_bytes: bytes = bits_to_bytes(uip.user_data)
+    tms: TextMessagingService = TextMessagingService.from_bytes(uip_data_bytes)
+    assert tms.as_bytes() == uip_data_bytes
 
 
 def test_process_burst(capsys):

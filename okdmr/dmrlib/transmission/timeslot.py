@@ -24,7 +24,7 @@ class Timeslot(WithObservers):
         self.rx_sequence: int = 0
         self.reset_rx_sequence: bool = False
         self.transmission: Transmission = Transmission(self)
-        self.color_code: int = 0
+        self.colour_code: int = 0
 
     def voice_transmission_ended(
         self, voice_header: FullLinkControl, blocks: List[BitsInterface]
@@ -52,7 +52,7 @@ class Timeslot(WithObservers):
             or dmrdata.sync_or_embedded_signalling == SyncPatterns.Reserved
         ):
             # Voice burst with SYNC (MS/BS Sourced, TDMA TS1/2, Reserved) do not carry CC information
-            self.color_code = dmrdata.colour_code
+            self.colour_code = dmrdata.colour_code
 
         out: Burst = (
             self.transmission.process_packet(dmrdata)
@@ -71,7 +71,7 @@ class Timeslot(WithObservers):
             f"[TS {self.timeslot}] "
             f"[STATUS {self.transmission.type.name}] "
             f"[LAST PACKET {datetime.fromtimestamp(self.last_packet_received)} {self.transmission.last_burst_data_type.name}] "
-            f"[COLOR CODE {self.color_code}]"
+            f"[COLOUR CODE {self.colour_code}]"
         )
         if printout:
             print(status)

@@ -36,5 +36,5 @@ class CRC32:
         :return: int crc32
         """
         return ba2int(
-            CRC32.CALC.calculate_checksum(bytes_to_bits(byteswap_bytes(data)))
+            CRC32.CALC.calculate_checksum(bytes_to_bits(byteswap_bytes(data), "little"))
         )

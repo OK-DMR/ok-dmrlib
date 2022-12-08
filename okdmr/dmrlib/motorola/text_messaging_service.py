@@ -57,12 +57,12 @@ class FirstHeader(BytesInterface):
         self.has_more_headers: bool = bool(has_more_headers)
         self.is_acknowledged: bool = bool(is_acknowledged)
         self.is_reserved: bool = bool(is_reserved)
-        self.is_control_message: bool = bool(is_control_message)
         self.pdu_type: TMSPDUType = (
             TMSPDUType((is_control_message, pdu_type))
             if isinstance(pdu_type, int)
             else pdu_type
         )
+        self.is_control_message: bool = bool(self.pdu_type.value[0])
 
     def set_has_more_headers(self, has: bool) -> "FirstHeader":
         self.has_more_headers = has
@@ -105,6 +105,7 @@ class FirstHeader(BytesInterface):
                 ("HAS-EXT " if self.has_more_headers else "")
                 + ("IS-ACK " if self.is_acknowledged else "")
                 + ("IS-CONTROL-MSG " if self.is_control_message else "IS-USER-DATA ")
+                + ("IS-RESERVED " if self.is_reserved else "")
             ).strip()
             + ")]"
         )

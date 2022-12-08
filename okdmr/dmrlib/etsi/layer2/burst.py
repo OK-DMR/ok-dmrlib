@@ -1,6 +1,9 @@
-from typing import Optional
+from typing import Optional, Literal
 
 from bitarray import bitarray
+from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
+from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
+
 from okdmr.dmrlib.etsi.fec.bptc_196_96 import BPTC19696
 from okdmr.dmrlib.etsi.fec.trellis import Trellis34
 from okdmr.dmrlib.etsi.layer2.elements.burst_types import BurstTypes
@@ -20,11 +23,10 @@ from okdmr.dmrlib.hytera.hytera_constants import IPSC_KAITAI_VOICE_SLOTS
 from okdmr.dmrlib.transmission.transmission_types import TransmissionTypes
 from okdmr.dmrlib.utils.bits_bytes import bits_to_bytes, bytes_to_bits, byteswap_bytes
 from okdmr.dmrlib.utils.bits_interface import BitsInterface
-from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
-from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
+from okdmr.dmrlib.utils.bytes_interface import BytesInterface
 
 
-class Burst:
+class Burst(BytesInterface):
     """
     ETSI TS 102 361-1 V2.5.1 (2017-10) - 4.2.2   Burst and frame structure
     """
@@ -222,12 +224,17 @@ class Burst:
         )
         return self.voice_bits[:108] + center_bits + self.voice_bits[108:]
 
+    def as_bytes(self, endian: Literal["big", "little"] = "big") -> bytes:
+        return bits_to_bytes(self.as_bits())
+
     @staticmethod
     def from_bits(bits: bitarray, burst_type: BurstTypes) -> "Burst":
         return Burst(full_bits=bits, burst_type=burst_type)
 
     @staticmethod
-    def from_bytes(data: bytes, burst_type: BurstTypes) -> "Burst":
+    def from_bytes(
+        data: bytes, burst_type: BurstTypes = BurstTypes.DataAndControl
+    ) -> "Burst":
         return Burst(full_bits=bytes_to_bits(data), burst_type=burst_type)
 
     @staticmethod

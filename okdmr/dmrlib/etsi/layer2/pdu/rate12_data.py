@@ -6,6 +6,7 @@ from bitarray.util import int2ba, ba2int
 
 from okdmr.dmrlib.etsi.crc.crc9 import CRC9
 from okdmr.dmrlib.etsi.layer2.elements.crc_masks import CrcMasks
+from okdmr.dmrlib.etsi.layer2.elements.data_types import DataTypes
 from okdmr.dmrlib.utils.bits_bytes import bits_to_bytes, bytes_to_bits
 from okdmr.dmrlib.utils.bits_interface import BitsInterface
 
@@ -72,6 +73,10 @@ class Rate12Data(BitsInterface):
         self.crc9_ok: bool = self.crc9 == calculated_crc9
 
     @staticmethod
+    def get_data_type() -> DataTypes:
+        return DataTypes.Rate12Data
+
+    @staticmethod
     def validate_packet_type(packet_type: Rate12DataTypes, data_length: int) -> bool:
         if data_length == 0 or packet_type == Rate12DataTypes.Undefined:
             return True
@@ -110,7 +115,7 @@ class Rate12Data(BitsInterface):
                 " [CRC9 INVALID]" if not self.crc9_ok else ""
             )
         if self.is_last_block():
-            label += f" [CRC32 int({self.crc32}) hex({self.crc32.to_bytes(4, byteorder='big').hex()})]"
+            label += f" [CRC32 int({self.crc32}) hex({self.crc32.to_bytes(4, byteorder='little').hex()})]"
         return label
 
     @staticmethod

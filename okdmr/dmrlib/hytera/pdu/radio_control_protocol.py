@@ -135,6 +135,7 @@ class RCPOpcode(BytesInterface, enum.Enum):
 
 @enum.unique
 class RCPCallType(enum.Enum):
+    # common call types
     PrivateCall = 0x00
     GroupCall = 0x01
     AllCall = 0x02
@@ -144,12 +145,60 @@ class RCPCallType(enum.Enum):
     PriorityPrivateCall = 0x06
     PriorityGroupcall = 0x07
     PriorityAllCall = 0x08
+    # for repeater only?
+    Dispatch = 0x09
+    PC = 0x0A
+    Alert = 0x0B
+    EmergencyAlarmCall = 0x0C
+    RadioCheck = 0x0D
+    RadioEnable = 0x0E
+    RadioDisable = 0x0F
 
 
 @enum.unique
 class RCPResult(enum.Enum):
     Success = 0x00
     Failure = 0x01
+
+
+@enum.unique
+class RepeaterMode(enum.Enum):
+    NormalSingleConnection = 0x00
+    SelectiveMultiConnection = 0x01
+
+
+@enum.unique
+class RepeaterStatus(enum.Enum):
+    LocalRepeating = 0x00
+    LocalCallHangTime = 0x01
+    IPRepeating = 0x02
+    IPCallHangTime = 0x03
+    ChannelHangTime = 0x04
+    Sleep = 0x05
+    RemotePttTx = 0x06
+    RemotePttHangTime = 0x07
+    RemotePttTxEnd = 0x08
+    RemotePttWaitAck = 0x09
+    RemotePttTOT = 0x0A
+    LocalPttTx = 0x0B
+    LocalPttHangTime = 0x0C
+    LocalPttTxEnd = 0x0D
+    LocalPttWaitAck = 0x0E
+    LocalPttTOT = 0x0F
+
+
+@enum.unique
+class RepeaterServiceType(enum.Enum):
+    NO_SERVICE = 0x00
+    VOICE = 0x01
+    TMP = 0x02
+    LP = 0x03
+    RRS = 0x04
+    TP = 0x05
+    SUPPLEMENTARY_SERVICE = 0x06
+    E2E = 0x07
+    """end-to-end encryption repeater data transfer mode"""
+    VOICE_OF_PHONE = 0x1F
 
 
 class RadioControlProtocol(HDAP):
@@ -166,9 +215,16 @@ class RadioControlProtocol(HDAP):
         # call request
         call_type: Optional[Union[int, RCPCallType]] = None,
         target_id: Optional[Union[int, bytes]] = None,
+        sender_id: Optional[Union[int, bytes]] = None,
         is_reliable: bool = False,
         # call reply
-        result: Optional[Union[int, RCPResult]] = 0,
+        result: Optional[RCPResult] = None,
+        # repeater broadcast transmit status
+        repeater_mode: Optional[RepeaterMode] = None,
+        repeater_status: Optional[RepeaterStatus] = None,
+        repeater_service_type: Optional[RepeaterServiceType] = None,
+        # (0x1847)Broadcast Message Configuration Request (Mobile API)
+        broadcast_type: int = 0b0000_0111,
     ):
         super().__init__(is_reliable=is_reliable)
         self.opcode: RCPOpcode = RCPOpcode(
@@ -176,19 +232,30 @@ class RadioControlProtocol(HDAP):
             if isinstance(opcode, RCPOpcode)
             else int.from_bytes(opcode, byteorder="big")
         )
+        # raws
         self.raw_payload: bytes = raw_payload
         self.raw_opcode: bytes = raw_opcode
+        #
         self.call_type: Optional[RCPCallType] = (
             RCPCallType(call_type) if isinstance(call_type, int) else call_type
         )
         self.target_id: Optional[int] = (
             target_id
             if (not target_id or isinstance(target_id, int))
-            else int.from_bytes(target_id, byteorder="little")
+            else int.from_bytes(target_id, byteorder=self.get_endianness())
         )
-        self.result: RCPResult = (
-            result if isinstance(result, RCPResult) else RCPResult(result)
+        self.sender_id: Optional[int] = (
+            sender_id
+            if (not sender_id or isinstance(sender_id, int))
+            else int.from_bytes(sender_id, byteorder=self.get_endianness())
         )
+        self.result: Optional[RCPResult] = result
+        self.repeater_mode: Optional[RepeaterMode] = repeater_mode
+        self.repeater_status: Optional[RepeaterStatus] = repeater_status
+        self.repeater_service_type: Optional[
+            RepeaterServiceType
+        ] = repeater_service_type
+        self.broadcast_type: int = broadcast_type
 
     def get_endianness(self) -> Literal["big", "little"]:
         return "little"
@@ -196,19 +263,19 @@ class RadioControlProtocol(HDAP):
     def get_opcode(self) -> bytes:
         if self.opcode == RCPOpcode.UnknownService:
             return self.raw_opcode[0:2]
-        return self.opcode.value.to_bytes(length=2, byteorder="little")
+        return self.opcode.value.to_bytes(length=2, byteorder=self.get_endianness())
 
     def get_service_type(self) -> HyteraServiceType:
         return HyteraServiceType.RCP
 
     @staticmethod
     def from_bytes(
-        data: bytes, endian: Literal["big", "little"] = "big"
+        data: bytes, endian: Literal["big", "little"] = "little"
     ) -> Optional["RadioControlProtocol"]:
         (is_reliable, service_type) = HDAP.get_reliable_and_service(data[0:1])
         assert service_type == HyteraServiceType.RCP, f"Expected RCP got {service_type}"
 
-        opcode = RCPOpcode(int.from_bytes(data[1:3], byteorder="little"))
+        opcode = RCPOpcode(int.from_bytes(data[1:3], byteorder=endian))
         if opcode == RCPOpcode.UnknownService:
             return RadioControlProtocol(
                 opcode=opcode,
@@ -229,7 +296,35 @@ class RadioControlProtocol(HDAP):
             )
         elif opcode == RCPOpcode.CallReply:
             return RadioControlProtocol(
-                opcode=opcode, is_reliable=is_reliable, result=data[5]
+                opcode=opcode, is_reliable=is_reliable, result=RCPResult(data[5])
+            )
+        elif opcode == RCPOpcode.RepeaterBroadcastTransmitStatus:
+            return RadioControlProtocol(
+                opcode=opcode,
+                is_reliable=is_reliable,
+                repeater_mode=RepeaterMode(int.from_bytes(data[5:7], byteorder=endian)),
+                repeater_status=RepeaterStatus(
+                    int.from_bytes(data[7:9], byteorder=endian)
+                ),
+                repeater_service_type=RepeaterServiceType(
+                    int.from_bytes(data[9:11], byteorder=endian)
+                ),
+                call_type=RCPCallType(int.from_bytes(data[11:13], byteorder=endian)),
+                target_id=data[13:17],
+                sender_id=data[17:21],
+            )
+        elif opcode == RCPOpcode.BroadcastMessageConfigurationRequest:
+            return RadioControlProtocol(
+                opcode=opcode, is_reliable=is_reliable, broadcast_type=data[5]
+            )
+        elif opcode == RCPOpcode.BroadcastMessageConfigurationReply:
+            return RadioControlProtocol(
+                opcode=opcode, is_reliable=is_reliable, result=RCPResult(data[5])
+            )
+        elif opcode == RCPOpcode.StatusChangeNotificationRequest:
+            return RadioControlProtocol(
+                opcode=opcode,
+                is_reliable=is_reliable,
             )
         else:
             raise ValueError(
@@ -247,10 +342,40 @@ class RadioControlProtocol(HDAP):
             )
         elif self.opcode == RCPOpcode.CallRequest:
             return bytes([self.call_type.value]) + self.target_id.to_bytes(
-                length=4, byteorder="little"
+                length=4, byteorder=self.get_endianness()
             )
         elif self.opcode == RCPOpcode.CallReply:
-            return bytes([self.result.value])
+            return self.result.value.to_bytes(1, byteorder=self.get_endianness())
+        elif self.opcode == RCPOpcode.RepeaterBroadcastTransmitStatus:
+            return (
+                self.repeater_mode.value.to_bytes(2, byteorder=self.get_endianness())
+                + self.repeater_status.value.to_bytes(
+                    2, byteorder=self.get_endianness()
+                )
+                + self.repeater_service_type.value.to_bytes(
+                    2, byteorder=self.get_endianness()
+                )
+                + self.call_type.value.to_bytes(2, byteorder=self.get_endianness())
+                + self.target_id.to_bytes(4, byteorder=self.get_endianness())
+                + self.sender_id.to_bytes(4, byteorder=self.get_endianness())
+            )
+        elif self.opcode == RCPOpcode.BroadcastMessageConfigurationRequest:
+            return bytes(
+                [
+                    # 4 bytes broadcast type
+                    0,
+                    0,
+                    0,
+                    self.broadcast_type,
+                    # 4 bytes reserved
+                    0,
+                    0,
+                    0,
+                    0,
+                ]
+            )
+        elif self.opcode == RCPOpcode.BroadcastMessageConfigurationReply:
+            return self.result.value.to_bytes(1, byteorder=self.get_endianness())
 
         raise ValueError(f"get_payload not implemented for {self.opcode}")
 
@@ -264,4 +389,19 @@ class RadioControlProtocol(HDAP):
             represented += f"[{self.call_type}] [TO: {self.target_id}]"
         elif self.opcode == RCPOpcode.CallReply:
             represented += f"[{self.result}]"
+        elif self.opcode == RCPOpcode.BroadcastMessageConfigurationRequest:
+            represented += (
+                "[BROADCAST "
+                + ("NORMAL-TMP " if (self.broadcast_type & 0b1) else "")
+                + ("SHORT-DATA " if (self.broadcast_type & 0b10) else "")
+                + ("CSBK " if (self.broadcast_type & 0b100) else "")
+            ).strip() + "]"
+        elif self.opcode == RCPOpcode.BroadcastMessageConfigurationReply:
+            represented += f"[{self.result}]"
+        elif self.opcode == RCPOpcode.RepeaterBroadcastTransmitStatus:
+            represented += (
+                f"[RPT MODE: {self.repeater_mode}] [RPT STATUS: {self.repeater_status}] "
+                f"[RPT SERVICE: {self.repeater_service_type}] [CALL TYPE: {self.call_type}] "
+                f"[SENDER: {self.sender_id}] [TARGET: {self.target_id}]"
+            )
         return represented

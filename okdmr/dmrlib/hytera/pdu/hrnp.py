@@ -77,6 +77,7 @@ class HRNP(BytesInterface):
             len(data) >= 12
         ), f"At least 12-bytes for HRNP required, got {len(data)} bytes instead"
         hrnp_packet_len = int.from_bytes(data[8:10], byteorder="big")
+        assert len(data) >= hrnp_packet_len, f"packet seems incomplete"
         return HRNP(
             header=data[0:1],
             version=data[1:2],

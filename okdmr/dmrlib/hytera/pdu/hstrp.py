@@ -16,14 +16,14 @@ class HSTRPPacketType(BytesInterface):
 
     def __init__(
         self,
-        is_option: bool = False,
+        have_options: bool = False,
         is_reject: bool = False,
         is_close: bool = False,
         is_connect: bool = False,
         is_heartbeat: bool = False,
         is_ack: bool = False,
     ):
-        self.is_option: bool = is_option
+        self.have_options: bool = have_options
         self.is_reject: bool = is_reject
         self.is_close: bool = is_close
         self.is_connect: bool = is_connect
@@ -37,7 +37,7 @@ class HSTRPPacketType(BytesInterface):
         assert len(data) > 0, f"HSTRP Option Byte needs at least one byte"
         bits = bytes_to_bits(data[0:1])
         return HSTRPPacketType(
-            is_option=bits[2] == 1,
+            have_options=bits[2] == 1,
             is_reject=bits[3] == 1,
             is_close=bits[4] == 1,
             is_connect=bits[5] == 1,
@@ -48,7 +48,7 @@ class HSTRPPacketType(BytesInterface):
     def __repr__(self) -> str:
         return (
             "HSTRPPacketType "
-            + ("IS_OPTION " if self.is_option else "")
+            + ("HAVE_OPTIONS " if self.have_options else "")
             + ("IS_REJECT " if self.is_reject else "")
             + ("IS_CLOSE " if self.is_close else "")
             + ("IS_CONNECT " if self.is_connect else "")
@@ -58,18 +58,18 @@ class HSTRPPacketType(BytesInterface):
 
     @property
     def has_options(self):
-        return not self.is_heartbeat and self.is_option
+        return not self.is_heartbeat and self.have_options
 
     @property
     def has_data(self):
-        return self.is_option or self.is_ack
+        return self.have_options or self.is_ack
 
     def as_bytes(self, endian: Literal["big", "little"] = "big") -> bytes:
         return bitarray(
             [
                 False,
                 False,
-                self.is_option,
+                self.have_options,
                 self.is_reject,
                 self.is_close,
                 self.is_connect,
@@ -132,7 +132,7 @@ class HSTRPOptions(BytesInterface):
     def __repr__(self) -> str:
         r: str = ""
         for (command, data) in self.options:
-            r += f"[{command}: {int.from_bytes(data, byteorder='little') if command != HSTRPOptionType.RTP else ''}] "
+            r += f"[{command}: {int.from_bytes(data, byteorder='big') if command != HSTRPOptionType.RTP else ''}] "
         return r
 
     @staticmethod
@@ -255,7 +255,7 @@ class HSTRP(LoggingTrait, BytesInterface):
 
     def __repr__(self) -> str:
         label = f"[{self.pkt_type}] [S/N: {self.sn}]"
-        if isinstance(self.options, HSTRPOptions):
+        if isinstance(self.options, HSTRPOptions) and len(self.options.options) > 0:
             label += "\n\tOPTIONS: " + repr(self.options)
         if isinstance(self.payload, BytesInterface):
             label += "\n\tPAYLOAD: " + repr(self.payload)

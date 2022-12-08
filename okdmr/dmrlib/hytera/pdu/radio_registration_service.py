@@ -125,5 +125,17 @@ class RadioRegistrationService(HDAP):
 
     def __repr__(self) -> str:
         r: str = f"[{self.opcode}]"
-        # TODO add more descriptive fields
+        # radio ip is in all messages
+        if self.radio_ip:
+            r += f" {repr(self.radio_ip)}"
+        # answer contains result and renew period
+        if self.opcode == RRSTypes.RadioRegistrationAnswer:
+            if self.result:
+                r += f" [RESULT: {self.result}]"
+            if self.renew_time_seconds:
+                r += f" [RENEW PERIOD: {self.renew_time_seconds}s]"
+        # status check answer contains status
+        if self.opcode == RRSTypes.RegistrationStatusCheckAnswer:
+            if self.radio_state:
+                r += f" [STATUS: {self.radio_state}]"
         return r

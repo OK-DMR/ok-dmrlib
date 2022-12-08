@@ -6,6 +6,7 @@ from bitarray.util import int2ba, ba2int
 
 from okdmr.dmrlib.etsi.crc.crc9 import CRC9
 from okdmr.dmrlib.etsi.layer2.elements.crc_masks import CrcMasks
+from okdmr.dmrlib.etsi.layer2.elements.data_types import DataTypes
 from okdmr.dmrlib.utils.bits_bytes import bits_to_bytes, bytes_to_bits
 from okdmr.dmrlib.utils.bits_interface import BitsInterface
 
@@ -70,6 +71,10 @@ class Rate1Data(BitsInterface):
         if self.crc9 <= 0:
             self.crc9 = calculated_crc9
         self.crc9_ok: bool = self.crc9 == calculated_crc9
+
+    @staticmethod
+    def get_data_type() -> DataTypes:
+        return DataTypes.Rate1Data
 
     @staticmethod
     def validate_packet_type(packet_type: Rate1DataTypes, data_length: int) -> bool:
