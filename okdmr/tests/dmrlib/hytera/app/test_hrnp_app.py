@@ -58,10 +58,11 @@ class HRNPApp(LoggingTrait):
             self.buffer_in = self.buffer_in[len_hrnp:]
             print(f"buffer after {self.buffer_in.hex()}")
             if hrnp.opcode == HRNPOpcodes.ACCEPT:
-                hrno = HRNP.from_bytes(
-                    bytes.fromhex(
-                        "7e04000020100000001b42b50247180800e000000000000000eb03"
-                    )
+                hrno = HRNP(
+                    opcode=HRNPOpcodes.DATA,
+                    data=RadioControlProtocol(
+                        opcode=RCPOpcode.BroadcastMessageConfigurationRequest
+                    ),
                 )
                 self.write(hrno)
         except:

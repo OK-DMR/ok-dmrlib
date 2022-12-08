@@ -358,10 +358,10 @@ class RadioControlProtocol(HDAP):
             return bytes(
                 [
                     # 4 bytes broadcast type
-                    0,
-                    0,
-                    0,
                     self.broadcast_type,
+                    0,
+                    0,
+                    0,
                     # 4 bytes reserved
                     0,
                     0,
