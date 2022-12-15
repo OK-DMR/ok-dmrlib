@@ -75,6 +75,21 @@ def test_hytera_ipsc_sync():
         assert len(repr(csbk))
 
 
+def test_kairos_csbk():
+    csbks: List[str] = [
+        "B800 0000 FFFF FF00 00CA 640B",
+        "BD00 C006 0000 0100 00CA 3F08",
+        "BD00 C005 0000 0100 00CA E78A",
+        "BD00 C004 0000 0100 00CA 5FEB",
+    ]
+    for hexpdu in csbks:
+        csbk: CSBK = CSBK.from_bits(
+            bytes_to_bits(bytes.fromhex(hexpdu.replace(" ", "")))
+        )
+        print(repr(csbk))
+        assert isinstance(csbk, CSBK), f"Payload is not a valid CSBK data"
+
+
 class TestCSBKOs:
     def test_unknown_csbkos(self):
         with pytest.raises(NotImplementedError):

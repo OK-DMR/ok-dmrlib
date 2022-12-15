@@ -12,6 +12,7 @@ from okdmr.dmrlib.etsi.layer2.elements.sarq import SARQ
 from okdmr.dmrlib.etsi.layer2.elements.supplementary_flag import SupplementaryFlag
 from okdmr.dmrlib.etsi.layer2.elements.udt_format import UDTFormat
 from okdmr.dmrlib.etsi.layer2.pdu.data_header import DataHeader
+from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits
 
 
 def test_crc():
@@ -77,3 +78,11 @@ def test_data_headers():
             if dh.data_packet_format == DataPacketFormats.UnifiedDataTransport
             else isinstance(dh.get_blocks_to_follow(), int)
         )
+
+
+def test_kairos_header():
+    header: DataHeader = DataHeader.from_bits(
+        bytes_to_bits(bytes.fromhex("8DA300000100000101002B97"))
+    )
+    print(repr(header))
+    assert isinstance(header, DataHeader)
