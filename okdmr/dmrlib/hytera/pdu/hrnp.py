@@ -1,7 +1,6 @@
 import enum
 from typing import Optional, Union, Tuple, Literal
 
-from okdmr.dmrlib.etsi.crc.crc16 import CRC16
 from okdmr.dmrlib.hytera.pdu.hdap import HDAP
 from okdmr.dmrlib.utils.bytes_interface import BytesInterface
 
@@ -149,15 +148,13 @@ class HRNP(BytesInterface):
             else int.from_bytes(checksum, byteorder="big", signed=False)
         )
 
-        check: int = 0
+        check: int = 1 if self.has_data() else 0
 
         for i in range(0, len(checked_data), 2):
             check = (
                 check + int.from_bytes(checked_data[i : i + 2], byteorder="big")
             ) & 0xFFFF
         check = (check ^ 0xFFFF) & 0xFFFF
-
-        check2: int = CRC16.calculate(checked_data)
 
         if checksum != 0 and not check == checksum:
             print(
