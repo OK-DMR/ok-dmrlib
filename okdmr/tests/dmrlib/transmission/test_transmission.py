@@ -37,6 +37,9 @@ from okdmr.dmrlib.transmission.transmission_types import TransmissionTypes
 from okdmr.dmrlib.transmission.transmission_watcher import TransmissionWatcher
 from okdmr.dmrlib.utils.bits_bytes import bits_to_bytes, bytes_to_bits
 from okdmr.dmrlib.utils.bits_interface import BitsInterface
+from scapy.config import conf
+
+conf.use_pcap = True
 
 SMS_BURST: List[str] = [
     "55e105fbbde427040a68305294fdff57d75df5dcae42369824097da3bedb329255",

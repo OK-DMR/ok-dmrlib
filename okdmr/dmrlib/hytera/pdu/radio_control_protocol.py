@@ -2,6 +2,7 @@ import enum
 from typing import Optional, Union, Literal
 
 from okdmr.dmrlib.hytera.pdu.hdap import HDAP, HyteraServiceType
+from okdmr.dmrlib.hytera.pdu.radio_ip import RadioIP
 from okdmr.dmrlib.utils.bytes_interface import BytesInterface
 
 
@@ -225,6 +226,9 @@ class RadioControlProtocol(HDAP):
         repeater_service_type: Optional[RepeaterServiceType] = None,
         # (0x1847)Broadcast Message Configuration Request (Mobile API)
         broadcast_type: int = 0b0000_0111,
+        # 0x0452 Radio ID/Radio IP Request
+        target: int = 0x00,
+        raw_value: bytes = b"",
     ):
         super().__init__(is_reliable=is_reliable)
         self.opcode: RCPOpcode = RCPOpcode(
@@ -256,6 +260,8 @@ class RadioControlProtocol(HDAP):
             RepeaterServiceType
         ] = repeater_service_type
         self.broadcast_type: int = broadcast_type
+        self.target: int = target
+        self.raw_value: bytes = raw_value
 
     def get_endianness(self) -> Literal["big", "little"]:
         return "little"
@@ -321,6 +327,18 @@ class RadioControlProtocol(HDAP):
             return RadioControlProtocol(
                 opcode=opcode, is_reliable=is_reliable, result=RCPResult(data[5])
             )
+        elif opcode == RCPOpcode.RadioIDAndRadioIPQueryRequest:
+            return RadioControlProtocol(
+                opcode=opcode, is_reliable=is_reliable, target=data[5]
+            )
+        elif opcode == RCPOpcode.RadioIDAndRadioIPQueryReply:
+            return RadioControlProtocol(
+                opcode=opcode,
+                is_reliable=is_reliable,
+                result=RCPResult(data[5]),
+                target=data[6],
+                raw_value=data[7:11],
+            )
         else:
             raise ValueError(
                 f"Opcode {opcode} (0x{bytes(reversed(data[1:3])).hex().upper()}) not yet implemented"
@@ -371,6 +389,13 @@ class RadioControlProtocol(HDAP):
             )
         elif self.opcode == RCPOpcode.BroadcastMessageConfigurationReply:
             return self.result.value.to_bytes(1, byteorder=self.get_endianness())
+        elif self.opcode == RCPOpcode.RadioIDAndRadioIPQueryReply:
+            assert (
+                len(self.raw_value) == 4
+            ), f"Radio ID/IP Query Reply value has to be 4 bytes"
+            return bytes([self.result.value, self.target]) + self.raw_value
+        elif self.opcode == RCPOpcode.RadioIDAndRadioIPQueryRequest:
+            return bytes([self.target])
 
         raise ValueError(f"get_payload not implemented for {self.opcode}")
 
@@ -399,4 +424,10 @@ class RadioControlProtocol(HDAP):
                 f"[RPT SERVICE: {self.repeater_service_type}] [CALL TYPE: {self.call_type}] "
                 f"[SENDER: {self.sender_id}] [TARGET: {self.target_id}]"
             )
+        elif self.opcode == RCPOpcode.RadioIDAndRadioIPQueryRequest:
+            targets = {0x00: "Radio ID", 0x01: "Radio IP"}
+            represented += f"[TARGET: {targets[self.target]}]"
+        elif self.opcode == RCPOpcode.RadioIDAndRadioIPQueryReply:
+            targets = {0x00: "Radio ID", 0x01: "Radio IP"}
+            represented += f"[{self.result}] [{targets[self.target]}] [{int.from_bytes(self.raw_value, byteorder=self.get_endianness()) if self.target == 0x00 else repr(RadioIP.from_bytes(self.raw_value))}]"
         return represented

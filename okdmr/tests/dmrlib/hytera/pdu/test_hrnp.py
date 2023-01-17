@@ -1,6 +1,11 @@
 from typing import Dict
 
 from okdmr.dmrlib.hytera.pdu.hrnp import HRNP, HRNPOpcodes
+from okdmr.dmrlib.hytera.pdu.radio_control_protocol import (
+    RadioControlProtocol,
+    RCPOpcode,
+    RCPResult,
+)
 from okdmr.tests.dmrlib.tests_utils import assert_expected_attribute_values
 
 
@@ -9,6 +14,19 @@ def test_defaults():
     assert hrnp.block_number == 0x00
     assert hrnp.version == b"\x04"
     assert hrnp.header == b"\x7E"
+
+
+def test_hrnp_rcp_stability():
+    h = HRNP(
+        opcode=HRNPOpcodes.DATA,
+        data=RadioControlProtocol(
+            opcode=RCPOpcode.RadioIDAndRadioIPQueryRequest,
+            target=0x01,
+            raw_value=b"\x04\x03\x02\x01",
+            result=RCPResult.Success,
+        ),
+    )
+    assert h.as_bytes() == HRNP.from_bytes(h.as_bytes()).as_bytes()
 
 
 def test_hrnp_frombytes():

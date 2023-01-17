@@ -1,7 +1,8 @@
 import asyncio
 import sys
+from threading import Thread
 from time import sleep
-from typing import List
+from typing import List, Dict, Union
 
 from okdmr.dmrlib.hytera.pdu.hrnp import HRNP, HRNPOpcodes
 from okdmr.dmrlib.hytera.pdu.radio_control_protocol import (
@@ -20,6 +21,7 @@ class HRNPApp(LoggingTrait):
         self.buffer_in: bytes = b""
         self.source_id: int = 0x20
         self.buffer_out: List[bytes] = []
+        self.is_running: bool = False
 
     def write(self, hrnp: HRNP) -> None:
         sleep(0.1)
@@ -29,26 +31,36 @@ class HRNPApp(LoggingTrait):
             hrnp.packet_number = self.counter
             self.counter += 1
         # log
-        print(f"write {hrnp.as_bytes().hex()}")
+        print(f"SEND: {hrnp.as_bytes().hex().upper()}")
         print(repr(hrnp))
+        # assert
+        assert (
+            HRNP.from_bytes(hrnp.as_bytes()).as_bytes() == hrnp.as_bytes()
+        ), f"not stable {repr(hrnp)} {hrnp.as_bytes().hex().upper()} vs {HRNP.from_bytes(hrnp.as_bytes()).as_bytes().hex().upper()}"
         # write out
         self.serial.write(hrnp.as_bytes())
 
-    def connect(self) -> None:
-        hrnp = HRNP.from_bytes(bytes.fromhex("7e0400fe20100000000c60e1"))
-        self.write(hrnp)
+    def close(self) -> None:
+        self.write(HRNP(opcode=HRNPOpcodes.CLOSE))
 
-    def try_print_hrnp(self, data: bytes) -> None:
+    def connect(self) -> None:
+        self.counter = 0
+        self.write(HRNP(opcode=HRNPOpcodes.CONNECT))
+
+    def parse_buffer_in(self, data: bytes) -> None:
         try:
+            # clear buffer until we find expected HRNP header byte
             while self.buffer_in[0] != 0x7E:
                 self.buffer_in = self.buffer_in[1:]
+            # try parse HRNP from buffer_in
             hrnp = HRNP.from_bytes(self.buffer_in)
+            print(f"RECV: {hrnp.as_bytes().hex().upper()}")
+            print(repr(hrnp))
             if hrnp.opcode == HRNPOpcodes.DATA and isinstance(
                 hrnp.data, RadioControlProtocol
             ):
                 if hrnp.data.opcode == RCPOpcode.UnknownService:
                     return
-            print(f"receive {repr(hrnp)}")
             len_hrnp = len(hrnp.as_bytes())
             if hrnp.opcode == HRNPOpcodes.DATA:
                 data_ack = HRNP(
@@ -56,36 +68,104 @@ class HRNPApp(LoggingTrait):
                 )
                 self.write(hrnp=data_ack)
             self.buffer_in = self.buffer_in[len_hrnp:]
-            print(f"buffer after {self.buffer_in.hex()}")
-            if hrnp.opcode == HRNPOpcodes.ACCEPT:
-                hrno = HRNP(
-                    opcode=HRNPOpcodes.DATA,
-                    data=RadioControlProtocol(
-                        opcode=RCPOpcode.BroadcastMessageConfigurationRequest
-                    ),
-                )
-                self.write(hrno)
         except:
             pass  # print(sys.exc_info())
 
     async def read(self) -> None:
         self.connect()
-        while True:
+        self.is_running = True
+        while self.is_running:
             radio_in = self.serial.read()
             if len(radio_in):
-                print(f"from radio: {radio_in.hex()}")
                 self.buffer_in += radio_in
-                if len(self.buffer_in):
-                    print(f"buffer {self.buffer_in.hex()}")
-                self.try_print_hrnp(radio_in)
+                print(
+                    f"read {len(radio_in)} bytes ({radio_in.hex()}): {self.buffer_in.hex()}"
+                )
+                self.parse_buffer_in(radio_in)
+
+    def get_radio_id(self) -> None:
+        self.write(
+            HRNP(
+                opcode=HRNPOpcodes.DATA,
+                data=RadioControlProtocol(
+                    opcode=RCPOpcode.RadioIDAndRadioIPQueryRequest,
+                    # radio ID
+                    target=0x00,
+                ),
+            )
+        )
+
+    def get_radio_ip(self) -> None:
+        self.write(
+            HRNP(
+                opcode=HRNPOpcodes.DATA,
+                data=RadioControlProtocol(
+                    opcode=RCPOpcode.RadioIDAndRadioIPQueryRequest,
+                    # radio ip
+                    target=0x01,
+                ),
+            )
+        )
+
+    def set_broadcast(self, enabled: bool = True) -> None:
+        self.write(
+            HRNP(
+                opcode=HRNPOpcodes.DATA,
+                data=RadioControlProtocol(
+                    opcode=RCPOpcode.BroadcastMessageConfigurationRequest,
+                    broadcast_type=0b111 if enabled else 0b000,
+                ),
+            )
+        )
+
+    def handle_menu(self, user_input: str) -> None:
+        print()
+        _options: Dict[str, callable] = {
+            "send-hrnp": lambda user_in: self.write(
+                HRNP.from_bytes(bytes.fromhex(user_in))
+            ),
+            "connect": lambda _: self.connect(),
+            "close": lambda _: self.close(),
+            "set-broadcast": lambda _: self.set_broadcast(True),
+            "unset-broadcast": lambda _: self.set_broadcast(False),
+            "quit": lambda _: self.throw(_type=KeyboardInterrupt),
+            "help": lambda _: print(
+                f"Available commands:\n"
+                + "".join(f">> {key}\n" for key in _options.keys())
+            ),
+            "radio-id": lambda _: self.get_radio_id(),
+            "radio-ip": lambda _: self.get_radio_ip(),
+        }
+        _keyword = user_input.split(" ")[0]
+        if _keyword not in _options.keys():
+            if len(_keyword):
+                print(f"Unknown command {_keyword}")
+            _keyword = "help"
+
+        _options[_keyword](user_input)
+
+    def stop(self) -> None:
+        self.is_running = False
+
+    def throw(self, _type=BaseException) -> None:
+        raise _type()
 
 
 if __name__ == "__main__":
     app: HRNPApp = HRNPApp()
-    asyncio.run(app.read())
+    app_thread: Thread = Thread(target=lambda: asyncio.run(app.read()))
+    app_thread.start()
+    # sleep(1)
+
     while True:
-        userinput = input("input: ")
         try:
-            app.serial.write(bytes.fromhex(userinput.strip()))
+            print()
+            app.handle_menu(input("input: "))
+        except Union[KeyboardInterrupt, EOFError]:
+            break
         except:
             print(sys.exc_info())
+
+    print(f"graceful stop")
+    app.stop()
+    app_thread.join()

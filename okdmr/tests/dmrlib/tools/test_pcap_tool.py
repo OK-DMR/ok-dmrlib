@@ -177,7 +177,7 @@ def test_ipsc_analyze(capsys):
         ia.process_packet(
             data=pkt_bytes,
             packet=IP(src="192.168.0.1")
-            / UDP(sport="123", dport="123")
+            / UDP(sport=123, dport=123)
             / Raw(_pkt=pkt_bytes),
         )
 

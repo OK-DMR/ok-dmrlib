@@ -309,6 +309,21 @@ class CSBK(BitsInterface):
                 csbko=csbko,
                 raw_data=bits[16:80],
             )
+        elif csbko == CsbkOpcodes.AnnouncementPDUsWithoutResponse:
+            return CSBK(
+                last_block=lb,
+                protect_flag=pf,
+                manufacturers_feature_set_id=fid,
+                crc=crc_ccit,
+                csbko=csbko,
+            )
+        elif csbko == CsbkOpcodes.AlohaPDUsForRandomAccessProtocol:
+            return CSBK(
+                protect_flag=pf,
+                manufacturers_feature_set_id=fid,
+                crc=crc_ccit,
+                csbko=csbko,
+            )
 
         raise NotImplementedError(
             f"Not-implemented CSBKO {csbko} PDU {bits_to_bytes(bits).hex()}"

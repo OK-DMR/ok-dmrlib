@@ -25,6 +25,9 @@ class HRNP(BytesInterface):
     | HRNP Header Checksum (0x0000 - 0xFFFF) | Data (Payload, HDAP in case Opcode == DATA)
     """
 
+    DEFAULT_HEADER: bytes = b"\x7E"
+    DEFAULT_VERSION: bytes = b"\x04"
+
     def __init__(
         self,
         data: Optional[Union[bytes, HDAP]] = None,
@@ -34,8 +37,8 @@ class HRNP(BytesInterface):
         block_number: int = 0x00,
         packet_number: int = 0x00,
         checksum: Union[int, bytes] = b"\x00\x00",
-        header: Union[int, bytes] = b"\x7E",
-        version: Union[int, bytes] = b"\x04",
+        header: Union[int, bytes] = DEFAULT_HEADER,
+        version: Union[int, bytes] = DEFAULT_VERSION,
     ):
         """
 
@@ -99,7 +102,8 @@ class HRNP(BytesInterface):
             )
             + self.packet_number.to_bytes(length=2, byteorder="big")
             + len(self).to_bytes(2, byteorder="big")
-            + self.checksum
+            # checksum must be calculated from data assembled here, not data passed to constructor
+            + self.verify_checksum(self.checksum)[1]
             + (self.data.as_bytes() if self.has_data() else b"")
         )
 

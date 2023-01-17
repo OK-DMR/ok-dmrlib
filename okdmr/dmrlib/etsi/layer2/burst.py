@@ -33,7 +33,7 @@ class Burst(BytesInterface):
 
     def __init__(
         self,
-        full_bits: bitarray = bitarray(264),
+        full_bits: bitarray = bitarray([0] * 264),
         burst_type: BurstTypes = BurstTypes.Undefined,
     ):
         assert (
