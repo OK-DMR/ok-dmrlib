@@ -229,6 +229,8 @@ class RadioControlProtocol(HDAP):
         # 0x0452 Radio ID/Radio IP Request
         target: int = 0x00,
         raw_value: bytes = b"",
+        # 0x10C9 broadcast configuration
+        broadcast_config_raw: bytes = b"",
     ):
         super().__init__(is_reliable=is_reliable)
         self.opcode: RCPOpcode = RCPOpcode(
@@ -262,6 +264,7 @@ class RadioControlProtocol(HDAP):
         self.broadcast_type: int = broadcast_type
         self.target: int = target
         self.raw_value: bytes = raw_value
+        self.broadcast_config_raw: bytes = broadcast_config_raw
 
     def get_endianness(self) -> Literal["big", "little"]:
         return "little"
@@ -339,6 +342,12 @@ class RadioControlProtocol(HDAP):
                 target=data[6],
                 raw_value=data[7:11],
             )
+        elif opcode == RCPOpcode.BroadcastStatusConfigurationRequest:
+            return RadioControlProtocol(
+                opcode=opcode,
+                is_reliable=is_reliable,
+                broadcast_config_raw=data[5 : data[5] * 2],
+            )
         else:
             raise ValueError(
                 f"Opcode {opcode} (0x{bytes(reversed(data[1:3])).hex().upper()}) not yet implemented"
@@ -396,6 +405,8 @@ class RadioControlProtocol(HDAP):
             return bytes([self.result.value, self.target]) + self.raw_value
         elif self.opcode == RCPOpcode.RadioIDAndRadioIPQueryRequest:
             return bytes([self.target])
+        elif self.opcode == RCPOpcode.BroadcastStatusConfigurationRequest:
+            return self.broadcast_config_raw
 
         raise ValueError(f"get_payload not implemented for {self.opcode}")
 
@@ -430,4 +441,6 @@ class RadioControlProtocol(HDAP):
         elif self.opcode == RCPOpcode.RadioIDAndRadioIPQueryReply:
             targets = {0x00: "Radio ID", 0x01: "Radio IP"}
             represented += f"[{self.result}] [{targets[self.target]}] [{int.from_bytes(self.raw_value, byteorder=self.get_endianness()) if self.target == 0x00 else repr(RadioIP.from_bytes(self.raw_value))}]"
+        elif self.opcode == RCPOpcode.BroadcastStatusConfigurationRequest:
+            represented += f"[options count: {self.broadcast_config_raw[0]} len: {len(self.broadcast_config_raw) - 1}]"
         return represented

@@ -103,7 +103,7 @@ class HRNP(BytesInterface):
             + self.packet_number.to_bytes(length=2, byteorder="big")
             + len(self).to_bytes(2, byteorder="big")
             # checksum must be calculated from data assembled here, not data passed to constructor
-            + self.verify_checksum(self.checksum)[1]
+            + bytes([0, 0])  # skip verify self.verify_checksum(self.checksum)[1]
             + (self.data.as_bytes() if self.has_data() else b"")
         )
 
@@ -136,29 +136,16 @@ class HRNP(BytesInterface):
         if self.has_data():
             checked_data += self.data.as_bytes()
 
-        print(f"checked data {checked_data.hex().upper()}")
         if len(checked_data) % 2 == 1:
-            # pad with single zero byte, to allow for crc16 checksum
+            # add padding byte
             checked_data += b"\x00"
-            pass
 
-        checksum: int = (
-            checksum
-            if isinstance(checksum, int)
-            else int.from_bytes(checksum, byteorder="big", signed=False)
-        )
-
-        check: int = 1 if self.has_data() else 0
+        check: int = 0
 
         for i in range(0, len(checked_data), 2):
-            check = (
-                check + int.from_bytes(checked_data[i : i + 2], byteorder="big")
-            ) & 0xFFFF
-        check = (check ^ 0xFFFF) & 0xFFFF
+            check += int.from_bytes(checked_data[i : i + 2], byteorder="big")
 
-        if checksum != 0 and not check == checksum:
-            print(
-                f"checksum not match orig check:{check}/{check.to_bytes(2, byteorder='big').hex()} checksum:{checksum}/{checksum.to_bytes(2, byteorder='big').hex()}"
-            )
+        while check >> 16:
+            check = (check & 0xFFFF) + check >> 16
 
         return check == checksum, check.to_bytes(length=2, byteorder="big")

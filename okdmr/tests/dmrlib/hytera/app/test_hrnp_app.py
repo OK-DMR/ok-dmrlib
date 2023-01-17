@@ -122,6 +122,16 @@ class HRNPApp(LoggingTrait):
             )
         )
 
+    def set_status(self, enabled: bool = True) -> None:
+        self.write(
+            HRNP(
+                opcode=HRNPOpcodes.DATA,
+                data=RadioControlProtocol(
+                    opcode=RCPOpcode.BroadcastStatusConfigurationRequest,
+                ),
+            )
+        )
+
     def handle_menu(self, user_input: str) -> None:
         print()
         _options: Dict[str, callable] = {
@@ -132,6 +142,8 @@ class HRNPApp(LoggingTrait):
             "close": lambda _: self.close(),
             "set-broadcast": lambda _: self.set_broadcast(True),
             "unset-broadcast": lambda _: self.set_broadcast(False),
+            "set-status": lambda _: self.set_status(True),
+            "unset-status": lambda _: self.set_status(False),
             "quit": lambda _: self.throw(_type=KeyboardInterrupt),
             "help": lambda _: print(
                 f"Available commands:\n"
