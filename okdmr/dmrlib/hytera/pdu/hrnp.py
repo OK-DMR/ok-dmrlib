@@ -1,6 +1,7 @@
 import enum
 from typing import Optional, Union, Tuple, Literal
 
+from okdmr.dmrlib.etsi.crc.crc16 import CRC16
 from okdmr.dmrlib.hytera.pdu.hdap import HDAP
 from okdmr.dmrlib.utils.bytes_interface import BytesInterface
 
@@ -114,10 +115,10 @@ class HRNP(BytesInterface):
         return 12 + (len(self.data) if self.has_data() else 0)
 
     def __repr__(self):
-        return (
-            f"[HRNP v{self.version.hex()}] [SOURCE: {self.source}] [DESTINATION: {self.destination}] "
-            f"[PN: {self.packet_number}] [BLOCK: {self.block_number}] [{self.opcode}] "
-            + (repr(self.data) if self.opcode == HRNPOpcodes.DATA else "")
+        return f"[HRNP v{self.version.hex()}] [SOURCE: {self.source}] [DESTINATION: {self.destination}] " f"[PN: {self.packet_number}] [BLOCK: {self.block_number}] [{self.opcode}] " + (
+            f"[CHECKSUM: {self.checksum.hex()}] " if hasattr(self, "checksum") else f""
+        ) + (
+            repr(self.data) if self.opcode == HRNPOpcodes.DATA else ""
         )
 
     def verify_checksum(
@@ -132,25 +133,35 @@ class HRNP(BytesInterface):
             + self.packet_number.to_bytes(length=2, byteorder="big")
             + len(self).to_bytes(2, byteorder="big")
         )
+
         if self.has_data():
             checked_data += self.data.as_bytes()
+
+        print(f"checked data {checked_data.hex().upper()}")
         if len(checked_data) % 2 == 1:
             # pad with single zero byte, to allow for crc16 checksum
             checked_data += b"\x00"
+            pass
 
         checksum: int = (
             checksum
             if isinstance(checksum, int)
-            else int.from_bytes(checksum, byteorder="big")
+            else int.from_bytes(checksum, byteorder="big", signed=False)
         )
 
-        # weird quirk, checksum is always off-by-one when opcode is HRNPOpcodes.DATA
-        check: int = 1 if self.has_data() else 0
+        check: int = 0
 
         for i in range(0, len(checked_data), 2):
             check = (
                 check + int.from_bytes(checked_data[i : i + 2], byteorder="big")
             ) & 0xFFFF
         check = (check ^ 0xFFFF) & 0xFFFF
+
+        check2: int = CRC16.calculate(checked_data)
+
+        if checksum != 0 and not check == checksum:
+            print(
+                f"checksum not match orig check:{check}/{check.to_bytes(2, byteorder='big').hex()} checksum:{checksum}/{checksum.to_bytes(2, byteorder='big').hex()}"
+            )
 
         return check == checksum, check.to_bytes(length=2, byteorder="big")

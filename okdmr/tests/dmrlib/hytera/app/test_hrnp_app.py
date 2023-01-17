@@ -54,7 +54,11 @@ class HRNPApp(LoggingTrait):
                 self.buffer_in = self.buffer_in[1:]
             # try parse HRNP from buffer_in
             hrnp = HRNP.from_bytes(self.buffer_in)
-            print(f"RECV: {hrnp.as_bytes().hex().upper()}")
+            print(f"RECV: {self.buffer_in.hex().upper()}")
+            if not hrnp.as_bytes() == self.buffer_in:
+                print(
+                    f"RECV checksum {self.buffer_in[10:12].hex().upper()} not match {hrnp.checksum.hex().upper()}"
+                )
             print(repr(hrnp))
             if hrnp.opcode == HRNPOpcodes.DATA and isinstance(
                 hrnp.data, RadioControlProtocol
@@ -78,9 +82,9 @@ class HRNPApp(LoggingTrait):
             radio_in = self.serial.read()
             if len(radio_in):
                 self.buffer_in += radio_in
-                print(
-                    f"read {len(radio_in)} bytes ({radio_in.hex()}): {self.buffer_in.hex()}"
-                )
+                # print(
+                #     f"read {len(radio_in)} bytes ({radio_in.hex()}): {self.buffer_in.hex()}"
+                # )
                 self.parse_buffer_in(radio_in)
 
     def get_radio_id(self) -> None:
@@ -161,10 +165,10 @@ if __name__ == "__main__":
         try:
             print()
             app.handle_menu(input("input: "))
-        except Union[KeyboardInterrupt, EOFError]:
+        except EOFError:
             break
-        except:
-            print(sys.exc_info())
+        except KeyboardInterrupt:
+            break
 
     print(f"graceful stop")
     app.stop()
