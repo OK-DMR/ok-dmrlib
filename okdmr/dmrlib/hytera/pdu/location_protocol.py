@@ -75,22 +75,30 @@ class GPSData(BytesInterface):
         direction: Union[bytes, int],
     ):
         self.data_valid: Literal["A", "V"] = data_valid
-        self.greenwich_time: time = (
+        self.greenwich_time: Optional[time] = (
             greenwich_time
             if isinstance(greenwich_time, time)
-            else time(
-                hour=int(greenwich_time[0:2]),
-                minute=int(greenwich_time[2:4]),
-                second=int(greenwich_time[4:6]),
+            else (
+                time(
+                    hour=int(greenwich_time[0:2]),
+                    minute=int(greenwich_time[2:4]),
+                    second=int(greenwich_time[4:6]),
+                )
+                if len(greenwich_time.replace(b"\x00", b""))
+                else None
             )
         )
-        self.greenwich_date: date = (
+        self.greenwich_date: Optional[date] = (
             greenwich_date
             if isinstance(greenwich_date, date)
-            else date(
-                day=int(greenwich_date[0:2]),
-                month=int(greenwich_date[2:4]),
-                year=2000 + int(greenwich_date[4:6]),
+            else (
+                date(
+                    day=int(greenwich_date[0:2]),
+                    month=int(greenwich_date[2:4]),
+                    year=2000 + int(greenwich_date[4:6]),
+                )
+                if len(greenwich_date.replace(b"\x00", b""))
+                else None
             )
         )
         self.north_south: Literal["N", "S"] = north_south
@@ -106,9 +114,17 @@ class GPSData(BytesInterface):
         self.speed_knots: float = (
             speed_knots
             if isinstance(speed_knots, float)
-            else float(speed_knots.decode("ascii"))
+            else (
+                float(speed_knots.decode("ascii"))
+                if len(speed_knots.replace(b"\x00", b""))
+                else 0
+            )
         )
-        self.direction: int = int(direction)
+        self.direction: int = (
+            direction
+            if isinstance(direction, int)
+            else (int(direction) if len(direction.replace(b"\x00", b"")) else 0)
+        )
 
     @staticmethod
     def from_bytes(
@@ -132,14 +148,22 @@ class GPSData(BytesInterface):
     def as_bytes(self, endian: Literal["big", "little"] = "big") -> bytes:
         return (
             self.data_valid
-            + self.greenwich_time.strftime("%H%M%S")
-            + self.greenwich_date.strftime("%d%m%y")
+            + (
+                "\0" * 6
+                if self.greenwich_time is None
+                else self.greenwich_time.strftime("%H%M%S")
+            )
+            + (
+                "\0" * 6
+                if self.greenwich_date is None
+                else self.greenwich_date.strftime("%d%m%y")
+            )
             + self.north_south
             + f"{self.latitude:09.4f}"
             + self.east_west
             + f"{self.longitude:010.4f}"
-            + f"{self.speed_knots:03}"
-            + f"{self.direction:03}"
+            + ("\0" * 3 if self.speed_knots <= 0 else f"{self.speed_knots:03}")
+            + ("\0" * 3 if not self.direction else f"{self.direction:03}")
         ).encode("ascii")
 
     def __repr__(self) -> str:
@@ -148,12 +172,20 @@ class GPSData(BytesInterface):
 
         return (
             ("VALID " if self.data_valid else "INVALID ")
-            + self.greenwich_date.strftime("%H:%M:%S ")
-            + self.greenwich_time.strftime("%d.%m.%Y ")
+            + (
+                ""
+                if not self.greenwich_date
+                else self.greenwich_date.strftime("%H:%M:%S ")
+            )
+            + (
+                ""
+                if not self.greenwich_time
+                else self.greenwich_time.strftime("%d.%m.%Y ")
+            )
             + self.north_south
-            + f"{round(float(_lat[:2]) + float(_lat[2:])/60.0, 8)} "
+            + f"{round(float(_lat[:2]) + float(_lat[2:]) / 60.0, 8)} "
             + self.east_west
-            + f"{round(float(_lon[:3]) + float(_lon[3:])/60.0, 8)} "
+            + f"{round(float(_lon[:3]) + float(_lon[3:]) / 60.0, 8)} "
             + f"speed:{round(self.speed_knots * 1.852, 5)} km/h "
             + f"direction:{self.direction}°"
         )

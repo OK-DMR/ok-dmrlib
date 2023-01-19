@@ -112,7 +112,14 @@ class HSTRPLayer(DatagramProtocol, LoggingTrait):
         @param addr:
         @return: Tuple[(pdu was handled, by HSTRPLayer itself), (optionally parsed HSTRP object)]
         """
-        pdu = HSTRP.from_bytes(data=data)
+        try:
+            pdu = HSTRP.from_bytes(data=data)
+        except:
+            pdu = None
+            self.log_error(
+                f"Could not decode HSTRP from received UDP datagram {data.hex()}"
+            )
+
         was_handled: bool = False
         was_confirmed: bool = False
 
