@@ -1,6 +1,9 @@
 import enum
 from typing import Optional, Union, Literal
 
+from okdmr.dmrlib.etsi.layer3.elements.talker_alias_data_format import (
+    TalkerAliasDataFormat,
+)
 from okdmr.dmrlib.hytera.pdu.hdap import HDAP, HyteraServiceType
 from okdmr.dmrlib.hytera.pdu.radio_ip import RadioIP
 from okdmr.dmrlib.utils.bytes_interface import BytesInterface
@@ -202,6 +205,24 @@ class RepeaterServiceType(enum.Enum):
     VOICE_OF_PHONE = 0x1F
 
 
+@enum.unique
+class DispatchStationReceivingStatus(enum.Enum):
+    UNAVAILABLE = 0x00
+    VOICE_RX = 0x01
+    HANG_TIME = 0x02
+    CALL_END = 0x03
+    RESERVED = 0x04
+    """0x04 - 0x09 reserved"""
+    EXIT_EMERGENCY_ALARM = 0x0A
+    START_SFR = 0x0B
+    END_SFR = 0x0C
+    WAITING_FOR_DUPLEX_CALL = 0x0D
+    RX_FULL_DUPLEX_CALL = 0x0E
+    RESERVED2 = 0x0F
+    """0x0F - 0x10 reserved"""
+    RX_EMERGENCY_CALL_IN_SILENCE = 0x11
+
+
 class RadioControlProtocol(HDAP):
     """
     RCP - Little endian protocol
@@ -231,6 +252,9 @@ class RadioControlProtocol(HDAP):
         raw_value: bytes = b"",
         # 0x10C9 broadcast configuration
         broadcast_config_raw: bytes = b"",
+        # (0x0852)Send Talker Alias Request (Repeater API)
+        talker_alias_format: Optional[TalkerAliasDataFormat] = None,
+        talker_alias_data: bytes = b"",
     ):
         super().__init__(is_reliable=is_reliable)
         self.opcode: RCPOpcode = RCPOpcode(
@@ -265,6 +289,10 @@ class RadioControlProtocol(HDAP):
         self.target: int = target
         self.raw_value: bytes = raw_value
         self.broadcast_config_raw: bytes = broadcast_config_raw
+        self.talker_alias_data_format: Optional[
+            TalkerAliasDataFormat
+        ] = talker_alias_format
+        self.talker_alias_data: bytes = talker_alias_data
 
     def get_endianness(self) -> Literal["big", "little"]:
         return "little"
@@ -348,6 +376,25 @@ class RadioControlProtocol(HDAP):
                 is_reliable=is_reliable,
                 broadcast_config_raw=data[5 : data[5] * 2],
             )
+        elif opcode == RCPOpcode.SendTalkerAliasRequest:
+            return RadioControlProtocol(
+                opcode=opcode,
+                is_reliable=is_reliable,
+                call_type=RCPCallType(data[5]),
+                sender_id=data[6:10],
+                target_id=data[10:14],
+                talker_alias_format=TalkerAliasDataFormat(data[14]),
+                talker_alias_data=data[16 : 16 + data[15]],
+            )
+        elif opcode == RCPOpcode.SendTalkerAliasReply:
+            return RadioControlProtocol(
+                opcode=opcode,
+                is_reliable=is_reliable,
+                result=RCPResult(data[5]),
+                call_type=RCPCallType(data[6]),
+                sender_id=data[7:11],
+                target_id=data[11:15],
+            )
         else:
             raise ValueError(
                 f"Opcode {opcode} (0x{bytes(reversed(data[1:3])).hex().upper()}) not yet implemented"
@@ -407,6 +454,22 @@ class RadioControlProtocol(HDAP):
             return bytes([self.target])
         elif self.opcode == RCPOpcode.BroadcastStatusConfigurationRequest:
             return self.broadcast_config_raw
+        elif self.opcode == RCPOpcode.SendTalkerAliasRequest:
+            return (
+                bytes([self.call_type.value])
+                + self.sender_id.to_bytes(4, byteorder=self.get_endianness())
+                + self.target_id.to_bytes(4, byteorder=self.get_endianness())
+                + bytes(
+                    [self.talker_alias_data_format.value, len(self.talker_alias_data)]
+                )
+                + self.talker_alias_data
+            )
+        elif self.opcode == RCPOpcode.SendTalkerAliasReply:
+            return (
+                bytes([self.result.value, self.call_type.value])
+                + self.sender_id.to_bytes(4, byteorder=self.get_endianness())
+                + self.target_id.to_bytes(4, byteorder=self.get_endianness())
+            )
 
         raise ValueError(f"get_payload not implemented for {self.opcode}")
 
@@ -443,4 +506,15 @@ class RadioControlProtocol(HDAP):
             represented += f"[{self.result}] [{targets[self.target]}] [{int.from_bytes(self.raw_value, byteorder=self.get_endianness()) if self.target == 0x00 else repr(RadioIP.from_bytes(self.raw_value))}]"
         elif self.opcode == RCPOpcode.BroadcastStatusConfigurationRequest:
             represented += f"[options count: {self.broadcast_config_raw[0]} len: {len(self.broadcast_config_raw) - 1}]"
+        elif self.opcode == RCPOpcode.SendTalkerAliasRequest:
+            represented += (
+                f"[{self.call_type}] "
+                f"[SENDER: {self.sender_id}] [TARGET: {self.target_id}] "
+                f"[{self.talker_alias_data_format}] [ALIAS: raw({self.talker_alias_data.hex()}) {self.talker_alias_data_format.decode(self.talker_alias_data)}]"
+            )
+        elif self.opcode == RCPOpcode.SendTalkerAliasReply:
+            represented += (
+                f"[{self.call_type}] [{self.result}] "
+                f"[SENDER: {self.sender_id}] [TARGET: {self.target_id}] "
+            )
         return represented

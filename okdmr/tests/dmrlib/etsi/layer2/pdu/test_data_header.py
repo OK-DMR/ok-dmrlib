@@ -84,5 +84,18 @@ def test_kairos_header():
     header: DataHeader = DataHeader.from_bits(
         bytes_to_bits(bytes.fromhex("8DA300000100000101002B97"))
     )
+    # [DataPacketFormats.ShortDataDefined] [SAPIdentifier.ShortData] [DefinedDataFormats.Binary] [SARQ.NotRequired] [TARGET IS GROUP] [SOURCE: 1] [DESTINATION: 1] [FullMessageFlag.FirstTryToCompletePacket] [APPENDED BLOCKS: 3]
     print(repr(header))
     assert isinstance(header, DataHeader)
+
+    dh: DataHeader = DataHeader.from_bits(
+        bytes_to_bits(bytes.fromhex("8DA000000100000101002B97"))
+    )
+    # [DataPacketFormats.ShortDataDefined] [CRC INVALID] [SAPIdentifier.ShortData] [DefinedDataFormats.Binary] [SARQ.NotRequired] [TARGET IS GROUP] [SOURCE: 1] [DESTINATION: 1] [FullMessageFlag.FirstTryToCompletePacket] [APPENDED BLOCKS: 0]
+    print(repr(dh))
+
+    dh: DataHeader = DataHeader.from_bits(
+        bytes_to_bits(bytes.fromhex("8DA30000010008350100B731"))
+    )
+    # [DataPacketFormats.ShortDataDefined] [SAPIdentifier.ShortData] [DefinedDataFormats.Binary] [SARQ.NotRequired] [TARGET IS GROUP] [SOURCE: 2101] [DESTINATION: 1] [FullMessageFlag.FirstTryToCompletePacket] [APPENDED BLOCKS: 3]
+    print(repr(dh))

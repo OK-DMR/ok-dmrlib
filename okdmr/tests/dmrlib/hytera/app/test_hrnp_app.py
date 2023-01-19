@@ -123,11 +123,16 @@ class HRNPApp(LoggingTrait):
         )
 
     def set_status(self, enabled: bool = True) -> None:
+        raw = b"\x01"
+        # 0x01: Broadcast Receive Status(0xB844)
+        raw += b"\x01\x01"
+
         self.write(
             HRNP(
                 opcode=HRNPOpcodes.DATA,
                 data=RadioControlProtocol(
                     opcode=RCPOpcode.BroadcastStatusConfigurationRequest,
+                    broadcast_config_raw=raw,
                 ),
             )
         )

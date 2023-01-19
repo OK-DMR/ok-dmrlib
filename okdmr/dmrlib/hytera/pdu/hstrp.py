@@ -220,6 +220,7 @@ class HSTRP(LoggingTrait, BytesInterface):
             if pkt_type.has_options
             else HSTRPOptions()
         )
+
         # payload might be there even if the options is_option=False
         payload = (
             HDAP.from_bytes(data[6 + len(options) :])

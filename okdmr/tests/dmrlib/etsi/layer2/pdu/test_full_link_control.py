@@ -64,7 +64,6 @@ def test_embedded_lc():
         bits: bitarray = bytes_to_bits(bytes.fromhex(hexmsg))
         vbptc: bitarray = VBPTC12873.deinterleave_data_bits(bits=bits, include_cs5=True)
         lc: FullLinkControl = FullLinkControl.from_bits(vbptc)
-
         if not len(assertdict):
             print(repr(lc))
 

@@ -18,6 +18,34 @@ class TalkerAliasDataFormat(BitsInterface, enum.Enum):
     UnicodeUTF8 = 0b10
     UnicodeUTF16LE = 0b11
 
+    def encode(self, string: str) -> bytes:
+        if self.value == TalkerAliasDataFormat.SevenBitCharacters.value:
+            return string.encode("646")
+        elif self.value == TalkerAliasDataFormat.UnicodeUTF16LE.value:
+            return string.encode("utf-16-le")
+        elif self.value == TalkerAliasDataFormat.UnicodeUTF8.value:
+            return string.encode("utf8")
+        elif self.value == TalkerAliasDataFormat.ISOEightBitCharacters.value:
+            return string.encode("latin")
+
+        raise NotImplementedError(
+            f"TalkerAliasDataFormat.encode not implemented for {self.value}"
+        )
+
+    def decode(self, raw: bytes) -> str:
+        if self.value == TalkerAliasDataFormat.SevenBitCharacters.value:
+            return raw.decode("646")
+        elif self.value == TalkerAliasDataFormat.UnicodeUTF16LE.value:
+            return raw.decode("utf-16-le")
+        elif self.value == TalkerAliasDataFormat.UnicodeUTF8.value:
+            return raw.decode("utf8")
+        elif self.value == TalkerAliasDataFormat.ISOEightBitCharacters.value:
+            return raw.decode("latin")
+
+        raise NotImplementedError(
+            f"TalkerAliasDataFormat.decode not implemented for {self.name}"
+        )
+
     def as_bits(self) -> bitarray:
         return int2ba(self.value, length=2)
 

@@ -8,9 +8,10 @@ from asyncio import (
     new_event_loop,
     BaseTransport,
 )
+from copy import deepcopy
 from datetime import datetime
 from signal import SIGINT, SIGTERM
-from typing import Union, Tuple, Any, Optional, List, Dict
+from typing import Union, Tuple, Any, Optional, Dict, Type
 
 from okdmr.dmrlib.hytera.pdu.hdap import HDAP
 from okdmr.dmrlib.hytera.pdu.hstrp import HSTRP, HSTRPPacketType
@@ -56,20 +57,21 @@ class HSTRPLayer(DatagramProtocol, LoggingTrait):
             self.hstrp_connected = connected
 
     def hstrp_send_ack(
-        self, addr: Tuple[Union[str, Any], int], request: HSTRP
+        self, addr: Tuple[Union[str, Any], int], request: HSTRP, reject: bool = False
     ) -> HSTRP:
         """
         Will directly send out ACK for given request to provided addr
 
         @param addr:
         @param request:
+        @param reject:
         @return: ACK HSTRP object
         """
-        ack: HSTRP = request
-        request.pkt_type.is_ack = True
-        request.payload = None
+        ack: HSTRP = deepcopy(request)
+        ack.pkt_type.is_ack = not reject
+        ack.pkt_type.is_reject = reject
+        ack.payload = None
         if self.transport:
-            # self.log_debug(f"hstrp_send_ack {repr(ack)}")
             self.transport.sendto(data=ack.as_bytes(), addr=addr)
         return ack
 
@@ -113,18 +115,6 @@ class HSTRPLayer(DatagramProtocol, LoggingTrait):
         pdu = HSTRP.from_bytes(data=data)
         was_handled: bool = False
         was_confirmed: bool = False
-        if (
-            not pdu
-            or not isinstance(pdu, HSTRP)
-            or (
-                isinstance(pdu, HSTRP)
-                and not pdu.pkt_type.is_ack
-                and not pdu.pkt_type.is_heartbeat
-            )
-        ):
-            self.log_debug(
-                f"datagram_received on {self.port} from {addr} data {data.hex()}"
-            )
 
         if not isinstance(pdu, HSTRP):
             self.log_warning(f"received non HSTRP on {self.transport}")
@@ -138,7 +128,7 @@ class HSTRPLayer(DatagramProtocol, LoggingTrait):
             was_confirmed = True
             self.hstrp_set_connected(connected=True)
             self.hstrp_send_ack(addr, pdu)
-        if pdu.pkt_type.is_heartbeat:
+        elif pdu.pkt_type.is_heartbeat:
             # heartbeat
             was_handled = True
             # HEARTBEAT is not confirmed protocol
@@ -146,7 +136,7 @@ class HSTRPLayer(DatagramProtocol, LoggingTrait):
             if self.hstrp_connected:
                 # TODO use T_HEARTBEAT and send own heartbeats (not-just copy peer timer/heartbeats)
                 self.hstrp_send_heartbeat(addr, pdu)
-        if pdu.pkt_type.is_close:
+        elif pdu.pkt_type.is_close:
             # connection teardown
             self.hstrp_set_connected(connected=False)
             was_handled = True
@@ -191,6 +181,24 @@ class RCPLayer(HSTRPLayer):
         return was_handled, pdu
 
 
+class LPLayer(HSTRPLayer):
+    def __init__(self, port: int) -> None:
+        super().__init__(port=port)
+
+    def datagram_received(
+        self, data: bytes, addr: Tuple[Union[str, Any], int]
+    ) -> Tuple[bool, Optional[HSTRP]]:
+        was_handled, pdu = super().datagram_received(data=data, addr=addr)
+        if not pdu:
+            return was_handled, pdu
+
+        if not was_handled:
+            self.log_warning(f"LP did not handle {data.hex()}")
+            self.log_warning(repr(pdu))
+
+        return was_handled, pdu
+
+
 class RRSLayer(HSTRPLayer):
     def __init__(self, port: int):
         super().__init__(port=port)
@@ -223,14 +231,18 @@ class RRSLayer(HSTRPLayer):
         rrs: RadioRegistrationService = (
             pdu.payload if isinstance(pdu.payload, RadioRegistrationService) else None
         )
+        if not rrs:
+            return was_handled, pdu
 
         if rrs.opcode == RRSTypes.RadioRegistrationRequest:
             was_handled = True
             self.registry[rrs.radio_ip.as_ip()] = RRSRadioState.Online
             self.rrs_confirm(pdu, addr)
+            self.log_info(f"Radio {rrs.radio_ip.radio_id} is {rrs.radio_state.name}")
         elif rrs.opcode == RRSTypes.RadioGoingOffline:
             was_handled = True
             self.registry[rrs.radio_ip.as_ip()] = RRSRadioState.Offline
+            self.log_info(f"Radio {rrs.radio_ip.radio_id} went Offline")
 
         if not was_handled:
             self.log_warning(f"RRS did not handle {data.hex()}")
@@ -242,44 +254,44 @@ class RRSLayer(HSTRPLayer):
 class RRSApp(LoggingTrait):
     DEF_PORT_SLOT1: int = 30_001
     DEF_PORT_SLOT2: int = 30_002
-    EXTRA_PORTS: List[int] = [
+    EXTRA_PORTS: Dict[int, Type[HSTRPLayer]] = {
         # mobile
-        3_002,
-        3_003,
-        5_016,
-        3_005,
-        3_006,
-        3_007,
-        3_009,
+        3_002: RRSLayer,
+        3_003: LPLayer,
+        5_016: HSTRPLayer,
+        3_005: RCPLayer,
+        3_006: HSTRPLayer,
+        3_007: HSTRPLayer,
+        3_009: HSTRPLayer,
         # GPS
-        30_003,
-        30_004,
+        30_003: LPLayer,
+        30_004: LPLayer,
         # telemetry
-        30_005,
-        30_006,
+        30_005: HSTRPLayer,
+        30_006: HSTRPLayer,
         # tms
-        30_007,
-        30_008,
+        30_007: HSTRPLayer,
+        30_008: HSTRPLayer,
         # radio control
-        30_009,
-        30_010,
+        30_009: RCPLayer,
+        30_010: RCPLayer,
         # voice service
-        30_012,
-        30_014,
+        30_012: None,
+        30_014: None,
         # analog call control
-        30_015,
-        30_016,
+        30_015: HSTRPLayer,
+        30_016: HSTRPLayer,
         # e2e
-        30_017,
-        30_018,
+        30_017: HSTRPLayer,
+        30_018: HSTRPLayer,
         # sdmp
-        3_017,
-        3_018,
-    ]
+        3_017: HSTRPLayer,
+        3_018: HSTRPLayer,
+    }
 
     def __init__(
         self,
-        ip: str = "10.0.0.1",  # "192.168.22.13",
+        ip: str = "192.168.22.13",
         slot1_port: int = DEF_PORT_SLOT1,
         slot2_port: int = DEF_PORT_SLOT2,
     ):
@@ -301,18 +313,15 @@ class RRSApp(LoggingTrait):
         await self.loop.create_datagram_endpoint(
             lambda: self.slot2, local_addr=(self.ip, self.port_slot2)
         )
-        for extra_port in self.EXTRA_PORTS:
-            self.extras[extra_port] = (
-                RCPLayer(port=extra_port)
-                if extra_port
-                in (
-                    30_009,
-                    30_010,
-                )
-                else HSTRPLayer(port=extra_port)
-            )
+        for extra_port, handler in self.EXTRA_PORTS.items():
+            if not handler:
+                continue
+            self.extras[extra_port] = handler(port=extra_port)
             await self.loop.create_datagram_endpoint(
                 lambda: self.extras[extra_port], local_addr=(self.ip, extra_port)
+            )
+            self.log_info(
+                f"Opened UDP port {extra_port} with handler {handler.__name__}"
             )
 
     def stop(self) -> None:
