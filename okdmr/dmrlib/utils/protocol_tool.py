@@ -22,5 +22,6 @@ class ProtocolTool:
             sys.argv[1:] if (not arguments or not len(arguments)) else arguments
         )
         for hex_msg in args.hex:
+            print(hex_msg)
             pdu = impl.from_bytes(bytes.fromhex(hex_msg))
             print(repr(pdu))

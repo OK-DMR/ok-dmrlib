@@ -1,4 +1,4 @@
-from typing import Union, Optional
+from typing import Union, Optional, Dict
 
 from bitarray import bitarray
 from bitarray.util import ba2int, int2ba
@@ -13,6 +13,9 @@ from okdmr.dmrlib.etsi.layer3.elements.additional_information_field import (
 from okdmr.dmrlib.etsi.layer3.elements.answer_response import AnswerResponse
 from okdmr.dmrlib.etsi.layer3.elements.channel_timing_opcode import ChannelTimingOpcode
 from okdmr.dmrlib.etsi.layer3.elements.dynamic_identifier import DynamicIdentifier
+from okdmr.dmrlib.etsi.layer3.elements.random_access_service_function import (
+    RandomAccessServiceFunction,
+)
 from okdmr.dmrlib.etsi.layer3.elements.reason_code import ReasonCode
 from okdmr.dmrlib.etsi.layer3.elements.service_options import ServiceOptions
 from okdmr.dmrlib.etsi.layer3.elements.source_type import SourceType
@@ -59,6 +62,18 @@ class CSBK(BitsInterface):
         channel_timing_opcode: Union[ChannelTimingOpcode, int] = 0,
         source_identifier: int = 0,
         source_dynamic_identifier: Union[DynamicIdentifier, int] = 0,
+        # aloha pdu for RAP
+        tsccas_support: bool = False,
+        site_timeslot_synchronized: bool = False,
+        document_version_control: int = 3,
+        tscc_is_offset_timing: bool = False,
+        ts_active_connection: bool = False,
+        aloha_mask: int = 0,
+        service_function: Union[RandomAccessServiceFunction, int] = 0,
+        nrand_wait: int = 0,
+        aloha_reg_required: bool = False,
+        aloha_backoff: int = 1,
+        system_identity_code: int = 0,
         # for unknown / manufacturer-specific data
         raw_data: Union[bytes, bitarray] = b"",
     ):
@@ -140,6 +155,21 @@ class CSBK(BitsInterface):
         self.raw_data: bytes = (
             bits_to_bytes(raw_data) if isinstance(raw_data, bitarray) else raw_data
         )
+        self.tsccas_support: bool = tsccas_support
+        self.site_timeslot_synchronized: bool = site_timeslot_synchronized
+        self.document_version_control: int = document_version_control
+        self.tscc_is_offset_timing: bool = tscc_is_offset_timing
+        self.ts_active_connection: bool = ts_active_connection
+        self.aloha_mask: int = aloha_mask
+        self.service_function: RandomAccessServiceFunction = (
+            service_function
+            if isinstance(service_function, RandomAccessServiceFunction)
+            else RandomAccessServiceFunction(service_function)
+        )
+        self.nrand_wait: int = nrand_wait
+        self.aloha_reg_required: bool = aloha_reg_required
+        self.aloha_backoff: int = aloha_backoff
+        self.system_identity_code: int = system_identity_code
 
         if self.crc <= 0:
             self.calculate_crc_ccit()
@@ -211,6 +241,25 @@ class CSBK(BitsInterface):
             )
         elif self.csbko == CsbkOpcodes.HyteraIPSCSync:
             pdu += bytes_to_bits(self.raw_data)
+        elif self.csbko == CsbkOpcodes.AlohaPDUsForRandomAccessProtocol:
+            pdu += (
+                bitarray(
+                    [
+                        0,  # reserved bit
+                        self.tsccas_support,
+                        self.site_timeslot_synchronized,
+                    ]
+                )
+                + int2ba(self.document_version_control, length=3)
+                + bitarray([self.tscc_is_offset_timing, self.ts_active_connection])
+                + int2ba(self.aloha_mask, length=5)
+                + int2ba(self.service_function.value, length=2)
+                + int2ba(self.nrand_wait, length=4)
+                + bitarray([self.aloha_reg_required])
+                + int2ba(self.aloha_backoff, length=4)
+                + int2ba(self.system_identity_code, length=16)
+                + int2ba(self.target_address, length=24)
+            )
 
         return pdu + int2ba(self.crc, length=16)
 
@@ -323,6 +372,18 @@ class CSBK(BitsInterface):
                 manufacturers_feature_set_id=fid,
                 crc=crc_ccit,
                 csbko=csbko,
+                tsccas_support=bits[17] == 1,
+                site_timeslot_synchronized=bits[18] == 1,
+                document_version_control=ba2int(bits[19:22]),
+                tscc_is_offset_timing=bits[22] == 1,
+                ts_active_connection=bits[23] == 1,
+                aloha_mask=ba2int(bits[24:29]),
+                service_function=ba2int(bits[29:31]),
+                nrand_wait=ba2int(bits[31:35]),
+                aloha_reg_required=bits[35] == 1,
+                aloha_backoff=ba2int(bits[36:40]),
+                system_identity_code=ba2int(bits[40:56]),
+                target_address=ba2int(bits[56:80]),
             )
 
         raise NotImplementedError(
@@ -358,4 +419,36 @@ class CSBK(BitsInterface):
             )
         elif self.csbko == CsbkOpcodes.HyteraIPSCSync:
             description += f"[MFID DATA HEX({self.raw_data.hex()})]"
+        elif self.csbko == CsbkOpcodes.AlohaPDUsForRandomAccessProtocol:
+            backoff: Dict[int, int] = {
+                1: 1,
+                2: 2,
+                3: 3,
+                4: 4,
+                5: 5,
+                6: 8,
+                7: 11,
+                8: 15,
+                9: 20,
+                10: 26,
+                11: 33,
+                12: 41,
+                13: 50,
+                14: 70,
+                15: 100,
+            }
+            description += (
+                f"[TSCCAS support: {self.tsccas_support}] "
+                f"[Timeslot sync enabled: {self.site_timeslot_synchronized}] "
+                f"[DOC: v{self.document_version_control}] "
+                f"[TIMING: {'offset' if self.tscc_is_offset_timing else 'aligned'}] "
+                f"[TS ACTIVE CONNECTION: {self.ts_active_connection}] "
+                f"[MASK: {self.aloha_mask}] "
+                f"[SERVICE: {self.service_function}] "
+                f"[NRAND_WAIT: {self.nrand_wait}] "
+                f"[REGISTRATION REQUIRED: {self.aloha_reg_required}] "
+                f"[BACKOFF: TDMA Frame Length = {backoff.get(self.aloha_backoff)}] "
+                f"[SYSTEM IDENTITY: {self.system_identity_code}] "
+                f"[MS ADDRESS: {self.target_address}]"
+            )
         return description

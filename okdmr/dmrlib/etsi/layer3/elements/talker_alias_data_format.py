@@ -28,10 +28,6 @@ class TalkerAliasDataFormat(BitsInterface, enum.Enum):
         elif self.value == TalkerAliasDataFormat.ISOEightBitCharacters.value:
             return string.encode("latin")
 
-        raise NotImplementedError(
-            f"TalkerAliasDataFormat.encode not implemented for {self.value}"
-        )
-
     def decode(self, raw: bytes) -> str:
         if self.value == TalkerAliasDataFormat.SevenBitCharacters.value:
             return raw.decode("646")
@@ -41,10 +37,6 @@ class TalkerAliasDataFormat(BitsInterface, enum.Enum):
             return raw.decode("utf8")
         elif self.value == TalkerAliasDataFormat.ISOEightBitCharacters.value:
             return raw.decode("latin")
-
-        raise NotImplementedError(
-            f"TalkerAliasDataFormat.decode not implemented for {self.name}"
-        )
 
     def as_bits(self) -> bitarray:
         return int2ba(self.value, length=2)
