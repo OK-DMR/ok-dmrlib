@@ -103,7 +103,7 @@ class HRNP(BytesInterface):
             + self.packet_number.to_bytes(length=2, byteorder="big")
             + len(self).to_bytes(2, byteorder="big")
             # checksum must be calculated from data assembled here, not data passed to constructor
-            + bytes([0, 0])  # skip verify self.verify_checksum(self.checksum)[1]
+            + self.verify_checksum(self.checksum)[1]
             + (self.data.as_bytes() if self.has_data() else b"")
         )
 
@@ -123,6 +123,7 @@ class HRNP(BytesInterface):
     def verify_checksum(
         self, checksum: Union[bytes, int] = b"\x00\x00"
     ) -> Tuple[bool, bytes]:
+        # checksumed data
         checked_data: bytes = (
             self.header
             + self.version
@@ -140,6 +141,7 @@ class HRNP(BytesInterface):
             # add padding byte
             checked_data += b"\x00"
 
+        # calc checksum
         check: int = 0
 
         for i in range(0, len(checked_data), 2):
@@ -147,5 +149,12 @@ class HRNP(BytesInterface):
 
         while check >> 16:
             check = (check & 0xFFFF) + check >> 16
+
+        # make check and checksum comparable
+        checksum: int = (
+            checksum
+            if isinstance(checksum, int)
+            else int.from_bytes(checksum, byteorder="big")
+        )
 
         return check == checksum, check.to_bytes(length=2, byteorder="big")

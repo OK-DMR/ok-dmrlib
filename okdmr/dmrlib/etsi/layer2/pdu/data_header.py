@@ -103,8 +103,6 @@ class DataHeader(BitsInterface):
             self.crc_ok: bool = CRC16.check(
                 self.as_bits()[:-16].tobytes(), ba2int(self.crc), CrcMasks.DataHeader
             )
-            if not self.crc_ok:
-                print(f"orig crc {self.crc}")
 
     def get_blocks_to_follow(self) -> Optional[int]:
         if self.data_packet_format == DataPacketFormats.UnifiedDataTransport:
