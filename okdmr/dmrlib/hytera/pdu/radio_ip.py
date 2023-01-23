@@ -11,6 +11,11 @@ class RadioIP(BytesInterface):
     """
 
     def __init__(self, radio_id: Union[int, bytes], subnet: int = 0x0A):
+        """
+
+        @param radio_id:
+        @param subnet: 0x0A is "10" as in IP "10.0.0.1"
+        """
         self.subnet: int = subnet
         self.radio_id: int = (
             radio_id
@@ -22,7 +27,9 @@ class RadioIP(BytesInterface):
     def from_bytes(
         data: bytes, endian: Literal["big", "little"] = "big"
     ) -> Optional["RadioIP"]:
-        assert len(data) >= 4, f"4 bytes required to construct RadioIP"
+        assert (
+            len(data) == 4
+        ), f"4 bytes required to construct RadioIP, got {len(data)} :: {data.hex()}"
         if endian == "little":
             data = data[::-1]
         return RadioIP(subnet=data[0], radio_id=data[1:4])

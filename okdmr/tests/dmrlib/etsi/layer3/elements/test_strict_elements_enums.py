@@ -22,6 +22,7 @@ from okdmr.dmrlib.etsi.layer3.elements.activity_id import ActivityID
 from okdmr.dmrlib.etsi.layer3.elements.additional_information_field import (
     AdditionalInformationField,
 )
+from okdmr.dmrlib.etsi.layer3.elements.announcement_type import AnnouncementType
 from okdmr.dmrlib.etsi.layer3.elements.answer_response import AnswerResponse
 from okdmr.dmrlib.etsi.layer3.elements.channel_timing_opcode import ChannelTimingOpcode
 from okdmr.dmrlib.etsi.layer3.elements.dynamic_identifier import DynamicIdentifier
@@ -96,3 +97,6 @@ class TestRaisingElements:
                 bits=bitarray([0] * 4)
                 + DataPacketFormats.ProprietaryDataPacket.as_bits()
             )
+        with pytest.raises(ValueError):
+            # value out of range, announcement type is 5-bit value
+            AnnouncementType(0b11_0101)

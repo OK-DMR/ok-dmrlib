@@ -127,7 +127,6 @@ class Burst(BytesInterface):
         if isinstance(self.data, CSBK):
             return int(self.data.target_address or 0)
         elif isinstance(self.data, DataHeader):
-            print(f"header llid destination {self.data.llid_destination}")
             return int(self.data.llid_destination or 0)
 
         return 0

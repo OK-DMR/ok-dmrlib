@@ -182,7 +182,7 @@ class RCPLayer(HSTRPLayer):
             return was_handled, pdu
 
         if not was_handled:
-            self.log_warning(f"RCP did not handle {data.hex()}")
+            self.log_warning(f"\nRCP did not handle {data.hex()}")
             self.log_warning(repr(pdu))
 
         return was_handled, pdu
@@ -200,7 +200,7 @@ class LPLayer(HSTRPLayer):
             return was_handled, pdu
 
         if not was_handled:
-            self.log_warning(f"LP did not handle {data.hex()}")
+            self.log_warning(f"\nLP did not handle {data.hex()}")
             self.log_warning(repr(pdu))
 
         return was_handled, pdu
@@ -252,7 +252,7 @@ class RRSLayer(HSTRPLayer):
             self.log_info(f"Radio {rrs.radio_ip.radio_id} went Offline")
 
         if not was_handled:
-            self.log_warning(f"RRS did not handle {data.hex()}")
+            self.log_warning(f"\nRRS did not handle {data.hex()}")
             self.log_warning(repr(pdu))
 
         return was_handled, pdu

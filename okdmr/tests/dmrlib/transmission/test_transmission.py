@@ -1,3 +1,4 @@
+import logging
 from typing import List
 
 import pytest
@@ -180,15 +181,21 @@ def test_sms():
     assert tms.as_bytes() == uip_data_bytes
 
 
-def test_process_burst(capsys):
+def test_process_burst(caplog):
+    caplog.clear()
+    caplog.set_level(logging.DEBUG)
+
     tw: TransmissionWatcher = TransmissionWatcher()
     assert tw.process_burst(Burst()) is None
-    captured = capsys.readouterr()
-    assert len(captured.out)
-    assert not len(captured.err)
+
+    # check no error logs produced while procesing
+    for record in caplog.records:
+        assert record.levelno != logging.ERROR
 
 
-def test_voice_bytes(capsys):
+def test_voice_bytes(caplog):
+    caplog.clear()
+    caplog.set_level(logging.DEBUG)
     ipsc_in: bytes = bytes.fromhex(
         "5a5a5a5a2003000041000501020000002222777755550000807325ef402209df1b7f9caf6575e774fd55f77d795f9f41364a68ca604641ec96a400b3402201006f000000fa372300"
     )
@@ -196,15 +203,17 @@ def test_voice_bytes(capsys):
     tw: TransmissionWatcher = TransmissionWatcher()
     tw.set_debug_voice_bytes(do_debug=True)
     tw.process_packet(data=ipsc_in, packet=ip_pkt)
-    captured = capsys.readouterr()
-    assert "[FROM 2308090]" in captured.out
-    assert "[TO 111]" in captured.out
+
+    search_in = " ".join(caplog.messages)
+
+    assert "[FROM 2308090]" in search_in
+    assert "[TO 111]" in search_in
     # first 9 bytes of vocoder data
-    assert "[239, 37, 34, 64, 223, 9, 127, 27, 175]" in captured.out
+    assert "[239, 37, 34, 64, 223, 9, 127, 27, 175]" in search_in
     # second 9 bytes
-    assert "[156, 117, 101, 116, 233, 65, 159, 74, 54]" in captured.out
+    assert "[156, 117, 101, 116, 233, 65, 159, 74, 54]" in search_in
     # last 9 bytes of vocoder data
-    assert "[202, 104, 70, 96, 236, 65, 164, 150, 179]" in captured.out
+    assert "[202, 104, 70, 96, 236, 65, 164, 150, 179]" in search_in
 
 
 def test_voice_transmission(capsys):

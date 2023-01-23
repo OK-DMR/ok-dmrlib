@@ -8,10 +8,23 @@ from okdmr.dmrlib.utils.bytes_interface import BytesInterface
 
 @enum.unique
 class TMPService(enum.Enum):
+    """
+    Contains both TMP and SDMP services
+    """
+
     SendPrivateMessage = 0xA1
     SendPrivateMessageAck = 0xA2
     SendGroupMessage = 0xB1
     SendGroupMessageAck = 0xB2
+
+    WorkOrderRequest = 0xAC
+    WorkOrderReply = 0xAD
+    WorkOrderReport = 0xAA
+    WorkOrderReportReply = 0xAB
+    PrivateShortData = 0xAE
+    PrivateShortDataAck = 0xAF
+    GroupShortData = 0xBE
+    GroupShortDataACk = 0xBF
 
 
 @enum.unique
@@ -47,8 +60,9 @@ class TextMessageProtocol(HDAP):
     def __init__(
         self,
         opcode: TMPService,
-        destination_id: RadioIP,
-        source_id: RadioIP,
+        source_ip: Optional[RadioIP] = None,
+        # target is either RadioIP (for private comms) or Group ID (for group comms)
+        destination_ip: Optional[RadioIP] = None,
         is_reliable: bool = False,
         is_confirmed: bool = False,
         has_option: bool = False,
@@ -56,19 +70,22 @@ class TextMessageProtocol(HDAP):
         text_data: Union[bytes, str] = b"",
         option_data: Optional[bytes] = None,
         result_code: Optional[TMPResultCodes] = None,
+        short_data: bytes = b"",
     ):
         super().__init__(is_reliable=is_reliable)
         self.opcode: TMPService = opcode
         self.has_option: bool = has_option
         self.is_confirmed: bool = is_confirmed
         self.request_id: int = request_id
-        self.destination_id: RadioIP = destination_id
-        self.source_id: RadioIP = source_id
+        self.destination_ip: RadioIP = destination_ip
+        self.source_ip: RadioIP = source_ip
         self.text_data: bytes = (
             text_data if isinstance(text_data, bytes) else text_data.encode("utf-16-le")
         )
+        print(f"text data: {self.text_data.hex()}")
         self.option_data: Optional[bytes] = option_data
         self.result_code: Optional[TMPResultCodes] = result_code
+        self.short_data: bytes = short_data
 
     def get_service_type(self) -> HyteraServiceType:
         return HyteraServiceType.TMP
@@ -87,6 +104,8 @@ class TextMessageProtocol(HDAP):
         return self.opcode in (
             TMPService.SendGroupMessageAck,
             TMPService.SendGroupMessage,
+            TMPService.GroupShortDataACk,
+            TMPService.GroupShortData,
         )
 
     @staticmethod
@@ -103,22 +122,18 @@ class TextMessageProtocol(HDAP):
         option_data_len: Optional[int] = (
             int.from_bytes(data[5:7], byteorder=endian) if has_option else None
         )
+        option_data_start_idx: int = (
+            (payload_idx + payload_len - option_data_len - 2)
+            if has_option
+            else (payload_idx + payload_len)
+        )
         option_data: Optional[bytes] = (
-            (
-                data[
-                    (payload_idx + payload_len - option_data_len - 2) : (
-                        payload_idx + payload_len - 2
-                    )
-                ]
-            )
+            (data[option_data_start_idx : (payload_idx + payload_len - 2)])
             if has_option and option_data_len
             else None
         )
 
         if opcode in (TMPService.SendPrivateMessage, TMPService.SendGroupMessage):
-            text_data_len = payload_len - (
-                (12 + 2 + option_data_len) if has_option else 12
-            )
             return TextMessageProtocol(
                 opcode=opcode,
                 is_reliable=is_reliable,
@@ -128,19 +143,16 @@ class TextMessageProtocol(HDAP):
                 request_id=int.from_bytes(
                     data[payload_idx : payload_idx + 4], byteorder=endian
                 ),
-                destination_id=RadioIP.from_bytes(
+                destination_ip=RadioIP.from_bytes(
                     data[payload_idx + 4 : payload_idx + 8], endian=endian
                 ),
-                source_id=RadioIP.from_bytes(
+                source_ip=RadioIP.from_bytes(
                     data[payload_idx + 8 : payload_idx + 12], endian=endian
                 ),
                 # utf-16-le text data
-                text_data=data[payload_idx + 12 : payload_idx + 12 + text_data_len],
+                text_data=data[payload_idx + 12 : option_data_start_idx],
             )
-        elif opcode in (
-            TMPService.SendPrivateMessageAck,
-            TMPService.SendGroupMessageAck,
-        ):
+        elif opcode == TMPService.SendGroupMessageAck:
             return TextMessageProtocol(
                 opcode=opcode,
                 is_reliable=is_reliable,
@@ -150,40 +162,168 @@ class TextMessageProtocol(HDAP):
                 request_id=int.from_bytes(
                     data[payload_idx : payload_idx + 4], byteorder=endian
                 ),
-                destination_id=RadioIP.from_bytes(
+                destination_ip=RadioIP.from_bytes(
                     data[payload_idx + 4 : payload_idx + 8], endian=endian
                 ),
-                source_id=RadioIP.from_bytes(
+                result_code=TMPResultCodes(data[payload_idx + 8]),
+            )
+        elif opcode == TMPService.SendPrivateMessageAck:
+            return TextMessageProtocol(
+                opcode=opcode,
+                is_reliable=is_reliable,
+                is_confirmed=is_confirmed,
+                has_option=has_option,
+                option_data=option_data,
+                request_id=int.from_bytes(
+                    data[payload_idx : payload_idx + 4], byteorder=endian
+                ),
+                destination_ip=RadioIP.from_bytes(
+                    data[payload_idx + 4 : payload_idx + 8], endian=endian
+                ),
+                source_ip=RadioIP.from_bytes(
                     data[payload_idx + 8 : payload_idx + 12], endian=endian
                 ),
                 result_code=TMPResultCodes(data[payload_idx + 12]),
             )
+        elif opcode == TMPService.PrivateShortData:
+            return TextMessageProtocol(
+                opcode=opcode,
+                is_reliable=is_reliable,
+                is_confirmed=is_confirmed,
+                has_option=has_option,
+                option_data=option_data,
+                request_id=int.from_bytes(
+                    data[payload_idx : payload_idx + 4], byteorder=endian
+                ),
+                destination_ip=RadioIP.from_bytes(
+                    data[payload_idx + 4 : payload_idx + 8], endian=endian
+                ),
+                source_ip=RadioIP.from_bytes(
+                    data[payload_idx + 8 : payload_idx + 12], endian=endian
+                ),
+                short_data=data[payload_idx + 12 : option_data_start_idx],
+            )
+        elif opcode == TMPService.PrivateShortDataAck:
+            return TextMessageProtocol(
+                opcode=opcode,
+                is_reliable=is_reliable,
+                is_confirmed=is_confirmed,
+                has_option=has_option,
+                option_data=option_data,
+                request_id=int.from_bytes(
+                    data[payload_idx : payload_idx + 4], byteorder=endian
+                ),
+                destination_ip=RadioIP.from_bytes(
+                    data[payload_idx + 4 : payload_idx + 8], endian=endian
+                ),
+                source_ip=RadioIP.from_bytes(
+                    data[payload_idx + 8 : payload_idx + 12], endian=endian
+                ),
+                result_code=TMPResultCodes(data[payload_idx + 12]),
+            )
+        elif opcode == TMPService.GroupShortData:
+            return TextMessageProtocol(
+                opcode=opcode,
+                is_reliable=is_reliable,
+                is_confirmed=is_confirmed,
+                has_option=has_option,
+                option_data=option_data,
+                request_id=int.from_bytes(
+                    data[payload_idx : payload_idx + 4], byteorder=endian
+                ),
+                destination_ip=RadioIP.from_bytes(
+                    data[payload_idx + 4 : payload_idx + 8]
+                ),
+                source_ip=RadioIP.from_bytes(
+                    data[payload_idx + 8 : payload_idx + 12], endian=endian
+                ),
+                short_data=data[payload_idx + 12 : option_data_start_idx],
+            )
+        elif opcode == TMPService.GroupShortDataACk:
+            return TextMessageProtocol(
+                opcode=opcode,
+                is_reliable=is_reliable,
+                is_confirmed=is_confirmed,
+                has_option=has_option,
+                option_data=option_data,
+                request_id=int.from_bytes(
+                    data[payload_idx : payload_idx + 4], byteorder=endian
+                ),
+                destination_ip=RadioIP.from_bytes(
+                    data[payload_idx + 4 : payload_idx + 8]
+                ),
+                result_code=TMPResultCodes(data[payload_idx + 8]),
+            )
+
+    def is_tmp(self) -> bool:
+        return self.opcode in (
+            TMPService.SendPrivateMessage,
+            TMPService.SendGroupMessage,
+            TMPService.SendGroupMessageAck,
+            TMPService.SendPrivateMessageAck,
+        )
 
     def get_payload(self) -> bytes:
-        return (
-            (
-                len(self.option_data).to_bytes(
-                    length=2, byteorder=self.get_endianness()
-                )
-                if self.has_option
-                else b""
-            )
-            + self.request_id.to_bytes(length=4, byteorder=self.get_endianness())
-            + self.destination_id.as_bytes(endian=self.get_endianness())
-            + self.source_id.as_bytes(endian=self.get_endianness())
-            + (
-                self.text_data
-                if self.opcode
-                in (TMPService.SendPrivateMessage, TMPService.SendGroupMessage)
-                else self.result_code.as_bytes(endian=self.get_endianness())
-            )
-            + (self.option_data if self.has_option else b"")
+        option_data_prefix: bytes = (
+            len(self.option_data).to_bytes(length=2, byteorder=self.get_endianness())
+            if self.has_option
+            else b""
         )
+        option_data: bytes = self.option_data if self.has_option else b""
+        request_id: bytes = self.request_id.to_bytes(
+            length=4, byteorder=self.get_endianness()
+        )
+
+        payload: bytes = option_data_prefix + request_id
+
+        if self.is_tmp():
+            payload += (
+                self.destination_ip.as_bytes(endian=self.get_endianness())
+                + (
+                    b""
+                    if self.opcode == TMPService.SendGroupMessageAck
+                    else self.source_ip.as_bytes(endian=self.get_endianness())
+                )
+                + (
+                    self.text_data
+                    if self.opcode
+                    in (TMPService.SendPrivateMessage, TMPService.SendGroupMessage)
+                    else self.result_code.as_bytes(endian=self.get_endianness())
+                )
+            )
+        elif self.opcode == TMPService.PrivateShortData:
+            payload += (
+                self.destination_ip.as_bytes(endian=self.get_endianness())
+                + self.source_ip.as_bytes(endian=self.get_endianness())
+                + self.short_data
+            )
+        elif self.opcode == TMPService.PrivateShortDataAck:
+            payload += (
+                self.destination_ip.as_bytes(endian=self.get_endianness())
+                + self.source_ip.as_bytes(endian=self.get_endianness())
+                + self.result_code.as_bytes(endian=self.get_endianness())
+            )
+        elif self.opcode == TMPService.GroupShortData:
+            payload += (
+                self.destination_ip.as_bytes(endian=self.get_endianness())
+                + self.source_ip.as_bytes(endian=self.get_endianness())
+                + self.short_data
+            )
+        elif self.opcode == TMPService.GroupShortDataACk:
+            payload += self.destination_ip.as_bytes(
+                endian=self.get_endianness()
+            ) + self.result_code.as_bytes(endian=self.get_endianness())
+
+        payload += option_data
+        return payload
 
     def __repr__(self) -> str:
         repre: str = "[TMP "
         repre += "GROUP " if self.is_group() else "PRIVATE "
-        repre += f"FROM:{repr(self.source_id)} TO:{repr(self.destination_id)}"
+        if self.source_ip:
+            repre += f"FROM:{repr(self.source_ip)} "
+        if self.destination_ip:
+            repre += f"TO:{repr(self.destination_ip)} "
         repre += "] "
         if self.request_id:
             repre += f"[REQUEST_ID: {self.request_id}] "
@@ -193,4 +333,6 @@ class TextMessageProtocol(HDAP):
             repre += f"[OPTION: {self.option_data}] "
         if self.text_data:
             repre += f"[TEXT: {self.text_data.decode('utf-16-le')}] "
+        if self.short_data:
+            repre += f"[SHORT DATA: {self.short_data.hex()}] "
         return repre

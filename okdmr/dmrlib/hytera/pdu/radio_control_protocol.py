@@ -166,6 +166,12 @@ class RCPResult(enum.Enum):
 
 
 @enum.unique
+class RadioIpIdTarget(enum.Enum):
+    RADIO_ID = 0x00
+    RADIO_IP = 0x01
+
+
+@enum.unique
 class RepeaterMode(enum.Enum):
     NormalSingleConnection = 0x00
     SelectiveMultiConnection = 0x01
@@ -235,12 +241,12 @@ class RadioControlProtocol(HDAP):
         raw_payload: bytes = b"",
         raw_opcode: bytes = b"",
         # call request
-        call_type: Optional[Union[int, RCPCallType]] = None,
+        call_type: Union[int, RCPCallType] = RCPCallType.PrivateCall,
         target_id: Optional[Union[int, bytes]] = None,
         sender_id: Optional[Union[int, bytes]] = None,
         is_reliable: bool = False,
         # call reply
-        result: Optional[RCPResult] = None,
+        result: RCPResult = RCPResult.Success,
         # repeater broadcast transmit status
         repeater_mode: Optional[RepeaterMode] = None,
         repeater_status: Optional[RepeaterStatus] = None,
@@ -248,7 +254,7 @@ class RadioControlProtocol(HDAP):
         # (0x1847)Broadcast Message Configuration Request (Mobile API)
         broadcast_type: int = 0b0000_0111,
         # 0x0452 Radio ID/Radio IP Request
-        target: int = 0x00,
+        target: RadioIpIdTarget = RadioIpIdTarget.RADIO_ID,
         raw_value: bytes = b"",
         # 0x10C9 broadcast configuration
         broadcast_config_raw: bytes = b"",
@@ -266,7 +272,7 @@ class RadioControlProtocol(HDAP):
         self.raw_payload: bytes = raw_payload
         self.raw_opcode: bytes = raw_opcode
         #
-        self.call_type: Optional[RCPCallType] = (
+        self.call_type: RCPCallType = (
             RCPCallType(call_type) if isinstance(call_type, int) else call_type
         )
         self.target_id: Optional[int] = (
@@ -279,14 +285,14 @@ class RadioControlProtocol(HDAP):
             if (not sender_id or isinstance(sender_id, int))
             else int.from_bytes(sender_id, byteorder=self.get_endianness())
         )
-        self.result: Optional[RCPResult] = result
+        self.result: RCPResult = result
         self.repeater_mode: Optional[RepeaterMode] = repeater_mode
         self.repeater_status: Optional[RepeaterStatus] = repeater_status
         self.repeater_service_type: Optional[
             RepeaterServiceType
         ] = repeater_service_type
         self.broadcast_type: int = broadcast_type
-        self.target: int = target
+        self.radio_ip_id_target: RadioIpIdTarget = target
         self.raw_value: bytes = raw_value
         self.broadcast_config_raw: bytes = broadcast_config_raw
         self.talker_alias_data_format: Optional[
@@ -319,10 +325,6 @@ class RadioControlProtocol(HDAP):
                 raw_payload=data[5:-2],
                 raw_opcode=data[1:3],
                 is_reliable=is_reliable,
-            )
-        elif opcode == RCPOpcode.BroadcastStatusConfigurationRequest:
-            return RadioControlProtocol(
-                opcode=opcode, raw_payload=data[5:-2], is_reliable=is_reliable
             )
         elif opcode == RCPOpcode.CallRequest:
             return RadioControlProtocol(
@@ -360,21 +362,25 @@ class RadioControlProtocol(HDAP):
             )
         elif opcode == RCPOpcode.RadioIDAndRadioIPQueryRequest:
             return RadioControlProtocol(
-                opcode=opcode, is_reliable=is_reliable, target=data[5]
+                opcode=opcode, is_reliable=is_reliable, target=RadioIpIdTarget(data[5])
             )
         elif opcode == RCPOpcode.RadioIDAndRadioIPQueryReply:
             return RadioControlProtocol(
                 opcode=opcode,
                 is_reliable=is_reliable,
                 result=RCPResult(data[5]),
-                target=data[6],
+                target=RadioIpIdTarget(data[6]),
                 raw_value=data[7:11],
             )
         elif opcode == RCPOpcode.BroadcastStatusConfigurationRequest:
             return RadioControlProtocol(
                 opcode=opcode,
                 is_reliable=is_reliable,
-                broadcast_config_raw=data[5 : data[5] * 2],
+                broadcast_config_raw=data[5 : 5 + 1 + data[5] * 2],
+            )
+        elif opcode == RCPOpcode.BroadcastStatusConfigurationReply:
+            return RadioControlProtocol(
+                opcode=opcode, is_reliable=is_reliable, result=RCPResult(data[5])
             )
         elif opcode == RCPOpcode.SendTalkerAliasRequest:
             return RadioControlProtocol(
@@ -404,11 +410,6 @@ class RadioControlProtocol(HDAP):
         if self.opcode == RCPOpcode.UnknownService:
             # UnknownService is special as it has to keep the original opcode and value untouched
             return self.raw_payload
-        elif self.opcode == RCPOpcode.BroadcastStatusConfigurationRequest:
-            return (
-                # TODO parse to fields and serialize from fields
-                self.raw_payload
-            )
         elif self.opcode == RCPOpcode.CallRequest:
             return bytes([self.call_type.value]) + self.target_id.to_bytes(
                 length=4, byteorder=self.get_endianness()
@@ -449,11 +450,16 @@ class RadioControlProtocol(HDAP):
             assert (
                 len(self.raw_value) == 4
             ), f"Radio ID/IP Query Reply value has to be 4 bytes"
-            return bytes([self.result.value, self.target]) + self.raw_value
+            return (
+                bytes([self.result.value, self.radio_ip_id_target.value])
+                + self.raw_value
+            )
         elif self.opcode == RCPOpcode.RadioIDAndRadioIPQueryRequest:
-            return bytes([self.target])
+            return bytes([self.radio_ip_id_target.value])
         elif self.opcode == RCPOpcode.BroadcastStatusConfigurationRequest:
             return self.broadcast_config_raw
+        elif self.opcode == RCPOpcode.BroadcastStatusConfigurationReply:
+            return bytes([self.result.value])
         elif self.opcode == RCPOpcode.SendTalkerAliasRequest:
             return (
                 bytes([self.call_type.value])
@@ -478,10 +484,14 @@ class RadioControlProtocol(HDAP):
         if self.opcode == RCPOpcode.UnknownService:
             represented += f"[RAW: {self.raw_payload.hex()}]"
         elif self.opcode == RCPOpcode.BroadcastStatusConfigurationRequest:
-            represented += f"[Configure {self.raw_payload[0]} broadcast functions]"
+            represented += (
+                f"[Configure {self.broadcast_config_raw[0]} broadcast functions]"
+            )
         elif self.opcode == RCPOpcode.CallRequest:
             represented += f"[{self.call_type}] [TO: {self.target_id}]"
         elif self.opcode == RCPOpcode.CallReply:
+            represented += f"[{self.result}]"
+        elif self.opcode == RCPOpcode.BroadcastStatusConfigurationReply:
             represented += f"[{self.result}]"
         elif self.opcode == RCPOpcode.BroadcastMessageConfigurationRequest:
             represented += (
@@ -499,13 +509,9 @@ class RadioControlProtocol(HDAP):
                 f"[SENDER: {self.sender_id}] [TARGET: {self.target_id}]"
             )
         elif self.opcode == RCPOpcode.RadioIDAndRadioIPQueryRequest:
-            targets = {0x00: "Radio ID", 0x01: "Radio IP"}
-            represented += f"[TARGET: {targets[self.target]}]"
+            represented += f"[{self.radio_ip_id_target}]"
         elif self.opcode == RCPOpcode.RadioIDAndRadioIPQueryReply:
-            targets = {0x00: "Radio ID", 0x01: "Radio IP"}
-            represented += f"[{self.result}] [{targets[self.target]}] [{int.from_bytes(self.raw_value, byteorder=self.get_endianness()) if self.target == 0x00 else repr(RadioIP.from_bytes(self.raw_value))}]"
-        elif self.opcode == RCPOpcode.BroadcastStatusConfigurationRequest:
-            represented += f"[options count: {self.broadcast_config_raw[0]} len: {len(self.broadcast_config_raw) - 1}]"
+            represented += f"[{self.result}] [{self.radio_ip_id_target}] [{int.from_bytes(self.raw_value, byteorder=self.get_endianness()) if self.radio_ip_id_target == RadioIpIdTarget.RADIO_ID else repr(RadioIP.from_bytes(self.raw_value))}]"
         elif self.opcode == RCPOpcode.SendTalkerAliasRequest:
             represented += (
                 f"[{self.call_type}] "

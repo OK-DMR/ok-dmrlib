@@ -145,6 +145,20 @@ class GPSData(BytesInterface):
             direction=data[37:40],
         )
 
+    @staticmethod
+    def zero() -> "GPSData":
+        yield GPSData(
+            data_valid="V",
+            greenwich_time=time(),
+            greenwich_date=date.today(),
+            latitude=0,
+            longitude=0,
+            east_west="E",
+            north_south="N",
+            speed_knots=0.0,
+            direction=0,
+        )
+
     def as_bytes(self, endian: Literal["big", "little"] = "big") -> bytes:
         return (
             self.data_valid
@@ -201,8 +215,8 @@ class LocationProtocol(HDAP):
         opcode: Union[bytes, LocationProtocolSpecificService],
         request_id: Union[int, bytes],
         radio_ip: Union[bytes, RadioIP],
-        result: Union[int, bytes],
-        gpsdata: Union[bytes, GPSData],
+        result: Union[int, bytes] = 0,  # 0 = OK, SUCCESS RESULT
+        gpsdata: Union[bytes, GPSData] = GPSData.zero(),
         is_reliable: bool = False,
     ):
         super().__init__(is_reliable=is_reliable)
@@ -247,6 +261,11 @@ class LocationProtocol(HDAP):
                 + self.result.value.to_bytes(length=2, byteorder="big")
                 + self.gpsdata.as_bytes()
             )
+        elif self.specific_service == LocationProtocolSpecificService.StandardRequest:
+            return (
+                self.request_id.to_bytes(length=4, byteorder="big")
+                + self.radio_ip.as_bytes()
+            )
         raise ValueError(f"LP get_payload not implemented for {self.specific_service}")
 
     @staticmethod
@@ -268,6 +287,10 @@ class LocationProtocol(HDAP):
                 gpsdata=data[15:55],
                 is_reliable=is_reliable,
             )
+        elif opcode == LocationProtocolSpecificService.StandardRequest:
+            return LocationProtocol(
+                opcode=opcode, request_id=data[5:9], radio_ip=data[9:13]
+            )
 
         raise ValueError(f"LP {opcode} not yet implemented")
 
@@ -278,4 +301,6 @@ class LocationProtocol(HDAP):
                 f"[Request ID {self.request_id}] [Radio IP {self.radio_ip}] "
                 f"[Result {self.result}] [GpsData {self.gpsdata}]"
             )
+        elif self.specific_service == LocationProtocolSpecificService.StandardRequest:
+            repre += f"[Request ID {self.request_id}] [Radio IP {self.radio_ip}] "
         return repre

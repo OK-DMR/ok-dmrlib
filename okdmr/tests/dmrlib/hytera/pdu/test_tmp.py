@@ -44,8 +44,8 @@ def test_ack_with_option_field():
         has_option=True,
         option_data=b"\x01\x02\x03",
         opcode=TMPService.SendPrivateMessageAck,
-        source_id=RadioIP(radio_id=196608, subnet=10),
-        destination_id=RadioIP(radio_id=111111, subnet=10),
+        source_ip=RadioIP(radio_id=196608, subnet=10),
+        destination_ip=RadioIP(radio_id=111111, subnet=10),
         request_id=2,
         result_code=TMPResultCodes.OK,
     )

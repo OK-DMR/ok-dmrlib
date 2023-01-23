@@ -148,7 +148,9 @@ class HRNP(BytesInterface):
             check += int.from_bytes(checked_data[i : i + 2], byteorder="big")
 
         while check >> 16:
-            check = (check & 0xFFFF) + check >> 16
+            check = (check & 0xFFFF) + (check >> 16)
+
+        check = ~check & 0xFFFF
 
         # make check and checksum comparable
         checksum: int = (

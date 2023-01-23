@@ -10,6 +10,7 @@ from okdmr.dmrlib.etsi.layer2.elements.feature_set_ids import FeatureSetIDs
 from okdmr.dmrlib.etsi.layer3.elements.additional_information_field import (
     AdditionalInformationField,
 )
+from okdmr.dmrlib.etsi.layer3.elements.announcement_type import AnnouncementType
 from okdmr.dmrlib.etsi.layer3.elements.answer_response import AnswerResponse
 from okdmr.dmrlib.etsi.layer3.elements.channel_timing_opcode import ChannelTimingOpcode
 from okdmr.dmrlib.etsi.layer3.elements.dynamic_identifier import DynamicIdentifier
@@ -27,6 +28,24 @@ class CSBK(BitsInterface):
     """
     ETSI TS 102 361-2 V2.4.1 (2017-10) - 7.1.2  Control Signalling BlocK (CSBK) PDUs
     """
+
+    TSCC_BACKOFF_MAP: Dict[int, int] = {
+        1: 1,
+        2: 2,
+        3: 3,
+        4: 4,
+        5: 5,
+        6: 8,
+        7: 11,
+        8: 15,
+        9: 20,
+        10: 26,
+        11: 33,
+        12: 41,
+        13: 50,
+        14: 70,
+        15: 100,
+    }
 
     def __init__(
         self,
@@ -71,11 +90,14 @@ class CSBK(BitsInterface):
         aloha_mask: int = 0,
         service_function: Union[RandomAccessServiceFunction, int] = 0,
         nrand_wait: int = 0,
-        aloha_reg_required: bool = False,
-        aloha_backoff: int = 1,
+        tscc_reg_required: bool = False,
+        tscc_backoff: int = 1,
         system_identity_code: int = 0,
         # for unknown / manufacturer-specific data
         raw_data: Union[bytes, bitarray] = b"",
+        # (C_BCAST)
+        announcement_type: AnnouncementType = AnnouncementType.GeneralSiteParams,
+        broadcast_params: bitarray = bitarray(),  # it's 14 and 24 bits, total 38 bits, missing 2 bits to bytes
     ):
         """
         Params that are optional, are specific for particular CSBKO
@@ -167,9 +189,11 @@ class CSBK(BitsInterface):
             else RandomAccessServiceFunction(service_function)
         )
         self.nrand_wait: int = nrand_wait
-        self.aloha_reg_required: bool = aloha_reg_required
-        self.aloha_backoff: int = aloha_backoff
+        self.tscc_reg_required: bool = tscc_reg_required
+        self.tscc_backoff: int = tscc_backoff
         self.system_identity_code: int = system_identity_code
+        self.broadcast_params: bitarray = broadcast_params
+        self.announcement_type: AnnouncementType = announcement_type
 
         if self.crc <= 0:
             self.calculate_crc_ccit()
@@ -255,10 +279,19 @@ class CSBK(BitsInterface):
                 + int2ba(self.aloha_mask, length=5)
                 + int2ba(self.service_function.value, length=2)
                 + int2ba(self.nrand_wait, length=4)
-                + bitarray([self.aloha_reg_required])
-                + int2ba(self.aloha_backoff, length=4)
+                + bitarray([self.tscc_reg_required])
+                + int2ba(self.tscc_backoff, length=4)
                 + int2ba(self.system_identity_code, length=16)
                 + int2ba(self.target_address, length=24)
+            )
+        elif self.csbko == CsbkOpcodes.AnnouncementPDUsWithoutResponse:
+            pdu += (
+                int2ba(self.announcement_type.value, length=5)
+                + self.broadcast_params[:14]
+                + bitarray([self.tscc_reg_required])
+                + int2ba(self.tscc_backoff, length=4)
+                + int2ba(self.system_identity_code, length=16)
+                + self.broadcast_params[14:38]
             )
 
         return pdu + int2ba(self.crc, length=16)
@@ -365,6 +398,11 @@ class CSBK(BitsInterface):
                 manufacturers_feature_set_id=fid,
                 crc=crc_ccit,
                 csbko=csbko,
+                announcement_type=AnnouncementType(ba2int(bits[16:21])),
+                tscc_reg_required=bits[35] == 1,
+                tscc_backoff=ba2int(bits[36:40]),
+                system_identity_code=ba2int(bits[40:56]),
+                broadcast_params=bits[21:35] + bits[56:80],
             )
         elif csbko == CsbkOpcodes.AlohaPDUsForRandomAccessProtocol:
             return CSBK(
@@ -380,8 +418,8 @@ class CSBK(BitsInterface):
                 aloha_mask=ba2int(bits[24:29]),
                 service_function=ba2int(bits[29:31]),
                 nrand_wait=ba2int(bits[31:35]),
-                aloha_reg_required=bits[35] == 1,
-                aloha_backoff=ba2int(bits[36:40]),
+                tscc_reg_required=bits[35] == 1,
+                tscc_backoff=ba2int(bits[36:40]),
                 system_identity_code=ba2int(bits[40:56]),
                 target_address=ba2int(bits[56:80]),
             )
@@ -419,24 +457,15 @@ class CSBK(BitsInterface):
             )
         elif self.csbko == CsbkOpcodes.HyteraIPSCSync:
             description += f"[MFID DATA HEX({self.raw_data.hex()})]"
+        elif self.csbko == CsbkOpcodes.AnnouncementPDUsWithoutResponse:
+            description += (
+                f"[{self.announcement_type}] "
+                f"[PARAMS1: {self.broadcast_params[:14].to01()}] [PARAMS2: {self.broadcast_params[14:].to01()}] "
+                f"[REGISTRATION REQUIRED: {self.tscc_reg_required}] "
+                f"[BACKOFF: TDMA Frame Length = {CSBK.TSCC_BACKOFF_MAP.get(self.tscc_backoff)}] "
+                f"[SYSTEM IDENTITY: {self.system_identity_code}] "
+            )
         elif self.csbko == CsbkOpcodes.AlohaPDUsForRandomAccessProtocol:
-            backoff: Dict[int, int] = {
-                1: 1,
-                2: 2,
-                3: 3,
-                4: 4,
-                5: 5,
-                6: 8,
-                7: 11,
-                8: 15,
-                9: 20,
-                10: 26,
-                11: 33,
-                12: 41,
-                13: 50,
-                14: 70,
-                15: 100,
-            }
             description += (
                 f"[TSCCAS support: {self.tsccas_support}] "
                 f"[Timeslot sync enabled: {self.site_timeslot_synchronized}] "
@@ -446,8 +475,8 @@ class CSBK(BitsInterface):
                 f"[MASK: {self.aloha_mask}] "
                 f"[SERVICE: {self.service_function}] "
                 f"[NRAND_WAIT: {self.nrand_wait}] "
-                f"[REGISTRATION REQUIRED: {self.aloha_reg_required}] "
-                f"[BACKOFF: TDMA Frame Length = {backoff.get(self.aloha_backoff)}] "
+                f"[REGISTRATION REQUIRED: {self.tscc_reg_required}] "
+                f"[BACKOFF: TDMA Frame Length = {CSBK.TSCC_BACKOFF_MAP.get(self.tscc_backoff)}] "
                 f"[SYSTEM IDENTITY: {self.system_identity_code}] "
                 f"[MS ADDRESS: {self.target_address}]"
             )

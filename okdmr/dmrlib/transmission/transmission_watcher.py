@@ -38,24 +38,28 @@ class TransmissionWatcher(LoggingTrait, WithObservers):
         if burst:
             self.process_burst(burst)
             if self.debug_voice_bytes and burst.is_vocoder:
+                import logging
+
+                if self.get_logger().getEffectiveLevel() < logging.DEBUG:
+                    self.log_error(f"Cannot print Vocoder with logger not being DEBUG")
                 voice_bytes = burst.voice_bits.tobytes()
                 if burst.stream_no != self.last_stream_no:
                     self.last_stream_no = burst.stream_no
-                    print(
+                    self.log_debug(
                         f"[STREAM {burst.stream_no}] [FROM {burst.source_radio_id}] [TO {burst.target_radio_id}]"
                     )
-                print(f"{[x for x in voice_bytes[:9]]},")
-                print(f"{[x for x in voice_bytes[9:18]]},")
-                print(f"{[x for x in voice_bytes[18:]]},")
+                self.log_debug(f"{[x for x in voice_bytes[:9]]},")
+                self.log_debug(f"{[x for x in voice_bytes[9:18]]},")
+                self.log_debug(f"{[x for x in voice_bytes[18:]]},")
 
     def process_burst(self, burst: Burst) -> Optional[Burst]:
         if not burst.target_radio_id:
             if type(burst) not in (HyteraIPSCSync, HyteraIPSCWakeup):
-                print(
+                self.log_warning(
                     f"TransmissionWatcher.process_burst ignoring {burst.__class__.__name__} with target radio id {burst.target_radio_id}"
                 )
-                print(repr(burst))
-            return None
+                self.log_warning(repr(burst))
+                return None
         self.ensure_terminal(burst.target_radio_id)
         return self.terminals[burst.target_radio_id].process_incoming_burst(
             burst=burst, timeslot=burst.timeslot
