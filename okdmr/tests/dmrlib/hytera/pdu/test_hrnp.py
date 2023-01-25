@@ -217,3 +217,12 @@ def test_tt():
     print(repr(h))
     print(h.as_bytes().hex())
     assert h.as_bytes() == HRNP.from_bytes(h.as_bytes()).as_bytes()
+
+    h = HRNP(
+        opcode=HRNPOpcodes.DATA,
+        data=RadioControlProtocol(
+            opcode=RCPOpcode.ZoneAndChannelOperationRequest,
+            raw_payload=b"\x01\x00\x00\x00\x00",
+        ),
+    )
+    print(h.as_bytes().hex())

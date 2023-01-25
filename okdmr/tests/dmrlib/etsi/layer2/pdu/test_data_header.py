@@ -99,3 +99,8 @@ def test_kairos_header():
     )
     # [DataPacketFormats.ShortDataDefined] [SAPIdentifier.ShortData] [DefinedDataFormats.Binary] [SARQ.NotRequired] [TARGET IS GROUP] [SOURCE: 2101] [DESTINATION: 1] [FullMessageFlag.FirstTryToCompletePacket] [APPENDED BLOCKS: 3]
     print(repr(dh))
+
+    dh: DataHeader = DataHeader.from_bits(
+        bytes_to_bits(bytes.fromhex("8DA300000100000101002B97"))
+    )
+    print(repr(dh))

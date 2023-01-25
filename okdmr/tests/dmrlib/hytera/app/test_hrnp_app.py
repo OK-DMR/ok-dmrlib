@@ -1,5 +1,4 @@
 import asyncio
-import sys
 import traceback
 from threading import Thread
 from time import sleep
@@ -27,7 +26,7 @@ class HRNPApp(LoggingTrait):
     def __init__(self):
         from serial import Serial
 
-        self.serial: Serial = Serial(port="/dev/ttyUSB0", baudrate=115200)
+        self.serial: Serial = Serial(port="/dev/ttyUSB0", baudrate=115200, timeout=0)
         self.counter_hrnp: int = 0
         self.counter_tmp_sdsmp: int = 0
         self.buffer_in: bytes = b""
@@ -63,6 +62,9 @@ class HRNPApp(LoggingTrait):
 
     def parse_buffer_in(self) -> None:
         try:
+            print(f"parse_buffer_in {self.buffer_in.hex()}")
+            if not len(self.buffer_in):
+                return
             # clear buffer until we find expected HRNP header byte
             while self.buffer_in[0] != 0x7E:
                 self.buffer_in = self.buffer_in[1:]
@@ -107,7 +109,7 @@ class HRNPApp(LoggingTrait):
         self.connect()
         self.is_running = True
         while self.is_running:
-            radio_in = self.serial.read(size=4)
+            radio_in = self.serial.read()
             if len(radio_in):
                 self.buffer_in += radio_in
                 # print(f"read {self.buffer_in.hex().upper()}")
@@ -190,6 +192,7 @@ class HRNPApp(LoggingTrait):
         print(f"_cmd {_cmd} target {_target_id} hex {_hex_payload}")
 
         self.counter_tmp_sdsmp += 1
+        print(f"{_target_id} as int {int(_target_id)}")
         pkt = HRNP(
             opcode=HRNPOpcodes.DATA,
             data=TextMessageProtocol(
@@ -197,16 +200,42 @@ class HRNPApp(LoggingTrait):
                 if group
                 else TMPService.PrivateShortData,
                 source_ip=self.self_radio_ip,
-                destination_ip=RadioIP(
-                    subnet=self.self_radio_ip.subnet, radio_id=int(_target_id)
-                ),
+                destination_ip=RadioIP(subnet=0, radio_id=int(_target_id)),
                 short_data=bytes.fromhex(_hex_payload),
-                is_confirmed=True,
-                is_reliable=True,
+                is_confirmed=False,
+                is_reliable=False,
                 request_id=self.counter_tmp_sdsmp,
             ),
         )
         self.write(pkt)
+
+    def set_zone_channel(self, user_in: str) -> None:
+        try:
+            (_cmd, _zone, _channel) = user_in.split(" ")
+            self.write(
+                HRNP(
+                    opcode=HRNPOpcodes.DATA,
+                    data=RadioControlProtocol(
+                        opcode=RCPOpcode.ZoneAndChannelOperationRequest,
+                        raw_payload=b"\x00"
+                        + int(_zone).to_bytes(length=2, byteorder="little")
+                        + int(_channel).to_bytes(length=2, byteorder="little"),
+                    ),
+                )
+            )
+        except:
+            print(f"usage set-zone-channel [ZONE-NUM] [CHANNEL-NUM]")
+
+    def get_zone_channel(self) -> None:
+        self.write(
+            HRNP(
+                opcode=HRNPOpcodes.DATA,
+                data=RadioControlProtocol(
+                    opcode=RCPOpcode.ZoneAndChannelOperationRequest,
+                    raw_payload=b"\x01\x00\x00\x00\x00",
+                ),
+            )
+        )
 
     def handle_menu(self, user_input: str) -> None:
         print()
@@ -230,6 +259,8 @@ class HRNPApp(LoggingTrait):
             "radio-ip": lambda _: self.get_radio_ip(),
             "sgsd": lambda user_in: self.send_short_data(group=True, user_in=user_in),
             "spsd": lambda user_in: self.send_short_data(user_in=user_in),
+            "set-zc": lambda user_in: self.set_zone_channel(user_in=user_in),
+            "get-zc": lambda _: self.get_zone_channel(),
         }
         _keyword = user_input.split(" ")[0]
         if _keyword not in _options.keys():

@@ -401,6 +401,14 @@ class RadioControlProtocol(HDAP):
                 sender_id=data[7:11],
                 target_id=data[11:15],
             )
+        elif opcode == RCPOpcode.ZoneAndChannelOperationRequest:
+            return RadioControlProtocol(
+                opcode=opcode, is_reliable=is_reliable, raw_payload=data[5:10]
+            )
+        elif opcode == RCPOpcode.ZoneAndChannelOperationReply:
+            return RadioControlProtocol(
+                opcode=opcode, is_reliable=is_reliable, raw_payload=data[5:-2]
+            )
         else:
             raise ValueError(
                 f"Opcode {opcode} (0x{bytes(reversed(data[1:3])).hex().upper()}) not yet implemented"
@@ -476,6 +484,11 @@ class RadioControlProtocol(HDAP):
                 + self.sender_id.to_bytes(4, byteorder=self.get_endianness())
                 + self.target_id.to_bytes(4, byteorder=self.get_endianness())
             )
+        elif self.opcode in (
+            RCPOpcode.ZoneAndChannelOperationRequest,
+            RCPOpcode.ZoneAndChannelOperationReply,
+        ):
+            return self.raw_payload
 
         raise ValueError(f"get_payload not implemented for {self.opcode}")
 
@@ -522,5 +535,18 @@ class RadioControlProtocol(HDAP):
             represented += (
                 f"[{self.call_type}] [{self.result}] "
                 f"[SENDER: {self.sender_id}] [TARGET: {self.target_id}] "
+            )
+        elif self.opcode == RCPOpcode.ZoneAndChannelOperationRequest:
+            represented += (
+                f"[OPERATION: {self.raw_payload[0]}] "
+                f"[ZONE {int.from_bytes(self.raw_payload[1:3], byteorder='little')}] "
+                f"[CHANNEL {int.from_bytes(self.raw_payload[3:5], byteorder='little')}] "
+            )
+        elif self.opcode == RCPOpcode.ZoneAndChannelOperationReply:
+            represented += (
+                f"[RESULT {int.from_bytes(self.raw_payload[0:4], byteorder='little')}] "
+                f"[OPERATION {int.from_bytes(self.raw_payload[4:8], byteorder='little')}] "
+                f"[ZONE {int.from_bytes(self.raw_payload[8:10], byteorder='little')}] "
+                f"[CHANNEL {int.from_bytes(self.raw_payload[10:12], byteorder='little')}] "
             )
         return represented

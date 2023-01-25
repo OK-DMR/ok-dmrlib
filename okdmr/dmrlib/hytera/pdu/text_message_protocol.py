@@ -319,12 +319,17 @@ class TextMessageProtocol(HDAP):
 
     def __repr__(self) -> str:
         repre: str = "[TMP "
+        if self.is_reliable:
+            repre += "RELIABLE "
+        if self.is_confirmed:
+            repre += "CONFIRMED "
         repre += "GROUP " if self.is_group() else "PRIVATE "
         if self.source_ip:
             repre += f"FROM:{repr(self.source_ip)} "
         if self.destination_ip:
             repre += f"TO:{repr(self.destination_ip)} "
         repre += "] "
+        repre += f"[{self.opcode}] "
         if self.request_id:
             repre += f"[REQUEST_ID: {self.request_id}] "
         if self.result_code:
