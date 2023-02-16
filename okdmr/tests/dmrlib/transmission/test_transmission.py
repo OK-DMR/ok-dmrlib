@@ -215,6 +215,14 @@ def test_voice_bytes(caplog):
     # last 9 bytes of vocoder data
     assert "[202, 104, 70, 96, 236, 65, 164, 150, 179]" in search_in
 
+    # test error log on too high loglevel
+    # caplog.clear()
+    caplog.set_level(logging.INFO)
+    tw.set_debug_voice_bytes(do_debug=True)
+    tw.process_packet(data=ipsc_in, packet=ip_pkt)
+
+    print(caplog.messages)
+
 
 def test_voice_transmission(capsys):
     voice_pkts: List[str] = [

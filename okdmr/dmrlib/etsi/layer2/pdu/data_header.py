@@ -1,4 +1,4 @@
-from typing import Union, Optional
+from typing import Union, Optional, Literal
 
 from bitarray import bitarray
 from bitarray.util import ba2int, int2ba
@@ -18,10 +18,12 @@ from okdmr.dmrlib.etsi.layer2.elements.sarq import SARQ
 from okdmr.dmrlib.etsi.layer2.elements.supplementary_flag import SupplementaryFlag
 from okdmr.dmrlib.etsi.layer2.elements.udt_format import UDTFormat
 from okdmr.dmrlib.etsi.layer3.elements.udt_option_flag import UDTOptionFlag
+from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits, bits_to_bytes
 from okdmr.dmrlib.utils.bits_interface import BitsInterface
+from okdmr.dmrlib.utils.bytes_interface import BytesInterface
 
 
-class DataHeader(BitsInterface):
+class DataHeader(BitsInterface, BytesInterface):
     """
     ETSI TS 102 361-1 V2.5.1 (2017-10) - 8.2.1 Header block structure
     """
@@ -168,6 +170,9 @@ class DataHeader(BitsInterface):
 
         return descr
 
+    def as_bytes(self, endian: Literal["big", "little"] = "big") -> bytes:
+        return bits_to_bytes(self.as_bits())
+
     def as_bits(self) -> bitarray:
         if self.data_packet_format == DataPacketFormats.DataPacketConfirmed:
             poc = int2ba(self.pad_octet_count, length=5)
@@ -254,6 +259,12 @@ class DataHeader(BitsInterface):
         raise NotImplementedError(
             f"as_bits not implemented for {self.data_packet_format}"
         )
+
+    @staticmethod
+    def from_bytes(
+        data: bytes, endian: Literal["big", "little"] = "big"
+    ) -> Optional["DataHeader"]:
+        return DataHeader.from_bits(bytes_to_bits(data))
 
     @staticmethod
     def from_bits(bits: bitarray) -> "DataHeader":

@@ -24,7 +24,7 @@ class TMPService(enum.Enum):
     PrivateShortData = 0xAE
     PrivateShortDataAck = 0xAF
     GroupShortData = 0xBE
-    GroupShortDataACk = 0xBF
+    GroupShortDataAck = 0xBF
 
 
 @enum.unique
@@ -82,7 +82,6 @@ class TextMessageProtocol(HDAP):
         self.text_data: bytes = (
             text_data if isinstance(text_data, bytes) else text_data.encode("utf-16-le")
         )
-        print(f"text data: {self.text_data.hex()}")
         self.option_data: Optional[bytes] = option_data
         self.result_code: Optional[TMPResultCodes] = result_code
         self.short_data: bytes = short_data
@@ -104,7 +103,7 @@ class TextMessageProtocol(HDAP):
         return self.opcode in (
             TMPService.SendGroupMessageAck,
             TMPService.SendGroupMessage,
-            TMPService.GroupShortDataACk,
+            TMPService.GroupShortDataAck,
             TMPService.GroupShortData,
         )
 
@@ -239,7 +238,7 @@ class TextMessageProtocol(HDAP):
                 ),
                 short_data=data[payload_idx + 12 : option_data_start_idx],
             )
-        elif opcode == TMPService.GroupShortDataACk:
+        elif opcode == TMPService.GroupShortDataAck:
             return TextMessageProtocol(
                 opcode=opcode,
                 is_reliable=is_reliable,
@@ -309,7 +308,7 @@ class TextMessageProtocol(HDAP):
                 + self.source_ip.as_bytes(endian=self.get_endianness())
                 + self.short_data
             )
-        elif self.opcode == TMPService.GroupShortDataACk:
+        elif self.opcode == TMPService.GroupShortDataAck:
             payload += self.destination_ip.as_bytes(
                 endian=self.get_endianness()
             ) + self.result_code.as_bytes(endian=self.get_endianness())

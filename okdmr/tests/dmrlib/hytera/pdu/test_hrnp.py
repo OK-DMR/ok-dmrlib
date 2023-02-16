@@ -226,3 +226,7 @@ def test_tt():
         ),
     )
     print(h.as_bytes().hex())
+    assert h.as_bytes() == HRNP.from_bytes(h.as_bytes()).as_bytes(), f"unstable"
+
+    h = HRNP.from_bytes(bytes.fromhex("7E0400FD10200000000C70D2"))
+    assert h.as_bytes() == HRNP.from_bytes(h.as_bytes()).as_bytes(), f"unstable"

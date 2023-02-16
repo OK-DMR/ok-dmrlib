@@ -46,7 +46,7 @@ class TransmissionWatcher(LoggingTrait, WithObservers):
                 if burst.stream_no != self.last_stream_no:
                     self.last_stream_no = burst.stream_no
                     self.log_debug(
-                        f"[STREAM {burst.stream_no}] [FROM {burst.source_radio_id}] [TO {burst.target_radio_id}]"
+                        f"[STREAM {burst.stream_no.hex().upper()}] [FROM {burst.source_radio_id}] [TO {burst.target_radio_id}]"
                     )
                 self.log_debug(f"{[x for x in voice_bytes[:9]]},")
                 self.log_debug(f"{[x for x in voice_bytes[9:18]]},")

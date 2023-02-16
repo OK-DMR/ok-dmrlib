@@ -102,6 +102,20 @@ Transport Format (UDT Format), UDP Port Identifier (SPID/DPID), IP Address Ident
 - There are some catches, when you want to serialize MBXML token with common name, look through the test_mbxml and
   test_lrrp modules, to see how to select specific (correct) token programatically
 
+### Available CLI tools
+
+- dmrlib-pcap-tool - PCAP/PCAPNG traffic description and data extraction
+- dmrlib-dmr-burst - Describe full Tier-II burst (33 bytes)
+- dmrlib-dmr-header - Describe DMR Data Header
+- dmrlib-dmr-ipudp - Describe DMR UDP/IPv4 Compressed data (header + user payload)
+- dmrlib-hytera-hstrp - Hytera Simple Transport Protocol
+- dmrlib-hytera-hdap - Hytera DMR Application Protocol
+- dmrlib-hytera-hrnp - Hytera Radio Network Protocol
+- dmrlib-hytera-lp - Hytera Location Protocol
+- dmrlib-hytera-rcp - Hytera Radio Control Protocol
+- dmrlib-hytera-rrs - Hytera Radio Registration Service
+- dmrlib-hytera-tmp - Hytera Text Message Protocol
+
 ### Additional notes
 
 - Almost every class/enum supports BitsInterface (de-serialization from on-air bits, serialization to transmission bits)

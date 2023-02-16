@@ -1,5 +1,5 @@
 import enum
-from typing import Optional, Union, Literal
+from typing import Optional, Union, Literal, Dict
 
 from okdmr.dmrlib.etsi.layer3.elements.talker_alias_data_format import (
     TalkerAliasDataFormat,
@@ -104,7 +104,7 @@ class RCPOpcode(BytesInterface, enum.Enum):
     RadioConnectLogoutRequest = 0x00CB
     RadioConnectLogoutReply = 0x80CB
     StatusChangeNotificationRequest = 0x10C7
-    RadioStatusConfigurationReply = 0x80C7
+    StatusChangeNotificationReply = 0x80C7
     RadioStatusReport = 0xB0C8
     BroadcastMessageConfigurationRequest = 0x1847
     BroadcastMessageConfigurationReply = 0x8847
@@ -229,6 +229,75 @@ class DispatchStationReceivingStatus(enum.Enum):
     RX_EMERGENCY_CALL_IN_SILENCE = 0x11
 
 
+@enum.unique
+class StatusChangeNotificationTargets(enum.Enum):
+    NONE = 0x00
+    SPK = 0x01
+    SQUELCH = 0x02
+    CTCSS_CDCSS = 0x03
+    VOLUME = 0x04
+    ZONE = 0x05
+    CHANNEL = 0x06
+    TALKAROUND = 0x07
+    RX_POWER = 0x08
+    EMERGENCY = 0x09
+    SCAN_FOR_CHANNEL = 0x0A
+    RSSI = 0x0B
+    CARRIER = 0x0C
+    BATTERY_SAVE = 0x0D
+    MAN_DOWN = 0x0E
+    OPTION_BOARD = 0x0F
+    MIC = 0x10
+    POWER_DOWN_STARTUP = 0x11
+    RADIO_DISABLE = 0x12
+    RENT = 0x13
+    BLOCK = 0x14
+    EMPTY_CHANNEL = 0x15
+    RESERVED = 0x16
+    LONE_WORKER_REMINDER = 0x17
+    COVERT_MODE = 0x18
+    MIC_POSITION = 0x19
+    SPK_POSITION = 0x1A
+    RADIO_RESET = 0x1B
+
+    @classmethod
+    def _missing_(cls, value: int) -> "StatusChangeNotificationTargets":
+        return StatusChangeNotificationTargets.RESERVED
+
+    def is_mobile_only(self) -> bool:
+        return self.value in (
+            StatusChangeNotificationTargets.ZONE,
+            StatusChangeNotificationTargets.CHANNEL,
+            StatusChangeNotificationTargets.TALKAROUND,
+            StatusChangeNotificationTargets.EMERGENCY,
+            StatusChangeNotificationTargets.SCAN_FOR_CHANNEL,
+            StatusChangeNotificationTargets.BATTERY_SAVE,
+            StatusChangeNotificationTargets.MAN_DOWN,
+            StatusChangeNotificationTargets.OPTION_BOARD,
+            StatusChangeNotificationTargets.MIC,
+            StatusChangeNotificationTargets.POWER_DOWN_STARTUP,
+            StatusChangeNotificationTargets.RADIO_DISABLE,
+            StatusChangeNotificationTargets.RENT,
+            StatusChangeNotificationTargets.BLOCK,
+            StatusChangeNotificationTargets.EMPTY_CHANNEL,
+            StatusChangeNotificationTargets.LONE_WORKER_REMINDER,
+            StatusChangeNotificationTargets.COVERT_MODE,
+            StatusChangeNotificationTargets.MIC_POSITION,
+            StatusChangeNotificationTargets.SPK_POSITION,
+        )
+
+
+@enum.unique
+class StatusChangeNotificationSetting(enum.Enum):
+    DISABLE_NOTIFY = 0x00
+    ENABLE_NOTIFY = 0x01
+    RESERVED = 0x02
+
+    @classmethod
+    def _missing_(cls, value: object) -> "StatusChangeNotificationSetting":
+        return StatusChangeNotificationSetting.RESERVED
+
+
 class RadioControlProtocol(HDAP):
     """
     RCP - Little endian protocol
@@ -261,6 +330,12 @@ class RadioControlProtocol(HDAP):
         # (0x0852)Send Talker Alias Request (Repeater API)
         talker_alias_format: Optional[TalkerAliasDataFormat] = None,
         talker_alias_data: bytes = b"",
+        # status change notifications
+        status_change_settings: Dict[
+            StatusChangeNotificationTargets, StatusChangeNotificationSetting
+        ] = dict(),
+        status_change_target: StatusChangeNotificationTargets = StatusChangeNotificationTargets.RESERVED,
+        status_change_value: int = 0,
     ):
         super().__init__(is_reliable=is_reliable)
         self.opcode: RCPOpcode = RCPOpcode(
@@ -299,6 +374,13 @@ class RadioControlProtocol(HDAP):
             TalkerAliasDataFormat
         ] = talker_alias_format
         self.talker_alias_data: bytes = talker_alias_data
+        self.status_change_settings: Dict[
+            StatusChangeNotificationTargets, StatusChangeNotificationSetting
+        ] = status_change_settings
+        self.status_change_value: int = status_change_value
+        self.status_change_target: StatusChangeNotificationTargets = (
+            status_change_target
+        )
 
     def get_endianness(self) -> Literal["big", "little"]:
         return "little"
@@ -402,12 +484,37 @@ class RadioControlProtocol(HDAP):
                 target_id=data[11:15],
             )
         elif opcode == RCPOpcode.ZoneAndChannelOperationRequest:
+            # TODO: fields
             return RadioControlProtocol(
                 opcode=opcode, is_reliable=is_reliable, raw_payload=data[5:10]
             )
         elif opcode == RCPOpcode.ZoneAndChannelOperationReply:
+            # TODO: fields
             return RadioControlProtocol(
                 opcode=opcode, is_reliable=is_reliable, raw_payload=data[5:-2]
+            )
+        elif opcode == RCPOpcode.StatusChangeNotificationRequest:
+            # construct options
+            _options = dict()
+            _count = data[5]
+            for i in range(0, _count * 2, 2):
+                _options[
+                    StatusChangeNotificationTargets(data[6 + i])
+                ] = StatusChangeNotificationSetting(data[7 + i])
+
+            return RadioControlProtocol(
+                opcode=opcode, is_reliable=is_reliable, status_change_settings=_options
+            )
+        elif opcode == RCPOpcode.StatusChangeNotificationReply:
+            return RadioControlProtocol(
+                opcode=opcode, is_reliable=is_reliable, result=RCPResult(data[5])
+            )
+        elif opcode == RCPOpcode.RadioStatusReport:
+            return RadioControlProtocol(
+                opcode=opcode,
+                is_reliable=is_reliable,
+                status_change_target=StatusChangeNotificationTargets(data[5]),
+                status_change_value=int.from_bytes(data[6:8], byteorder=endian),
             )
         else:
             raise ValueError(
@@ -454,6 +561,8 @@ class RadioControlProtocol(HDAP):
             )
         elif self.opcode == RCPOpcode.BroadcastMessageConfigurationReply:
             return self.result.value.to_bytes(1, byteorder=self.get_endianness())
+        elif self.opcode == RCPOpcode.StatusChangeNotificationReply:
+            return self.result.value.to_bytes(1, byteorder=self.get_endianness())
         elif self.opcode == RCPOpcode.RadioIDAndRadioIPQueryReply:
             assert (
                 len(self.raw_value) == 4
@@ -488,7 +597,19 @@ class RadioControlProtocol(HDAP):
             RCPOpcode.ZoneAndChannelOperationRequest,
             RCPOpcode.ZoneAndChannelOperationReply,
         ):
+            # TODO: split into fields
             return self.raw_payload
+        elif self.opcode == RCPOpcode.StatusChangeNotificationRequest:
+            _settings = len(self.status_change_settings).to_bytes(1, byteorder="little")
+            for target, setting in self.status_change_settings.items():
+                _settings += bytes([target.value, setting.value])
+            return _settings
+        elif self.opcode == RCPOpcode.RadioStatusReport:
+            return bytes(
+                [self.status_change_target.value]
+            ) + self.status_change_value.to_bytes(
+                length=2, byteorder=self.get_endianness()
+            )
 
         raise ValueError(f"get_payload not implemented for {self.opcode}")
 
@@ -505,6 +626,8 @@ class RadioControlProtocol(HDAP):
         elif self.opcode == RCPOpcode.CallReply:
             represented += f"[{self.result}]"
         elif self.opcode == RCPOpcode.BroadcastStatusConfigurationReply:
+            represented += f"[{self.result}]"
+        elif self.opcode == RCPOpcode.StatusChangeNotificationReply:
             represented += f"[{self.result}]"
         elif self.opcode == RCPOpcode.BroadcastMessageConfigurationRequest:
             represented += (
@@ -537,16 +660,36 @@ class RadioControlProtocol(HDAP):
                 f"[SENDER: {self.sender_id}] [TARGET: {self.target_id}] "
             )
         elif self.opcode == RCPOpcode.ZoneAndChannelOperationRequest:
+            # TODO: split into fields
             represented += (
                 f"[OPERATION: {self.raw_payload[0]}] "
                 f"[ZONE {int.from_bytes(self.raw_payload[1:3], byteorder='little')}] "
                 f"[CHANNEL {int.from_bytes(self.raw_payload[3:5], byteorder='little')}] "
             )
         elif self.opcode == RCPOpcode.ZoneAndChannelOperationReply:
+            # TODO: split into fields
             represented += (
                 f"[RESULT {int.from_bytes(self.raw_payload[0:4], byteorder='little')}] "
                 f"[OPERATION {int.from_bytes(self.raw_payload[4:8], byteorder='little')}] "
                 f"[ZONE {int.from_bytes(self.raw_payload[8:10], byteorder='little')}] "
                 f"[CHANNEL {int.from_bytes(self.raw_payload[10:12], byteorder='little')}] "
             )
+        elif self.opcode == RCPOpcode.StatusChangeNotificationRequest:
+            _enabled: str = ""
+            _disabled: str = ""
+            for target, setting in (
+                self.status_change_settings.items()
+                if self.status_change_settings
+                else dict()
+            ):
+                repre: str = f"{target.name} "
+                if setting == StatusChangeNotificationSetting.ENABLE_NOTIFY:
+                    _enabled += repre
+                else:
+                    _disabled += repre
+            represented += (
+                f"[DISABLE: {_disabled.strip()}] " if len(_disabled) else ""
+            ) + (f"[ENABLE: {_enabled.strip()}] " if len(_enabled) else "")
+        elif self.opcode == RCPOpcode.RadioStatusReport:
+            represented += f"[{self.status_change_target}: {self.status_change_value}]"
         return represented

@@ -1,4 +1,5 @@
 import enum
+import logging
 import math
 from copy import copy
 from datetime import datetime
@@ -889,7 +890,9 @@ class MBXML:
 
             return ARRP
 
-        print(f"get_implementation returns default for {doc_type}")
+        logging.getLogger().warning(
+            f"get_implementation returns default for {doc_type}"
+        )
         return MBXMLDocument
 
     @classmethod

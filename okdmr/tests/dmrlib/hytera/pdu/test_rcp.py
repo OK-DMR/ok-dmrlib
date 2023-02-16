@@ -1,9 +1,12 @@
 from typing import List
 
-from okdmr.dmrlib.hytera.pdu.hrnp import HRNP, HRNPOpcodes
+from okdmr.dmrlib.hytera.pdu.hrnp import HRNPOpcodes, HRNP
 from okdmr.dmrlib.hytera.pdu.radio_control_protocol import (
     RCPOpcode,
     RadioControlProtocol,
+    StatusChangeNotificationSetting,
+    StatusChangeNotificationTargets,
+    RCPResult,
 )
 
 
@@ -33,3 +36,44 @@ def test_pdus():
         rcp: RadioControlProtocol = RadioControlProtocol.from_bytes(pdu_bytes)
         assert rcp.as_bytes() == pdu_bytes
         assert len(repr(rcp))
+
+
+def test_status_notify_pdus():
+    r = RadioControlProtocol(
+        opcode=RCPOpcode.StatusChangeNotificationRequest,
+        status_change_settings={
+            StatusChangeNotificationTargets.RSSI: StatusChangeNotificationSetting.ENABLE_NOTIFY,
+            StatusChangeNotificationTargets.CHANNEL: StatusChangeNotificationSetting.ENABLE_NOTIFY,
+            StatusChangeNotificationTargets.ZONE: StatusChangeNotificationSetting.DISABLE_NOTIFY,
+            StatusChangeNotificationTargets.RADIO_DISABLE: StatusChangeNotificationSetting.ENABLE_NOTIFY,
+        },
+    )
+    print(repr(r))
+    print(r.as_bytes().hex())
+    print(
+        HRNP(
+            opcode=HRNPOpcodes.DATA,
+            data=RadioControlProtocol(
+                opcode=RCPOpcode.StatusChangeNotificationReply, result=RCPResult.Success
+            ),
+        )
+        .as_bytes()
+        .hex()
+    )
+
+    assert (
+        r.as_bytes() == RadioControlProtocol.from_bytes(r.as_bytes()).as_bytes()
+    ), f"unstable"
+
+    r2 = HRNP(
+        opcode=HRNPOpcodes.DATA,
+        data=RadioControlProtocol(
+            opcode=RCPOpcode.RadioStatusReport,
+            status_change_target=StatusChangeNotificationTargets.RSSI,
+            # RSSI value 0-4
+            status_change_value=4,
+        ),
+    )
+    print(repr(r2))
+    print(r2.as_bytes().hex())
+    assert r2.as_bytes() == HRNP.from_bytes(r2.as_bytes()).as_bytes(), f"unstable"

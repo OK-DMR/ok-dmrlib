@@ -61,8 +61,8 @@ def test_data_headers():
         },
     }
     for pduhex, validations in pdus.items():
-        _bits = bitarray()
-        _bits.frombytes(bytes.fromhex(pduhex))
+        _bytes = bytes.fromhex(pduhex)
+        _bits = bytes_to_bits(_bytes)
         dh: DataHeader = DataHeader.from_bits(_bits)
         for key, val in validations.items():
             assert getattr(dh, key) == val
@@ -73,6 +73,7 @@ def test_data_headers():
         nulled_crc = _bits.copy()
         nulled_crc[80:] = 0
         assert DataHeader.from_bits(nulled_crc).as_bits() == _bits
+        assert DataHeader.from_bytes(_bytes).as_bytes() == _bytes
         assert (
             (dh.get_blocks_to_follow() is None)
             if dh.data_packet_format == DataPacketFormats.UnifiedDataTransport

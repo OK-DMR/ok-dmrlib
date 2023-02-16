@@ -48,6 +48,8 @@ setup(
             "dmrlib-hytera-rrs=okdmr.dmrlib.tools.hytera_tool:HyteraTool.rrs",
             "dmrlib-hytera-tmp=okdmr.dmrlib.tools.hytera_tool:HyteraTool.tmp",
             "dmrlib-dmr-burst=okdmr.dmrlib.tools.dmrlib_tool:DmrlibTool.burst",
+            "dmrlib-dmr-header=okdmr.dmrlib.tools.dmrlib_tool:DmrlibTool.header",
+            "dmrlib-dmr-ipudp=okdmr.dmrlib.tools.dmrlib_tool:DmrlibTool.ipudp",
         ],
     },
     keywords="dmr etsi ham mmdvm homebrew radio hytera motorola",

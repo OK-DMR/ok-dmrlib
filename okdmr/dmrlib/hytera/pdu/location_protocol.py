@@ -104,12 +104,14 @@ class GPSData(BytesInterface):
         self.north_south: Literal["N", "S"] = north_south
         self.east_west: Literal["E", "W"] = east_west
         self.latitude: float = (
-            latitude if isinstance(latitude, float) else float(latitude.decode("ascii"))
+            float(latitude.decode("ascii"))
+            if isinstance(latitude, bytes)
+            else float(latitude)
         )
         self.longitude: float = (
-            longitude
-            if isinstance(longitude, float)
-            else float(longitude.decode("ascii"))
+            float(longitude.decode("ascii"))
+            if isinstance(longitude, bytes)
+            else longitude
         )
         self.speed_knots: float = (
             speed_knots
@@ -147,7 +149,7 @@ class GPSData(BytesInterface):
 
     @staticmethod
     def zero() -> "GPSData":
-        yield GPSData(
+        return GPSData(
             data_valid="V",
             greenwich_time=time(),
             greenwich_date=date.today(),
