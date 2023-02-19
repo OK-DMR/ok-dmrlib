@@ -33,10 +33,14 @@ from okdmr.dmrlib.etsi.layer3.elements.talker_alias_data_format import (
     TalkerAliasDataFormat,
 )
 from okdmr.dmrlib.etsi.layer3.elements.udt_option_flag import UDTOptionFlag
+from okdmr.dmrlib.hytera.pdu.radio_control_protocol import (
+    StatusChangeNotificationTargets,
+    StatusChangeNotificationSetting,
+)
 
 
 class TestRaisingElements:
-    def test_raising_elements(self):
+    def test_raising_elements(self) -> None:
         with pytest.raises(ValueError):
             AdditionalInformationField(0b10)
         with pytest.raises(ValueError):
@@ -100,3 +104,15 @@ class TestRaisingElements:
         with pytest.raises(ValueError):
             # value out of range, announcement type is 5-bit value
             AnnouncementType(0b11_0101)
+
+    def test_missing_elements(self) -> None:
+        assert (
+            StatusChangeNotificationTargets(0x1F)
+            == StatusChangeNotificationTargets.RESERVED
+        )
+        assert not StatusChangeNotificationTargets(0x1F).is_mobile_only()
+        assert StatusChangeNotificationTargets.ZONE.is_mobile_only()
+        assert (
+            StatusChangeNotificationSetting(0x03)
+            == StatusChangeNotificationSetting.RESERVED
+        )

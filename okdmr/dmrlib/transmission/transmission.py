@@ -81,9 +81,9 @@ class Transmission(WithObservers, LoggingTrait):
 
         if data_header.get_blocks_to_follow():
             if self.blocks_expected == 0:
-                self.blocks_expected = data_header.blocks_to_follow + 1
+                self.blocks_expected = data_header.get_blocks_to_follow() + 1
             elif self.blocks_expected != (
-                self.blocks_received + data_header.blocks_to_follow + 1
+                self.blocks_received + data_header.get_blocks_to_follow() + 1
             ):
                 pass
                 # self.log_warning(

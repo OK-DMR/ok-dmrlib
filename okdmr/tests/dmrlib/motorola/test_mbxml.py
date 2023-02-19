@@ -113,6 +113,7 @@ def test_lrrp_example():
     lrrp_asserts(
         msg=serialized,
         xml=xml,
+        debug=True,
         docid=MBXMLDocumentIdentifier.LRRP_ImmediateLocationRequest_NCDT,
     )
 
@@ -156,3 +157,22 @@ def test_globaltokens():
 
 def test_docid_resolve():
     assert MBXMLDocumentIdentifier.resolve(0x28) is None
+
+
+def test_lrrp_cdt():
+    serialized: bytes = bytes.fromhex("040E05054150434f22042468ACE05362")
+    xml: str = """<?xml version="1.0" ?>
+<Immediate-Location-Request>
+\t<request-id>2468ACE0</request-id>
+\t<query-info>
+\t\t<ret-info/>
+\t\t<request-speed-hor/>
+\t</query-info>
+</Immediate-Location-Request>
+"""
+    lrrp_asserts(
+        msg=serialized,
+        xml=xml,
+        docid=MBXMLDocumentIdentifier.LRRP_ImmediateLocationRequest,
+        debug=True,
+    )

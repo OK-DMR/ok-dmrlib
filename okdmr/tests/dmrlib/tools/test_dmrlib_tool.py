@@ -27,4 +27,18 @@ def test_hytera_tool(capsys) -> None:
         proto=DmrlibTool.burst,
     )
 
+    single_hytera_proto_test(
+        capsys,
+        # [IPv4 id: 512] [IP src: IPAddressIdentifier.RadioNetwork] [IP dst: IPAddressIdentifier.Reserved] [UDP src: UDPPortIdentifier.ManufacturerSpecific (120)] [UDP dst: UDPPortIdentifier.ManufacturerSpecific (120)]  [DATA: 0980be001000000001000000010a00000101020304cd03000000004172f253]
+        payload="02000278780980BE001000000001000000010A00000101020304CD03000000004172F253",
+        proto=DmrlibTool.ipudp,
+    )
+
+    single_hytera_proto_test(
+        capsys,
+        # [DataPacketFormats.DataPacketUnconfirmed] [SAPIdentifier.UDP_IP_compression] [TARGET IS GROUP] [PAD OCTETS: 4] [SOURCE: 1001] [DESTINATION: 1] [FullMessageFlag.FirstTryToCompletePacket] [BTF: 3] [FSN: Unconfirmed data single fragment]
+        payload="82340000010003E98300CF77",
+        proto=DmrlibTool.header,
+    )
+
     sys.argv = argv_backup

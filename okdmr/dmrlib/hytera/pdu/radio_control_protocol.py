@@ -265,7 +265,7 @@ class StatusChangeNotificationTargets(enum.Enum):
         return StatusChangeNotificationTargets.RESERVED
 
     def is_mobile_only(self) -> bool:
-        return self.value in (
+        return self in (
             StatusChangeNotificationTargets.ZONE,
             StatusChangeNotificationTargets.CHANNEL,
             StatusChangeNotificationTargets.TALKAROUND,

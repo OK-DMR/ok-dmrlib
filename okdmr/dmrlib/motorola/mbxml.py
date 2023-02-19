@@ -7,6 +7,7 @@ from typing import List, Optional, Tuple, Dict, Type, Union
 from xml.dom import minidom
 
 from bitarray.util import ba2int
+from okdmr.kaitai.tools.prettyprint import prettyprint
 
 from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits
 
@@ -208,6 +209,7 @@ class MBXMLToken:
 
     def get_value(self, doc: "MBXMLDocument") -> MBXMLToken_Value:
         if self.token_type in (GlobalToken.STR8_ST, GlobalToken.OPAQUE_T):
+            print(f"get_value for {self.token_type} from {self.value} ->read_opaque")
             (val, idx) = MBXML.read_opaque(doc.constants_table, self.value)
             return val.decode("ascii")
         elif isinstance(self.value, bytes):
@@ -367,6 +369,8 @@ class MBXMLDocument:
     ) -> None:
         self.id: MBXMLDocumentIdentifier = document_id
         self.constants_table: bytes = constants_table
+        self.is_constant_table_default: bool = True
+        """Indicates whether the table is expected per document id or custom (that needs to be encoded into bytes)"""
         self.default_constants_table: Dict[int, MBXMLToken] = (
             default_constants_table or {}
         )
@@ -378,6 +382,7 @@ class MBXMLDocument:
         self, constants: Dict[int, MBXMLToken]
     ) -> "MBXMLDocument":
         self.default_constants_table = constants
+        self.is_constant_table_default = True
         self.constants_table = MBXML.build_constants_table(self.id)
         return self
 
@@ -726,7 +731,11 @@ class MBXML:
 
     @classmethod
     def read_document(
-        cls, doctype: MBXMLDocumentIdentifier, data: bytes, idx: int
+        cls,
+        doctype: MBXMLDocumentIdentifier,
+        data: bytes,
+        idx: int,
+        previous_doc: Optional[MBXMLDocument] = None,
     ) -> MBXMLDocument:
         doctype_configuration = cls.get_implementation(doctype).get_configuration(
             doctype
@@ -741,9 +750,26 @@ class MBXML:
             print(repr(doc))
 
         if not has_no_constants_table:
-            # fill in constants, if indicated
-            (constants, idx) = cls.read_opaque(data, idx)
-            doc.constants_table = constants
+            (cdt_length, idx) = cls.read_uintvar(data, idx)
+            assert idx >= 1, f"MBXML CDT_LEN value is invalid"
+            if idx == 1:
+                # 2.11 Representation of Multiple Documents
+                # special cdt len value (1) means to CDT from previous document
+                if previous_doc:
+                    doc.constants_table = previous_doc.constants_table
+                    doc.is_constant_table_default = (
+                        previous_doc.is_constant_table_default
+                    )
+                else:
+                    logging.getLogger().error(
+                        f"CDT_LEN(1) requires previous_doc be available, CDT will not correspond to tokens"
+                    )
+            else:
+                # cdt_length does not include itself
+                (doc.constants_table, idx) = cls.read_opaque_defined_size(
+                    data, idx, cdt_length
+                )
+                doc.is_constant_table_default = False
         elif MBXMLTokenType.CONSTANT_TOKEN in doctype_configuration:
             doc.set_default_constants_table(
                 doctype_configuration[MBXMLTokenType.CONSTANT_TOKEN]
@@ -920,13 +946,19 @@ class MBXML:
             print(f"MBXML.from_bytes {data.hex()}")
 
         idx: int = 0
+        last_doc: Optional[MBXMLDocument] = None
         while True:
             (doc_id, idx) = cls.read_uintvar(data, idx)
-            doctype = MBXMLDocumentIdentifier.resolve(doc_id)
+            doctype = MBXMLDocumentIdentifier.resolve(docid=doc_id)
             (doc_len_bytes, idx) = cls.read_uintvar(data, idx)
-            rtn.append(cls.read_document(doctype, data, idx))
+            rtn.append(
+                cls.read_document(
+                    doctype=doctype, data=data, idx=idx, previous_doc=last_doc
+                )
+            )
             idx += doc_len_bytes
             if idx == data_len:
+                # no more documents in data
                 break
 
         cls.DEBUG = False
@@ -937,6 +969,9 @@ class MBXML:
         rtn = cls.write_uintvar(doc.id.value[0])
 
         body = b""
+        if not doc.is_constant_table_default:
+            body += cls.write_uintvar(len(doc.constants_table)) + doc.constants_table
+
         for part in doc.parts:
             body += cls.write_part(part)
 
