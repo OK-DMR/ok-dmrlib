@@ -1,0 +1,2 @@
+# okdmr.dmrlib.protocols should not be package, but namespace
+__init__.py

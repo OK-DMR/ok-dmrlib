@@ -3,6 +3,7 @@ from typing import Dict, Any
 from bitarray import bitarray
 
 from okdmr.dmrlib.etsi.fec.vbptc_128_72 import VBPTC12873
+from okdmr.dmrlib.etsi.layer2.burst import Burst
 from okdmr.dmrlib.etsi.layer2.elements.feature_set_ids import FeatureSetIDs
 from okdmr.dmrlib.etsi.layer2.elements.flcos import FLCOs
 from okdmr.dmrlib.etsi.layer2.pdu.full_link_control import FullLinkControl

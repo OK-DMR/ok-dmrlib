@@ -23,5 +23,8 @@ class ProtocolTool:
         )
         for hex_msg in args.hex:
             print(hex_msg)
-            pdu = impl.from_bytes(bytes.fromhex(hex_msg))
-            print(repr(pdu))
+            try:
+                pdu = impl.from_bytes(bytes.fromhex(hex_msg))
+                print(repr(pdu))
+            except Exception as e:
+                print(e)

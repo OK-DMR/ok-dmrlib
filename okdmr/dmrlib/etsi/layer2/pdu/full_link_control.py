@@ -1,4 +1,4 @@
-from typing import Union, Optional
+from typing import Union, Optional, Literal
 
 from bitarray import bitarray
 from bitarray.util import ba2int, int2ba
@@ -10,11 +10,12 @@ from okdmr.dmrlib.etsi.layer3.elements.service_options import ServiceOptions
 from okdmr.dmrlib.etsi.layer3.elements.talker_alias_data_format import (
     TalkerAliasDataFormat,
 )
-from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits
+from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits, bits_to_bytes
 from okdmr.dmrlib.utils.bits_interface import BitsInterface
+from okdmr.dmrlib.utils.bytes_interface import BytesInterface
 
 
-class FullLinkControl(BitsInterface):
+class FullLinkControl(BytesInterface, BitsInterface):
     """
     ETSI TS 102 361-1 V2.5.1 (2017-10) - 9.1.6  Full Link Control (FULL LC) PDU
     ETSI TS 102 361-2 V2.4.1 (2017-10) - 7.1.1  Full Link Control PDUs
@@ -92,6 +93,15 @@ class FullLinkControl(BitsInterface):
             )
 
         raise KeyError(f"FullLinkControl.__repr__ does not support " + descr)
+
+    @staticmethod
+    def from_bytes(
+        data: bytes, endian: Literal["big", "little"] = "big"
+    ) -> Optional["FullLinkControl"]:
+        return FullLinkControl.from_bits(bytes_to_bits(data))
+
+    def as_bytes(self, endian: Literal["big", "little"] = "big") -> bytes:
+        return bits_to_bytes(self.as_bits())
 
     @staticmethod
     def from_bits(bits: bitarray) -> "FullLinkControl":

@@ -7,7 +7,6 @@ from typing import List, Optional, Tuple, Dict, Type, Union
 from xml.dom import minidom
 
 from bitarray.util import ba2int
-from okdmr.kaitai.tools.prettyprint import prettyprint
 
 from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits
 
@@ -168,7 +167,6 @@ class MBXMLDocumentIdentifier(enum.Enum):
 
     @classmethod
     def resolve(cls, docid: int) -> Optional["MBXMLDocumentIdentifier"]:
-
         for _doc in cls:
             (_docid, _is_ncdt, _) = _doc.value
             if _docid == docid:
@@ -450,8 +448,7 @@ class MBXMLDocument:
         """
         tokens = cls.get_known_tokens(is_request=is_request)
         for tokenset in tokens:
-            for (tokendef_id, tokendef_setting) in tokenset.items():
-
+            for tokendef_id, tokendef_setting in tokenset.items():
                 valid_candidate: bool = (
                     tokendef_setting.name == name
                     if isinstance(name, str)
@@ -461,7 +458,7 @@ class MBXMLDocument:
 
                 if valid_candidate:
                     # verify found token has required attributes
-                    for (attr_key, attr_val) in attributes.items():
+                    for attr_key, attr_val in attributes.items():
                         (attr_copy, value_changed) = cls.get_attribute(
                             name=attr_key, value=attr_val
                         )
@@ -500,7 +497,7 @@ class MBXMLDocument:
         """
         attrs = cls.get_known_attributes(is_request=is_request)
         for attrset in attrs:
-            for (attrdef_id, attrdef_setting) in attrset.items():
+            for attrdef_id, attrdef_setting in attrset.items():
                 if (
                     attrdef_setting.name == name
                     if isinstance(name, str)

@@ -53,6 +53,8 @@ class TransmissionWatcher(LoggingTrait, WithObservers):
                 self.log_debug(f"{[x for x in voice_bytes[18:]]},")
 
     def process_burst(self, burst: Burst) -> Optional[Burst]:
+        if not burst:
+            return
         if not burst.target_radio_id:
             if type(burst) not in (HyteraIPSCSync, HyteraIPSCWakeup):
                 self.log_warning(

@@ -1,4 +1,4 @@
-from typing import Union, Optional, Dict
+from typing import Union, Optional, Dict, Literal
 
 from bitarray import bitarray
 from bitarray.util import ba2int, int2ba
@@ -22,9 +22,10 @@ from okdmr.dmrlib.etsi.layer3.elements.service_options import ServiceOptions
 from okdmr.dmrlib.etsi.layer3.elements.source_type import SourceType
 from okdmr.dmrlib.utils.bits_bytes import bits_to_bytes, bytes_to_bits
 from okdmr.dmrlib.utils.bits_interface import BitsInterface
+from okdmr.dmrlib.utils.bytes_interface import BytesInterface
 
 
-class CSBK(BitsInterface):
+class CSBK(BitsInterface, BytesInterface):
     """
     ETSI TS 102 361-2 V2.4.1 (2017-10) - 7.1.2  Control Signalling BlocK (CSBK) PDUs
     """
@@ -295,6 +296,15 @@ class CSBK(BitsInterface):
             )
 
         return pdu + int2ba(self.crc, length=16)
+
+    @staticmethod
+    def from_bytes(
+        data: bytes, endian: Literal["big", "little"] = "big"
+    ) -> Optional["CSBK"]:
+        return CSBK.from_bits(bytes_to_bits(data))
+
+    def as_bytes(self, endian: Literal["big", "little"] = "big") -> bytes:
+        return bits_to_bytes(self.as_bits())
 
     @staticmethod
     def from_bits(bits: bitarray) -> "CSBK":
