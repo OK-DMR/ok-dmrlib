@@ -1,5 +1,5 @@
 import sys
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 from okdmr.dmrlib.etsi.layer2.burst import Burst
 from okdmr.dmrlib.etsi.layer2.elements.burst_types import BurstTypes
@@ -39,7 +39,8 @@ class DmrlibTool(ProtocolTool):
     @staticmethod
     def dsdfme() -> None:
         parser: ArgumentParser = ArgumentParser(
-            description="DSD-FME Structured DSP processing"
+            description="DSD-FME Structured DSP processing",
+            formatter_class=ArgumentDefaultsHelpFormatter,
         )
         parser.add_argument(
             "file", type=str, help=f'Single DSP output file (use dsd-fme "-Q" option)'

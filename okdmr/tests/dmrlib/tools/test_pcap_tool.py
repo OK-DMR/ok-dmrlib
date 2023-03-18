@@ -145,7 +145,7 @@ def test_embedded_extractor(capsys: CaptureFixture):
 
     ee: EmbeddedExtractor = EmbeddedExtractor()
     full_lc: Optional[FullLinkControl] = None
-    for (expect_full_lc, pkt_data, ip_data) in testdata:
+    for expect_full_lc, pkt_data, ip_data in testdata:
         full_lc = ee.process_packet(
             data=bytes.fromhex(pkt_data), packet=IP(bytes.fromhex(ip_data))
         )

@@ -17,7 +17,7 @@ def test_uintvar():
         ("828F25", 0x87A5),
         ("8757", 0x3D7),
     ]
-    for (uint_hex, uint_val) in uintvars:
+    for uint_hex, uint_val in uintvars:
         uint_bytes = bytes.fromhex(uint_hex)
         (uint, idx) = MBXML.read_uintvar(uint_bytes, 0)
         # assert value is read out correctly
@@ -34,7 +34,7 @@ def test_sintvar():
         ("65", -0x25),
         ("C120", -0xA0),
     ]
-    for (sint_hex, sint_val) in sintvars:
+    for sint_hex, sint_val in sintvars:
         sint_bytes = bytes.fromhex(sint_hex)
         (sint, idx, sign) = MBXML.read_sintvar(sint_bytes, 0)
         assert sint == sint_val
@@ -50,7 +50,7 @@ def test_ufloatvar():
         (160 + (7 / 128), "812007", 2),
         (160 + (983 / (128**2)), "81208757", 2),
     ]
-    for (ufloat_val, ufloat_hex, expected_precision) in ufloatvars:
+    for ufloat_val, ufloat_hex, expected_precision in ufloatvars:
         ufloat_bytes = bytes.fromhex(ufloat_hex)
         (ufloat, idx) = MBXML.read_ufloatvar(ufloat_bytes, 0)
         assert idx == len(ufloat_bytes)
@@ -67,7 +67,7 @@ def test_sfloatvar():
         (-160 - (983 / (128**2)), "C1208757", 2),
         (-0.078125, "400a", 1),
     ]
-    for (sfloat_val, sfloat_hex, expected_precision) in sfloatvars:
+    for sfloat_val, sfloat_hex, expected_precision in sfloatvars:
         sfloat_bytes = bytes.fromhex(sfloat_hex)
         (sfloat, idx) = MBXML.read_sfloatvar(sfloat_bytes, 0)
         assert idx == len(sfloat_bytes)

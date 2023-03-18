@@ -2,7 +2,7 @@
 import logging
 import sys
 import traceback
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from typing import Callable, List, Dict, Optional, Tuple
 
 from bitarray import bitarray
@@ -93,9 +93,9 @@ class IPSCAnalyze:
                 self.map[rowkey] = row
 
     def print_stats(self):
-        for ((slot, frame), dt_stats) in self.map.items():
+        for (slot, frame), dt_stats in self.map.items():
             print(f"SLOT: {slot} FRAME: {frame}")
-            for (dt, dt_count) in dt_stats.items():
+            for dt, dt_count in dt_stats.items():
                 print(f"\tCOUNT: {dt_count}\tDT: {dt}")
 
 
@@ -348,7 +348,8 @@ class PcapTool:
     @staticmethod
     def _arguments() -> ArgumentParser:
         parser = ArgumentParser(
-            description="Read and debug UDP packets in PCAP/PCAPNG file"
+            description="Read and debug UDP packets in PCAP/PCAPNG file",
+            formatter_class=ArgumentDefaultsHelpFormatter,
         )
         parser.add_argument(
             "files", type=str, nargs="+", help="PCAP or PCAPNG file to be read"

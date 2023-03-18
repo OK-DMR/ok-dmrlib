@@ -9,7 +9,7 @@ def test_encode_decode():
     hex_slottypes: List[Tuple[str, str]] = [
         ("01010011111100101011", "[DataTypes.CSBK] [CC: 5]")
     ]
-    for (hex_slottype, str_repr) in hex_slottypes:
+    for hex_slottype, str_repr in hex_slottypes:
         original_bits: bitarray = bitarray(hex_slottype)
         slot: SlotType = SlotType.from_bits(original_bits)
         assert slot.fec_parity_ok, "Parity does not match in test data"

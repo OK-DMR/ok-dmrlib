@@ -1,17 +1,50 @@
 import sys
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+from dataclasses import dataclass
 
 from okdmr.dmrlib.utils.logging_trait import LoggingTrait
 
 
+@dataclass
+class HRNPClientConfiguration:
+    """
+    No defaults should be set in this dataclass
+    """
+
+    # custom
+    repeater_ip: str
+    # cps
+    rrs1: int
+    rrs2: int
+    gps1: int
+    gps2: int
+    tel1: int
+    tel2: int
+    tms1: int
+    tms2: int
+    rcc1: int
+    rcc2: int
+    rvs1: int
+    rvs2: int
+    e2e1: int
+    e2e2: int
+    sdmp1: int
+    sdmp2: int
+
+
 class HRNPClient(LoggingTrait):
+    def __init__(self, config: HRNPClientConfiguration) -> None:
+        self.config: HRNPClientConfiguration = config
+
     @staticmethod
     def args() -> ArgumentParser:
         args: ArgumentParser = ArgumentParser(
-            description="HRNP Connect",
+            description="HRNP Connect", formatter_class=ArgumentDefaultsHelpFormatter
         )
 
         args.add_argument("repeater_ip", type=str, help="Repeater IP address")
+        # args.add_argument("--1", type=int, default=30_00, help=" TS1")
+        # args.add_argument("--2", type=int, default=30_00, help=" TS2")
         args.add_argument(
             "--rrs1", type=int, default=30_001, help="Radio Registration Service TS1"
         )
@@ -30,8 +63,6 @@ class HRNPClient(LoggingTrait):
         args.add_argument(
             "--tel2", type=int, default=30_006, help="Radio Telemetry TS2"
         )
-        # args.add_argument("--1", type=int, default=30_00, help=" TS1")
-        # args.add_argument("--2", type=int, default=30_00, help=" TS2")
         args.add_argument(
             "--tms1", type=int, default=30_007, help="Text Messaging Service TS1"
         )
@@ -73,4 +104,4 @@ class HRNPClient(LoggingTrait):
     @staticmethod
     def run() -> None:
         parsed = HRNPClient.args().parse_args(sys.argv[1:])
-        print(parsed)
+        print(HRNPClientConfiguration(**vars(parsed)))

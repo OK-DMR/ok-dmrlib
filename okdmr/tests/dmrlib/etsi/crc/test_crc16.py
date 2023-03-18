@@ -19,7 +19,7 @@ def test_crc16():
     # fmt:on
     # @formatter:on
 
-    for (databytes, crc16, crc_mask) in data:
+    for databytes, crc16, crc_mask in data:
         assert CRC16.check(
             data=bytes.fromhex(databytes),
             crc16=int.from_bytes(bytes.fromhex(crc16), byteorder="big"),

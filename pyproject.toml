@@ -1,0 +1,99 @@
+[project]
+name = "ok-dmrlib"
+version = "0.8.0"
+description = "DMR PDUs, elements, FEC and CRC library, including proprietary DMR protocols of Hytera and Motorola"
+authors = [
+    { name = "Marek Sebera", email = "marek.sebera@gmail.com" },
+]
+dependencies = [
+    "dmr-kaitai>=1.0",
+    "bitarray==2.7.3",
+    "numpy==1.24.2",
+    "scapy==2.5.0",
+]
+requires-python = ">=3.8"
+license = { text = "AGPL-3.0" }
+keywords = [
+    "dmr",
+    "etsi",
+    "ham",
+    "mmdvm",
+    "homebrew",
+    "radio",
+    "hytera",
+    "motorola"
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+    "Environment :: Console",
+    "Topic :: Communications :: Ham Radio",
+    "Operating System :: POSIX :: Linux",
+    "Typing :: Typed",
+    "Framework :: Pytest",
+    "Intended Audience :: Telecommunications Industry",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3.8",
+]
+dynamic = ["readme"]
+
+[project.urls]
+repository = "https://github.com/OK-DMR/ok-dmrlib"
+
+[project.optional-dependencies]
+pytest = ["pytest==7.2.2"]
+pytest-cov = ["pytest-cov==4.0.0"]
+pytest-asyncio = ["pytest-asyncio==0.20.3"]
+crc = ["crc==4.1.0"]
+pre-commit = ["pre-commit==3.2.0"]
+
+[tool.hatch.metadata.hooks.fancy-pypi-readme]
+content-type = "text/markdown"
+fragments = [
+    { path = "README.md" }
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["/okdmr"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/README.md",
+    "/okdmr",
+    "/Makefile",
+    "/.yamllint",
+    "/.pre-commit-config.yaml",
+    "/setup.py"
+]
+exclude = [
+    ".gitignore",
+    "/.gitignore",
+    ".gitkeep",
+    "/okdmr/tests",
+    "/.github"
+]
+
+[build-system]
+requires = ["hatchling>=1.8.0", "hatch-fancy-pypi-readme"]
+build-backend = "hatchling.build"
+
+[tool.isort]
+profile = "black"
+
+[tool.pytest.ini_options]
+asyncio_mode = "strict"
+
+[tool.coverage.run]
+branch = true
+source = ["okdrm.dmrlib"]
+
+[tool.coverage.report]
+precision = 2
+exclude_lines = [
+    "if __name__ == .__main__.:",
+    "pass",
+    "continue",
+    "traceback.print_exc()",
+    "raise KeyError",
+    "raise ValueError"
+]

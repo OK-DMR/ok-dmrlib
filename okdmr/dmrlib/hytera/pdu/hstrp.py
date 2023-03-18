@@ -113,7 +113,7 @@ class HSTRPOptions(BytesInterface):
         options_count: int = len(self.options)
         current_option: int = 0
         rtn = b""
-        for (command, data) in self.options:
+        for command, data in self.options:
             is_last: bool = current_option == (options_count - 1)
             current_option += 1
 
@@ -125,13 +125,13 @@ class HSTRPOptions(BytesInterface):
 
     def __len__(self) -> int:
         length: int = 0
-        for (command, data) in self.options:
+        for command, data in self.options:
             length += 2 + len(data)
         return length
 
     def __repr__(self) -> str:
         r: str = ""
-        for (command, data) in self.options:
+        for command, data in self.options:
             r += f"[{command}: {int.from_bytes(data, byteorder='big') if command != HSTRPOptionType.RTP else ''}] "
         return r
 

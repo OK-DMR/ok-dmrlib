@@ -1,5 +1,5 @@
 import sys
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from typing import Type, Optional, List
 
 from okdmr.dmrlib.utils.bytes_interface import BytesInterface
@@ -8,7 +8,9 @@ from okdmr.dmrlib.utils.bytes_interface import BytesInterface
 class ProtocolTool:
     @staticmethod
     def _args(protocol: str) -> ArgumentParser:
-        parser = ArgumentParser(description="Debug packet(s)")
+        parser = ArgumentParser(
+            description="Debug packet(s)", formatter_class=ArgumentDefaultsHelpFormatter
+        )
         parser.add_argument(
             "hex", type=str, nargs="+", help=f"Hex encoded messages of {protocol}"
         )

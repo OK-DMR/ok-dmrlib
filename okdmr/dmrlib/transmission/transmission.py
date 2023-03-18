@@ -136,7 +136,6 @@ class Transmission(WithObservers, LoggingTrait):
             return
         self.log_info(f"[VOICE CALL END]")
         if isinstance(self.header, FullLinkControl):
-
             self.voice_transmission_ended(self.header, self.blocks)
 
             if self.header.full_link_control_opcode == FLCOs.GroupVoiceChannelUser:

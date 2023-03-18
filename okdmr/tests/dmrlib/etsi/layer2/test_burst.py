@@ -150,7 +150,7 @@ def test_burst_as_bits():
         #    BurstTypes.DataAndControl
         # )
     ]
-    for (hexstr, burst_type) in bursts:
+    for hexstr, burst_type in bursts:
         _bytes: bytes = bytes.fromhex(hexstr)
         b: Burst = Burst.from_bytes(data=_bytes, burst_type=burst_type)
         assert (
@@ -190,7 +190,7 @@ def test_vocoder_socket():
     ]
     transmission: Transmission = Transmission()
     transmission.new_transmission(TransmissionTypes.VoiceTransmission)
-    for (hexstr, burst_type) in bursts:
+    for hexstr, burst_type in bursts:
         b: Burst = Burst.from_hytera_ipsc(
             IpSiteConnectProtocol.from_bytes(bytes.fromhex(hexstr))
         )

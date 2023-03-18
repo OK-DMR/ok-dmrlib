@@ -38,7 +38,7 @@ def test_crc9():
     ]
     # fmt:on
 
-    for (databytes, serialno, expected_crc9, mask, crc32) in data:
+    for databytes, serialno, expected_crc9, mask, crc32 in data:
         assert CRC9.check(
             data=bytes.fromhex(databytes),
             serial_number=serialno,

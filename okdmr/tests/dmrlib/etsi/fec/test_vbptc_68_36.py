@@ -39,7 +39,7 @@ def test_encode_decode_vbptc():
         ),
     ]
 
-    for (burst, expected_slco) in bursts:
+    for burst, expected_slco in bursts:
         on_air_bits = bitarray(burst)
 
         deinterleaved_all_bits = VBPTC6828.deinterleave_all_bits(on_air_bits)
