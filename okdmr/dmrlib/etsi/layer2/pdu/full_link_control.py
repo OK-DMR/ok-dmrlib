@@ -98,7 +98,8 @@ class FullLinkControl(BytesInterface, BitsInterface):
     def from_bytes(
         data: bytes, endian: Literal["big", "little"] = "big"
     ) -> Optional["FullLinkControl"]:
-        return FullLinkControl.from_bits(bytes_to_bits(data))
+        _bits = bytes_to_bits(data)
+        return FullLinkControl.from_bits(_bits[:-3] if len(_bits) == 80 else _bits)
 
     def as_bytes(self, endian: Literal["big", "little"] = "big") -> bytes:
         return bits_to_bytes(self.as_bits())

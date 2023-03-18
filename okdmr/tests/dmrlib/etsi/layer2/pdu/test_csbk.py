@@ -33,6 +33,7 @@ def test_single_csbk():
         == csbk.as_bits()
         == burst.info_bits_deinterleaved
     )
+    assert csbk.as_bytes() == CSBK.from_bytes(csbk.as_bytes()).as_bytes()
     assert len(repr(csbk))
 
 

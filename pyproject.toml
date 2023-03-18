@@ -1,6 +1,6 @@
 [build-system]
 build-backend = "hatchling.build"
-requires = ["hatchling>=1.8.0", "hatch-fancy-pypi-readme"]
+requires = ["hatchling>=1.13.0", "hatch-fancy-pypi-readme"]
 
 [project]
 authors = [
@@ -20,9 +20,9 @@ classifiers = [
 ]
 dependencies = [
   "dmr-kaitai>=1.0",
-  "bitarray==2.7.3",
-  "numpy==1.24.2",
-  "scapy==2.5.0"
+  "bitarray>=2.7",
+  "numpy~=1.24.2",
+  "scapy~=2.5.0"
 ]
 description = "DMR PDUs, elements, FEC and CRC library, including proprietary DMR protocols of Hytera and Motorola"
 dynamic = ["readme"]
@@ -42,7 +42,7 @@ requires-python = ">=3.8"
 version = "0.8"
 
 [project.optional-dependencies]
-pre-commit = ["pre-commit==3.2.0"]
+pre-commit = ["pre-commit==3.0.0"]
 test = [
   "pytest==7.2.2",
   "pytest-cov==4.0.0",
@@ -82,7 +82,8 @@ exclude_lines = [
 precision = 2
 
 [tool.coverage.run]
-branch = true
+# branch is currently broken see: https://github.com/nedbat/coveragepy/issues/1530
+branch = false
 source = ["okdrm.dmrlib"]
 
 [tool.hatch.build.targets.sdist]
@@ -113,6 +114,3 @@ fragments = [
 
 [tool.isort]
 profile = "black"
-
-[tool.pytest.ini_options]
-asyncio_mode = "strict"

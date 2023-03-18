@@ -10,3 +10,5 @@ def test_said_daid():
 
     assert IPAddressIdentifier(3) == IPAddressIdentifier.Reserved
     assert IPAddressIdentifier(13) == IPAddressIdentifier.ManufacturerSpecific
+    assert IPAddressIdentifier(2) == IPAddressIdentifier.Reserved
+    assert IPAddressIdentifier(12) == IPAddressIdentifier.ManufacturerSpecific

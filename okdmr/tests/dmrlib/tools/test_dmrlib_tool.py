@@ -42,3 +42,20 @@ def test_hytera_tool(capsys) -> None:
     )
 
     sys.argv = argv_backup
+
+
+def test_throwing_pdu(capsys):
+    argv_backup = copy(sys.argv)
+
+    sys.argv = ["dmrlib-mock-throwing", "ABCDEF"]
+    DmrlibTool.ipudp()
+
+    captured = capsys.readouterr()
+    # de-serialization error appears here
+    assert len(captured.err)
+    assert "got 24 instead" in captured.err
+    # raw input appears here
+    assert len(captured.out)
+    assert "ABCDEF" in captured.out
+
+    sys.argv = argv_backup

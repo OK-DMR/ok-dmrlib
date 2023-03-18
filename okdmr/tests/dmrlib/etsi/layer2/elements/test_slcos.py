@@ -7,4 +7,4 @@ def test_slcos():
 
     for i in range(0b0000, 0b1111):
         # this tests that all values in SLCO value range are defined, and no error is thrown
-        SLCOs(i)
+        assert isinstance(SLCOs(i), SLCOs)

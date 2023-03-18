@@ -1,6 +1,10 @@
-from typing import Dict
+from typing import Dict, List
 
 from okdmr.dmrlib.hytera.pdu.hrnp import HRNP, HRNPOpcodes
+from okdmr.dmrlib.hytera.pdu.location_protocol import (
+    LocationProtocol,
+    LocationProtocolSpecificService,
+)
 from okdmr.dmrlib.hytera.pdu.radio_control_protocol import (
     RadioControlProtocol,
     RCPOpcode,
@@ -233,3 +237,90 @@ def test_tt():
 
     h = HRNP.from_bytes(bytes.fromhex("7E0400FD10200000000C70D2"))
     assert h.as_bytes() == HRNP.from_bytes(h.as_bytes()).as_bytes(), f"unstable"
+
+
+def test_hrnp_app_payloads():
+    payloads: List[HRNP] = [
+        HRNP(
+            opcode=HRNPOpcodes.DATA,
+            data=RadioControlProtocol(
+                opcode=RCPOpcode.RadioIDAndRadioIPQueryRequest,
+                # radio ID
+                target=RadioIpIdTarget.RADIO_ID,
+            ),
+        ),
+        HRNP(opcode=HRNPOpcodes.CLOSE),
+        HRNP(opcode=HRNPOpcodes.CONNECT),
+        HRNP(
+            opcode=HRNPOpcodes.DATA,
+            data=RadioControlProtocol(
+                opcode=RCPOpcode.RadioIDAndRadioIPQueryRequest,
+                # radio ip
+                target=RadioIpIdTarget.RADIO_IP,
+            ),
+        ),
+        HRNP(
+            opcode=HRNPOpcodes.DATA,
+            data=RadioControlProtocol(
+                opcode=RCPOpcode.BroadcastMessageConfigurationRequest,
+                broadcast_type=0b111,  # if enabled else 0b000,
+            ),
+        ),
+        HRNP(
+            opcode=HRNPOpcodes.DATA,
+            data=RadioControlProtocol(
+                opcode=RCPOpcode.BroadcastStatusConfigurationRequest,
+                broadcast_config_raw=b"\x02\x00\x01\x01\x00",
+            ),
+        ),
+        HRNP(
+            opcode=HRNPOpcodes.DATA,
+            data=LocationProtocol(
+                opcode=LocationProtocolSpecificService.StandardRequest,
+                request_id=1,
+                radio_ip=RadioIP(radio_id=1001, subnet=10),
+            ),
+        ),
+        # group(0)
+        HRNP(
+            opcode=HRNPOpcodes.DATA,
+            data=TextMessageProtocol(
+                opcode=TMPService.PrivateShortData,
+                source_ip=RadioIP(1001),
+                destination_ip=RadioIP(subnet=0, radio_id=int(1002)),
+                short_data=bytes.fromhex("00010203040506070809"),
+                is_confirmed=False,
+                is_reliable=False,
+                request_id=1,
+            ),
+        ),
+        # group(1)
+        HRNP(
+            opcode=HRNPOpcodes.DATA,
+            data=TextMessageProtocol(
+                opcode=TMPService.GroupShortData,
+                source_ip=RadioIP(1001),
+                destination_ip=RadioIP(subnet=0, radio_id=int(1)),
+                short_data=bytes.fromhex("00010203040506070809"),
+                is_confirmed=False,
+                is_reliable=False,
+                request_id=1,
+            ),
+        ),
+        HRNP(
+            opcode=HRNPOpcodes.DATA,
+            data=RadioControlProtocol(
+                opcode=RCPOpcode.ZoneAndChannelOperationRequest,
+                raw_payload=b"\x00"
+                + int(1).to_bytes(length=2, byteorder="little")  # zone
+                + int(1).to_bytes(length=2, byteorder="little"),  # channel
+            ),
+        ),
+    ]
+    for payload in payloads:
+        payload_bytes = payload.as_bytes()
+
+        assert (
+            payload_bytes == HRNP.from_bytes(payload_bytes).as_bytes()
+        ), f"Stack re-assembly unstable"
+        assert len(repr(payload))

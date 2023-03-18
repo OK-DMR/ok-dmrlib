@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 from bitarray import bitarray
 
@@ -11,7 +11,7 @@ from okdmr.dmrlib.etsi.layer3.elements.position_error import PositionError
 from okdmr.dmrlib.etsi.layer3.elements.talker_alias_data_format import (
     TalkerAliasDataFormat,
 )
-from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits
+from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits, bits_to_bytes
 
 
 def test_embedded_lc():
@@ -65,6 +65,7 @@ def test_embedded_lc():
         bits: bitarray = bytes_to_bits(bytes.fromhex(hexmsg))
         vbptc: bitarray = VBPTC12873.deinterleave_data_bits(bits=bits, include_cs5=True)
         lc: FullLinkControl = FullLinkControl.from_bits(vbptc)
+
         if not len(assertdict):
             print(repr(lc))
 
@@ -77,6 +78,19 @@ def test_embedded_lc():
             assert getattr(lc, key) == val
 
         assert lc.as_bits() == vbptc
+
+
+def test_bytes():
+    hexes: List[str] = [
+        "00000000000620baefe8",
+        "00000000000920baef08",
+        "00000000086520baf888",
+        "00000000086520baef40",
+    ]
+    for hexmsg in hexes:
+        lc: FullLinkControl = FullLinkControl.from_bytes(bytes.fromhex(hexmsg))
+        lc_bytes = lc.as_bytes()
+        assert lc_bytes == FullLinkControl.from_bytes(lc_bytes).as_bytes()
 
 
 def test_assemble_talker_alias():

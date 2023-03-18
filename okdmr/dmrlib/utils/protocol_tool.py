@@ -29,4 +29,4 @@ class ProtocolTool:
                 pdu = impl.from_bytes(bytes.fromhex(hex_msg))
                 print(repr(pdu))
             except Exception as e:
-                print(e)
+                print(e, file=sys.stderr)
