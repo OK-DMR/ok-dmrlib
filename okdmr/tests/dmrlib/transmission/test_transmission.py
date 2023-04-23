@@ -187,6 +187,9 @@ def test_process_burst(caplog):
 
     tw: TransmissionWatcher = TransmissionWatcher()
     assert tw.process_burst(Burst()) is None
+    # following is not valid
+    # noinspection PyTypeChecker
+    assert tw.process_burst(None) is None
 
     # check no error logs produced while procesing
     for record in caplog.records:

@@ -1,7 +1,15 @@
+import asyncio
+import logging
 import sys
+import traceback
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+from asyncio import DatagramProtocol, AbstractEventLoop
 from dataclasses import dataclass
+from socket import AddressFamily
+from threading import Thread
+from typing import Dict, Optional
 
+from okdmr.dmrlib.protocols.hytera.rrs_datagram_protocol import RRSDatagramProtocol
 from okdmr.dmrlib.utils.logging_trait import LoggingTrait
 
 
@@ -34,7 +42,45 @@ class HRNPClientConfiguration:
 
 class HRNPClient(LoggingTrait):
     def __init__(self, config: HRNPClientConfiguration) -> None:
+        self.log_info(f"HRNP Client staring, config: {repr(config)}")
+        self.is_running: bool = False
         self.config: HRNPClientConfiguration = config
+        self.services: Dict[int, DatagramProtocol] = {}
+        """ dict port -> protocol handle """
+        self.loop: Optional[AbstractEventLoop] = None
+
+    def stop(self) -> None:
+        self.is_running = False
+
+    async def go(self) -> None:
+        self.is_running = True
+
+        rrs1proto = RRSDatagramProtocol(self.config.rrs1)
+        rrs2proto = RRSDatagramProtocol(self.config.rrs2)
+        # Radio Registration Service handler
+        (
+            self.services[self.config.rrs1],
+            _,
+        ) = await asyncio.get_event_loop().create_datagram_endpoint(
+            lambda: rrs1proto,
+            local_addr=("0.0.0.0", self.config.rrs1),
+            remote_addr=(self.config.repeater_ip, self.config.rrs1),
+            reuse_port=True,
+            family=AddressFamily.AF_INET,
+        )
+        (
+            self.services[self.config.rrs2],
+            _,
+        ) = await asyncio.get_event_loop().create_datagram_endpoint(
+            lambda: rrs2proto,
+            local_addr=("0.0.0.0", self.config.rrs2),
+            remote_addr=(self.config.repeater_ip, self.config.rrs2),
+            reuse_port=True,
+            family=AddressFamily.AF_INET,
+        )
+
+        await asyncio.get_event_loop().create_task(rrs1proto.periodic_maintenance())
+        await asyncio.get_event_loop().create_task(rrs2proto.periodic_maintenance())
 
     @staticmethod
     def args() -> ArgumentParser:
@@ -103,5 +149,23 @@ class HRNPClient(LoggingTrait):
 
     @staticmethod
     def run() -> None:
-        parsed = HRNPClient.args().parse_args(sys.argv[1:])
-        print(HRNPClientConfiguration(**vars(parsed)))
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format="[%(asctime)s] [%(levelname)s] [{ %(message)s }]",
+            datefmt="%X",
+        )
+        mainlog = logging.getLogger("hrnp-connect-entry")
+        app_thread = None
+        app = None
+        try:
+            parsed = HRNPClient.args().parse_args(sys.argv[1:])
+            config = HRNPClientConfiguration(**vars(parsed))
+            app = HRNPClient(config=config)
+            app_thread = Thread(target=lambda: asyncio.run(app.go(), debug=True))
+            app_thread.start()
+            mainlog.info("Thread started")
+            app_thread.join()
+        except Exception:
+            traceback.print_last(file=sys.stderr)
+        finally:
+            app.stop()

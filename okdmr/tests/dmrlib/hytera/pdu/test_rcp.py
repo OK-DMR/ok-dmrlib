@@ -6,7 +6,6 @@ from okdmr.dmrlib.hytera.pdu.radio_control_protocol import (
     RadioControlProtocol,
     StatusChangeNotificationSetting,
     StatusChangeNotificationTargets,
-    RCPResult,
 )
 
 
@@ -48,18 +47,6 @@ def test_status_notify_pdus():
             StatusChangeNotificationTargets.RADIO_DISABLE: StatusChangeNotificationSetting.ENABLE_NOTIFY,
         },
     )
-    print(repr(r))
-    print(r.as_bytes().hex())
-    print(
-        HRNP(
-            opcode=HRNPOpcodes.DATA,
-            data=RadioControlProtocol(
-                opcode=RCPOpcode.StatusChangeNotificationReply, result=RCPResult.Success
-            ),
-        )
-        .as_bytes()
-        .hex()
-    )
 
     assert (
         r.as_bytes() == RadioControlProtocol.from_bytes(r.as_bytes()).as_bytes()
@@ -74,6 +61,4 @@ def test_status_notify_pdus():
             status_change_value=4,
         ),
     )
-    print(repr(r2))
-    print(r2.as_bytes().hex())
     assert r2.as_bytes() == HRNP.from_bytes(r2.as_bytes()).as_bytes(), f"unstable"

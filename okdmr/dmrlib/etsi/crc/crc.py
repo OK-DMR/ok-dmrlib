@@ -72,7 +72,6 @@ class BitCrcConfiguration:
 
     def __post_init__(self):
         if self.feed_width_bits < 1:
-            print(f"feed_width_bits hit")
             object.__setattr__(self, "feed_width_bits", self.calc_feed_width_bits)
 
     @property

@@ -1,10 +1,11 @@
+import asyncio
 from asyncio import DatagramProtocol, DatagramTransport, BaseTransport
 from copy import deepcopy
 from datetime import datetime
 from typing import Optional, Tuple, Union, Any
 
 from okdmr.dmrlib.hytera.pdu.hdap import HDAP
-from okdmr.dmrlib.hytera.pdu.hstrp import HSTRP, HSTRPPacketType
+from okdmr.dmrlib.hytera.pdu.hstrp import HSTRP, HSTRPPacketType, HSTRPOptions
 from okdmr.dmrlib.utils.logging_trait import LoggingTrait
 
 
@@ -20,13 +21,14 @@ class HSTRPDatagramProtocol(DatagramProtocol, LoggingTrait):
     T_NUMRETRY: int = 3
     """number of retries to deliver single HSTRP packet, not being able (or not receiving ACK in timeout) means HSTRP packet was not-delivered and should be discarded"""
 
-    def __init__(self, port: int) -> None:
+    def __init__(self, port: int, be_active_peer: bool = False) -> None:
         self.transport: Optional[DatagramTransport] = None
         self.hstrp_connected: bool = False
         self.hstrp_last_contact: datetime = datetime.now()
         self.hstrp_last_heartbeat: datetime = datetime.now()
         self.port: int = port
         self.sn: int = 0
+        self.be_active_peer: bool = be_active_peer
 
     def hstrp_increment_sn(self) -> int:
         # HSTRP S/N is 2-bytes (16-bit) value
@@ -59,14 +61,11 @@ class HSTRPDatagramProtocol(DatagramProtocol, LoggingTrait):
             self.transport.sendto(data=ack.as_bytes(), addr=addr)
         return ack
 
-    def hstrp_send_heartbeat(
-        self, addr: Tuple[Union[str, Any], int], request: Optional[HSTRP]
-    ) -> HSTRP:
+    def hstrp_send_heartbeat(self, addr: Tuple[Union[str, Any], int]) -> HSTRP:
         """
         Will directly send out HEARTBEAT to provided addr
 
         @param addr:
-        @param request:
         @return:
         """
         hb: HSTRP = HSTRP(pkt_type=HSTRPPacketType(is_heartbeat=True), sn=0)
@@ -85,6 +84,20 @@ class HSTRPDatagramProtocol(DatagramProtocol, LoggingTrait):
 
     def connection_lost(self, exc: Union[Exception, None]) -> None:
         self.hstrp_connected = False
+
+    async def periodic_maintenance(self) -> None:
+        self.log_info(f"periodic maintenance START")
+        while asyncio.get_running_loop() and not asyncio.get_running_loop().is_closed():
+            if not self.hstrp_connected:
+                self.log_info(f"sending connect")
+                self.transport.sendto(
+                    data=HSTRP(
+                        pkt_type=HSTRPPacketType(is_connect=True), sn=0
+                    ).as_bytes(),
+                    addr=("192.168.22.18", self.port),
+                )
+            await asyncio.sleep(5)
+        self.log_info(f"periodic maintenance STOP")
 
     def datagram_received(
         self, data: bytes, addr: Tuple[Union[str, Any], int]
@@ -126,7 +139,7 @@ class HSTRPDatagramProtocol(DatagramProtocol, LoggingTrait):
             was_confirmed = True
             if self.hstrp_connected:
                 # TODO use T_HEARTBEAT and send own heartbeats (not-just copy peer timer/heartbeats)
-                self.hstrp_send_heartbeat(addr, pdu)
+                self.hstrp_send_heartbeat(addr)
         elif pdu.pkt_type.is_close:
             # connection teardown
             self.hstrp_set_connected(connected=False)

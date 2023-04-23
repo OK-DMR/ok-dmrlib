@@ -1,5 +1,8 @@
 from typing import Dict, List
 
+from okdmr.dmrlib.etsi.layer3.elements.talker_alias_data_format import (
+    TalkerAliasDataFormat,
+)
 from okdmr.dmrlib.hytera.pdu.hrnp import HRNP, HRNPOpcodes
 from okdmr.dmrlib.hytera.pdu.location_protocol import (
     LocationProtocol,
@@ -10,11 +13,14 @@ from okdmr.dmrlib.hytera.pdu.radio_control_protocol import (
     RCPOpcode,
     RCPResult,
     RadioIpIdTarget,
+    RCPCallType,
+    StatusChangeNotificationTargets,
 )
 from okdmr.dmrlib.hytera.pdu.radio_ip import RadioIP
 from okdmr.dmrlib.hytera.pdu.text_message_protocol import (
     TextMessageProtocol,
     TMPService,
+    TMPResultCodes,
 )
 from okdmr.tests.dmrlib.tests_utils import assert_expected_attribute_values
 
@@ -314,6 +320,88 @@ def test_hrnp_app_payloads():
                 raw_payload=b"\x00"
                 + int(1).to_bytes(length=2, byteorder="little")  # zone
                 + int(1).to_bytes(length=2, byteorder="little"),  # channel
+            ),
+        ),
+        HRNP(
+            opcode=HRNPOpcodes.DATA,
+            data=TextMessageProtocol(
+                opcode=TMPService.SendGroupMessageAck,
+                request_id=1,
+                destination_ip=RadioIP(1001),
+                result_code=TMPResultCodes.OK,
+            ),
+        ),
+        HRNP(
+            opcode=HRNPOpcodes.DATA,
+            data=TextMessageProtocol(
+                opcode=TMPService.SendPrivateMessageAck,
+                request_id=1,
+                destination_ip=RadioIP(1001),
+                source_ip=RadioIP(1002),
+                result_code=TMPResultCodes.OK,
+            ),
+        ),
+        HRNP(
+            opcode=HRNPOpcodes.DATA,
+            data=TextMessageProtocol(
+                opcode=TMPService.PrivateShortDataAck,
+                request_id=1,
+                destination_ip=RadioIP(1001),
+                source_ip=RadioIP(1002),
+                result_code=TMPResultCodes.OK,
+            ),
+        ),
+        HRNP(
+            opcode=HRNPOpcodes.DATA,
+            data=TextMessageProtocol(
+                opcode=TMPService.GroupShortDataAck,
+                is_reliable=True,
+                request_id=1,
+                destination_ip=RadioIP(1001),
+                result_code=TMPResultCodes.OK,
+            ),
+        ),
+        HRNP(
+            opcode=HRNPOpcodes.DATA,
+            data=RadioControlProtocol(
+                opcode=RCPOpcode.BroadcastStatusConfigurationReply,
+                result=RCPResult.Success,
+            ),
+        ),
+        HRNP(
+            opcode=HRNPOpcodes.DATA,
+            data=RadioControlProtocol(
+                opcode=RCPOpcode.SendTalkerAliasRequest,
+                sender_id=1002,
+                target_id=1001,
+                call_type=RCPCallType.PrivateCall,
+                talker_alias_format=TalkerAliasDataFormat.UnicodeUTF8,
+                talker_alias_data="OK-DMR".encode("utf-8"),
+            ),
+        ),
+        HRNP(
+            opcode=HRNPOpcodes.DATA,
+            data=RadioControlProtocol(
+                opcode=RCPOpcode.SendTalkerAliasReply,
+                sender_id=1002,
+                target_id=1001,
+                call_type=RCPCallType.PrivateCall,
+                result=RCPResult.Success,
+            ),
+        ),
+        HRNP(
+            opcode=HRNPOpcodes.DATA,
+            data=RadioControlProtocol(
+                opcode=RCPOpcode.StatusChangeNotificationReply, result=RCPResult.Success
+            ),
+        ),
+        HRNP(
+            opcode=HRNPOpcodes.DATA,
+            data=RadioControlProtocol(
+                opcode=RCPOpcode.RadioStatusReport,
+                status_change_target=StatusChangeNotificationTargets.RSSI,
+                # RSSI value 0-4
+                status_change_value=4,
             ),
         ),
     ]

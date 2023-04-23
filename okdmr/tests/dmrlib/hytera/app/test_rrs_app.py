@@ -15,7 +15,7 @@ from okdmr.dmrlib.hytera.pdu.radio_registration_service import (
     RRSTypes,
     RRSResult,
 )
-from okdmr.dmrlib.protocols.hytera.hrnp_datagram_protocol import HSTRPDatagramProtocol
+from okdmr.dmrlib.protocols.hytera.hstrp_datagram_protocol import HSTRPDatagramProtocol
 from okdmr.dmrlib.utils.logging_trait import LoggingTrait
 
 
