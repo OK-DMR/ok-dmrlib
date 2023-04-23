@@ -5,3 +5,6 @@ test:
 
 clean:
 	git clean -xdff
+
+release:
+	python3 -m build . --sdist --wheel
