@@ -40,7 +40,7 @@ keywords = [
 license = {text = "AGPL-3.0"}
 name = "ok-dmrlib"
 requires-python = ">=3.8"
-version = "0.8"
+version = "0.8.0"
 
 [project.optional-dependencies]
 pre-commit = ["pre-commit>=3.0.0"]
