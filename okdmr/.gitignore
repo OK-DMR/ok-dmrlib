@@ -1,2 +1,2 @@
 # okdmr should not be package, but namespace
-__init__.py
+/okdmr/__init__.py
