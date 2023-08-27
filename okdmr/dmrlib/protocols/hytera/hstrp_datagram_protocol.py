@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Optional, Tuple, Union, Any
 
 from okdmr.dmrlib.hytera.pdu.hdap import HDAP
-from okdmr.dmrlib.hytera.pdu.hstrp import HSTRP, HSTRPPacketType, HSTRPOptions
+from okdmr.dmrlib.hytera.pdu.hstrp import HSTRP, HSTRPPacketType
 from okdmr.dmrlib.utils.logging_trait import LoggingTrait
 
 
@@ -109,12 +109,13 @@ class HSTRPDatagramProtocol(DatagramProtocol, LoggingTrait):
         @param addr:
         @return: Tuple[(pdu was handled, by HSTRPLayer itself), (optionally parsed HSTRP object)]
         """
+        # noinspection PyBroadException
         try:
             pdu = HSTRP.from_bytes(data=data)
         except:
             pdu = None
             self.log_error(
-                f"Could not decode HSTRP from received UDP datagram {data.hex()}"
+                f"Could not decode HSTRP from {addr} received UDP datagram {data.hex()}"
             )
 
         was_handled: bool = False

@@ -14,8 +14,8 @@ class LoggingTrait:
     def log_warning(self, msg: str):
         self.get_logger().warning(msg)
 
-    def log_error(self, msg: str):
-        self.get_logger().error(msg)
+    def log_error(self, msg: str, exc_info=None):
+        self.get_logger().error(msg=msg, exc_info=exc_info)
 
     def log_exception(self, exc):
         self.get_logger().exception(exc)

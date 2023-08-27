@@ -23,7 +23,8 @@ dependencies = [
   "bitarray>=2.7",
   "numpy>=1.24.0",
   "scapy>=2.4.0",
-  "asyncio>=3.4.0"
+  "asyncio>=3.4.0",
+  "puresnmp>=2.0.0.post1"
 ]
 description = "DMR PDUs, elements, FEC and CRC library, including proprietary DMR protocols of Hytera and Motorola"
 dynamic = ["readme"]
