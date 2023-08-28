@@ -26,11 +26,11 @@ def test_snmp():
             message="Experimental SNMPv1 support", category=UserWarning, action="ignore"
         )
 
-    rpt = Repeater(address_out=("127.0.0.1", 0))
+    rpt = Repeater(address_out=("127.0.0.1", 0), address_in=("127.0.0.1", 0))
     rpt.read_snmp_values()
 
 
 def test_snmp_print(caplog):
     caplog.set_level(logging.DEBUG)
-    SNMP().print_snmp_data({"key": "value", SNMP.OID_RADIO_ID: 12345}, "0.1.2.3")
+    SNMP().print_snmp_data({"key": "value", SNMP.OID_RADIO_ID: 12345}, "127.0.0.1")
     assert len(caplog.messages)

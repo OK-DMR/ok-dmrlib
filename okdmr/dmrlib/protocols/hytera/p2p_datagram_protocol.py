@@ -178,3 +178,8 @@ class P2PDatagramProtocol(DatagramProtocol, LoggingTrait):
                 "Idle packet received, %d bytes from %s" % (len(data), address)
             )
             self.log_debug(data.hex())
+
+    def disconnect(self) -> None:
+        if self.transport and not self.transport.is_closing():
+            # reset connection state
+            self.transport.sendto(bytes([0x00]))

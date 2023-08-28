@@ -1,3 +1,7 @@
+import uuid
+
+import pytest
+
 from okdmr.dmrlib.storage.repeater_storage import RepeaterStorage
 
 
@@ -29,3 +33,11 @@ def test_storage_auto_create(caplog):
     rs.match_attr("callsign", "OK4DMR")
 
     assert rs.match_uuid(rpt.id) == rpt
+    assert len(rs.all()) == 3
+
+    rpt = rs.match_ip_incoming(addr3[0])
+    assert rpt.address_in == addr3
+
+    with pytest.raises(SystemError):
+        # unknown UUID should not match
+        rs.match_uuid(uuid.uuid4())

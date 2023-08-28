@@ -1,5 +1,6 @@
 import sys
 
+from okdmr.dmrlib.storage import ADDRESS_EMPTY
 from okdmr.dmrlib.storage.repeater import Repeater
 
 
@@ -8,16 +9,16 @@ def test_repeater():
         dmr_id=2305519,
         callsign="OK1DMR",
         serial="ABCDEF",
-        address_in=("", 1),
-        address_out=("", 0),
+        address_in=("127.0.0.1", 1),
+        address_out=("127.0.0.1", 0),
         nat_enabled=True,
         snmp_enabled=True,
     )
     assert rpt.callsign == "OK1DMR"
     assert rpt.dmr_id == 2305519
     assert rpt.serial == "ABCDEF"
-    assert rpt.address_out == ("", 0)
-    assert rpt.address_in == ("", 1)
+    assert rpt.address_out == ("127.0.0.1", 0)
+    assert rpt.address_in == ("127.0.0.1", 1)
     assert rpt.nat_enabled
     assert rpt.snmp_enabled
 
@@ -27,9 +28,9 @@ def test_repeater():
     assert rpt.attr("custom_attr") == None
 
     rpt.nat_enabled = True
-    assert rpt.repeater_target_address() == ("", 0)
+    assert rpt.repeater_target_address() == ADDRESS_EMPTY
     rpt.nat_enabled = False
-    assert rpt.repeater_target_address() == ("", 1)
+    assert rpt.repeater_target_address() == ("127.0.0.1", 1)
 
     rpt.patch({"different_attr": False, "callsign": "OK4DMR"})
     assert rpt.attr("different_attr") == False

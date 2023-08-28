@@ -75,6 +75,9 @@ class HSTRPDatagramProtocol(DatagramProtocol, LoggingTrait):
         return hb
 
     def connection_made(self, transport: BaseTransport) -> None:
+        assert isinstance(
+            transport, BaseTransport
+        ), f"transport is of unexpected type {type(transport)}"
         if self.transport and not self.transport.is_closing():
             self.log_warning(
                 f"HSTRP transport being replaced, old not yet disconnected"

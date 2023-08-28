@@ -24,6 +24,7 @@ class Repeater:
         serial: str = "",
         address_in: ADDRESS_TYPE = ADDRESS_EMPTY,
         address_out: ADDRESS_TYPE = ADDRESS_EMPTY,
+        address_nat: ADDRESS_TYPE = ADDRESS_EMPTY,
         snmp_enabled: bool = True,
         nat_enabled: bool = False,
         logger: Logger = None,
@@ -36,7 +37,7 @@ class Repeater:
         """ Address(IP+Port) from which the data come """
         self.address_out: ADDRESS_TYPE = address_out
         """ Address(IP+Port) for sending data to repeater """
-        self.address_nat: ADDRESS_TYPE = ADDRESS_EMPTY
+        self.address_nat: ADDRESS_TYPE = address_nat
         """ Address(IP+Port) to which Repeater is sending data (NAT external IP + Forwarded Port) """
         self.snmp_enabled: bool = snmp_enabled
         self.nat_enabled: bool = nat_enabled
@@ -122,7 +123,7 @@ class Repeater:
             return {}
 
         snmp_data = asyncio.run(
-            SNMP().walk_ip(ip=self.address_out[0], snmp_community=snmp_community)
+            SNMP().walk_ip(ip=self.address_in[0], snmp_community=snmp_community)
         )
         if patch_self:
             print(snmp_data)
