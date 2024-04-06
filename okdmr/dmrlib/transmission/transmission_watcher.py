@@ -39,6 +39,7 @@ class TransmissionWatcher(LoggingTrait, WithObservers):
             processed_burst: Burst = self.process_burst(burst)
             if processed_burst:
                 print(processed_burst)
+                print(processed_burst.as_bytes().hex())
             if self.debug_voice_bytes and burst.is_vocoder:
                 import logging
 
