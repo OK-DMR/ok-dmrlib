@@ -25,7 +25,7 @@ def test_repeater():
     rpt.attr("custom_attr", 123_456)
     assert rpt.attr("custom_attr") == 123_456
     rpt.delete_attr("custom_attr")
-    assert rpt.attr("custom_attr") == None
+    assert rpt.attr("custom_attr") is None
 
     rpt.nat_enabled = True
     assert rpt.repeater_target_address() == ADDRESS_EMPTY

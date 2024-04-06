@@ -298,7 +298,7 @@ class PcapTool:
 
                         if len(ip_whitelist):
                             # if no whitelisted ips, do not filter
-                            if ip_layer.src not in ip_whitelist:
+                            if ip_layer and ip_layer.src not in ip_whitelist:
                                 continue
 
                         if len(ports_whitelist):

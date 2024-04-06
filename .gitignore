@@ -6,3 +6,5 @@ __pycache__
 /.coverage
 /coverage.xml
 /.pdm.toml
+/.idea
+/.tool-versions
