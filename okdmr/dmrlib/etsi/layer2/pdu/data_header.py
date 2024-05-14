@@ -346,4 +346,6 @@ class DataHeader(BitsInterface, BytesInterface):
                 udt_opcode=CsbkOpcodes.from_bits(bits[74:80]),
             )
         else:
-            raise NotImplementedError(f"from_bits not implemented for {dpf}")
+            raise NotImplementedError(
+                f"from_bits not implemented for {dpf} (val {bits[4:8]})"
+            )

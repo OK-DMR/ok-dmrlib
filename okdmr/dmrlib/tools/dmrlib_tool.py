@@ -11,6 +11,7 @@ from okdmr.dmrlib.etsi.layer3.pdu.udp_ipv4_compressed_header import (
 )
 from okdmr.dmrlib.transmission.transmission_watcher import TransmissionWatcher
 from okdmr.dmrlib.utils.protocol_tool import ProtocolTool
+from okdmr.dmrlib.tools.pcap_tool import EmbeddedExtractor
 
 
 class DmrlibTool(ProtocolTool):
@@ -49,11 +50,14 @@ class DmrlibTool(ProtocolTool):
 
         _mapping = {99: "rc burst", 98: "cach burst", 10: "voice burst"}
         watcher: TransmissionWatcher = TransmissionWatcher()
+        emb_extractor: EmbeddedExtractor = EmbeddedExtractor()
 
         with open(args.file, "r") as file:
-            i = 0
-            while i < 200:
+            while True:
                 line = file.readline()
+                if not line:
+                    break
+
                 parts = line.split(" ")
                 if len(parts) == 3:
                     timeslot = int(parts[0])
@@ -61,6 +65,9 @@ class DmrlibTool(ProtocolTool):
                     burst_data = bytes.fromhex(parts[2])
                     if burst_type not in (99, 98):
                         try:
+                            from scapy.layers.inet import IP, UDP
+                            from scapy.packet import Raw
+
                             b = Burst.from_bytes(
                                 data=burst_data,
                                 burst_type=(
@@ -70,7 +77,13 @@ class DmrlibTool(ProtocolTool):
                                 ),
                             )
                             b.timeslot = timeslot
-                            watcher.process_burst(b)
+
+                            b = watcher.process_burst(b)
+                            if b:
+                                print(repr(b))
+                                emb_extractor.process_packet(
+                                    data=b.as_bytes(),
+                                    packet=IP() / UDP() / Raw(burst_data),
+                                )
                         except Exception as e:
                             print(e)
-                    i += 1

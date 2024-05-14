@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import logging
 import sys
 import traceback
@@ -503,7 +502,3 @@ class PcapTool:
 
         if return_stats:
             return stats
-
-
-if __name__ == "__main__":
-    PcapTool.main()

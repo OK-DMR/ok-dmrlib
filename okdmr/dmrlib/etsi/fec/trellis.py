@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from array import array
 from typing import Union, List, Dict, Tuple
 
