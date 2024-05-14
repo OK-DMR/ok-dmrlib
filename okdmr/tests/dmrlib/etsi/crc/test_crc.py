@@ -7,7 +7,7 @@ from okdmr.dmrlib.utils.bits_bytes import bytes_to_bits
 
 
 def test_ccit_bitcrc_crc():
-    crc_ccit = Calculator(optimized=True, configuration=Crc16.CCITT)
+    crc_ccit = Calculator(optimized=True, configuration=Crc16.XMODEM)
     bit_crc_ccit = BitCrcCalculator(
         table_based=True,
         configuration=BitCrcConfiguration(
