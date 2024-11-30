@@ -20,10 +20,10 @@ classifiers = [
 ]
 dependencies = [
   "dmr-kaitai>=1.0",
-  "bitarray>=2.7",
-  "numpy>=1.24.0",
-  "scapy>=2.4.0",
-  "asyncio>=3.4.0",
+  "bitarray>=2.9.2",
+  "numpy>=1.26.3",
+  "scapy>=2.5.0",
+  "asyncio>=3.4.3",
   "puresnmp>=2.0.0.post1"
 ]
 description = "DMR PDUs, elements, FEC and CRC library, including proprietary DMR protocols of Hytera and Motorola"
@@ -46,9 +46,9 @@ version = "0.8.0"
 [project.optional-dependencies]
 pre-commit = ["pre-commit>=3.0.0"]
 test = [
-  "pytest>=7.0.0",
-  "pytest-cov>=4.0.0",
-  "pytest-asyncio>=0.20.0",
+  "pytest>=8.1.1",
+  "pytest-cov>=5.0.0",
+  "pytest-asyncio>=0.23.6",
   "crc>=7.0.0",
   "coverage>=7.4.0"
 ]
