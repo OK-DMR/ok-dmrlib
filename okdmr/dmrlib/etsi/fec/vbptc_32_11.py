@@ -174,7 +174,7 @@ class VBPTC3211:
         return table
 
     @staticmethod
-    def encode(bits_deinterleaved: bitarray) -> bitarray:
+    def encode(bits_deinterleaved: bitarray, even_parity: bool = True) -> bitarray:
         """
         Takes 11 bits of data (info bits) and return interleaved and FEC protected 32 bits
         :param bits_deinterleaved:
@@ -209,7 +209,7 @@ class VBPTC3211:
 
         # fill columns with parity bit
         for column in range(0, 16):
-            table[:, column] = VBPTC3211.set_parity(table[:, column])
+            table[:, column] = VBPTC3211.set_parity(table[:, column], even_parity)
 
         out: bitarray = bitarray([0] * 32)
         for index, (
@@ -224,7 +224,7 @@ class VBPTC3211:
         return out
 
     @staticmethod
-    def set_parity(column: numpy.ndarray) -> numpy.ndarray:
+    def set_parity(column: numpy.ndarray, even_parity: bool = True) -> numpy.ndarray:
         assert len(column) == 2
-        column[1] = column[0]
+        column[1] = column[0] if even_parity else not column[0]
         return column

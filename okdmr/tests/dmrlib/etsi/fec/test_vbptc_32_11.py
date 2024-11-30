@@ -13,14 +13,18 @@ def test_vbptc_sanity():
 
 
 def test_encode_decode_vbptc():
-    bursts: List[(str,)] = [
-        ("00000100010110000000100010100100",),
+    # payload, even_parity
+    bursts: List[(str, bool)] = [
+        # even parity (default)
+        ("00000100010110000000100010100100", True),
+        # same payload mock with odd paritiy
+        ("01010001000011010101110111110001", False),
         # following are not valid vbptc protected payloads, probably something proprietary / unidentified
-        # ("00001100000100010010010001000001",),
-        # ("00010111000010100000011001000100",),
+        # ("00001100000100010010010001000001", ),
+        # ("00010111000010100000011001000100", ),
     ]
 
-    for (burst,) in bursts:
+    for burst, even_parity in bursts:
         on_air_bits = bitarray(burst)
 
         deinterleaved_all_bits = VBPTC3211.deinterleave_all_bits(on_air_bits)
@@ -31,9 +35,9 @@ def test_encode_decode_vbptc():
 
         deinterleaved_data_bits = VBPTC3211.deinterleave_data_bits(on_air_bits)
 
-        encoded_all_bits = VBPTC3211.encode(deinterleaved_all_bits)
-        encoded_data_bits = VBPTC3211.encode(deinterleaved_data_bits)
-        encoded_info_bits = VBPTC3211.encode(deinterleaved_info_bits)
+        encoded_all_bits = VBPTC3211.encode(deinterleaved_all_bits, even_parity)
+        encoded_data_bits = VBPTC3211.encode(deinterleaved_data_bits, even_parity)
+        encoded_info_bits = VBPTC3211.encode(deinterleaved_info_bits, even_parity)
 
         assert encoded_all_bits == encoded_data_bits
         assert encoded_data_bits == encoded_info_bits
