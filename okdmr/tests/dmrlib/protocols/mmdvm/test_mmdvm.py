@@ -1,13 +1,16 @@
 from asyncio import Queue
 from typing import Callable
 
+import pytest
+
 from okdmr.dmrlib.protocols.mmdvm.mmdvm_client_protocol import (
     MMDVMClientProtocol,
     MMDVMClientConfiguration,
 )
 
 
-def test_mmdvm_client():
+@pytest.mark.asyncio
+async def test_mmdvm_client():
     mock_config: MMDVMClientConfiguration = MMDVMClientConfiguration(
         # fill only required vars
         repeater_id=2309901,
