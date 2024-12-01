@@ -7,6 +7,13 @@ from okdmr.dmrlib.hytera.pdu.radio_registration_service import RadioRegistration
 from okdmr.dmrlib.hytera.pdu.text_message_protocol import TextMessageProtocol
 from okdmr.dmrlib.utils.protocol_tool import ProtocolTool
 
+import sys
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+from typing import Type, Optional, List
+
+from okdmr.dmrlib.etsi.layer2.burst import Burst
+from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
+
 
 class HyteraTool(ProtocolTool):
     @staticmethod
@@ -44,3 +51,30 @@ class HyteraTool(ProtocolTool):
         HyteraTool._impl(
             protocol="TMP - Text Message Protocol", impl=TextMessageProtocol
         )
+
+    @staticmethod
+    def ipsc(arguments: Optional[List[str]] = None) -> None:
+        parser: ArgumentParser = ArgumentParser(
+            description="IPSC - IP Site Connect",
+            formatter_class=ArgumentDefaultsHelpFormatter,
+        )
+        parser.add_argument(
+            "hex",
+            type=str,
+            nargs="+",
+            help=f"Hex encoded messages of Hytera IPSC protocol",
+        )
+        args = (
+            parser.parse_args(sys.argv[1:])
+            if (not arguments or not len(arguments))
+            else arguments
+        )
+        for hex_msg in args.hex:
+            print(hex_msg)
+            try:
+                pdu = Burst.from_hytera_ipsc(
+                    IpSiteConnectProtocol.from_bytes(bytes.fromhex(hex_msg))
+                )
+                print(repr(pdu))
+            except Exception as e:
+                print(e, file=sys.stderr)

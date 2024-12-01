@@ -1,6 +1,9 @@
 from typing import Optional, Literal
 
 from bitarray import bitarray
+from okdmr.dmrlib.etsi.layer2.elements.preemption_power_indicator import (
+    PreemptionPowerIndicator,
+)
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
 
@@ -186,6 +189,14 @@ class Burst(BytesInterface):
 
     def __repr__(self) -> str:
         status: str = f"[{self.sync_or_embedded_signalling.name}] "
+
+        if (
+            self.has_emb
+            and self.sync_or_embedded_signalling == SyncPatterns.EmbeddedSignalling
+            and self.emb.preemption_and_power_control_indicator
+            == PreemptionPowerIndicator.CarriesReverseChannelInformation
+        ):
+            status += f"[RC Info {self.embedded_signalling_bits}] "
 
         if self.is_vocoder:
             status += f" [{self.voice_burst}]"
