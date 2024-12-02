@@ -13,6 +13,7 @@ from okdmr.dmrlib.etsi.layer2.elements.preemption_power_indicator import (
     PreemptionPowerIndicator,
 )
 from okdmr.dmrlib.etsi.layer2.pdu.full_link_control import FullLinkControl
+from okdmr.dmrlib.etsi.layer2.pdu.reverse_channel import ReverseChannel
 from okdmr.dmrlib.transmission.transmission_watcher import TransmissionWatcher
 from okdmr.dmrlib.utils.parsing import try_parse_packet
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
@@ -30,21 +31,34 @@ class EmbeddedExtractor:
     Helper class, collects
     """
 
-    def __init__(self):
+    def __init__(self, filter_rc: bool = False):
         self.data: Dict[str, Tuple[LCSS, bitarray]] = {}
+        self.filter_rc: bool = filter_rc
 
     def process_packet(self, data: bytes, packet: IP) -> Optional[FullLinkControl]:
         burst: Optional[Burst] = PcapTool.debug_packet(
             data=data, packet=packet, hide_unknown=True, silent=True
         )
 
+        if not burst or not burst.has_emb:
+            return
+
+        if self.filter_rc:
+            if (
+                burst.emb.preemption_and_power_control_indicator
+                == PreemptionPowerIndicator.CarriesReverseChannelInformation
+            ):
+                # print("FOUND RC")
+                print(data.hex())
+                print(repr(burst))
+                print(burst.embedded_signalling_bits.to01())
+            return
+
         if (
-            not burst
-            or not burst.has_emb
-            or burst.emb.link_control_start_stop == LCSS.SingleFragmentLCorCSBK
-            or burst.emb.preemption_and_power_control_indicator
+            burst.emb.preemption_and_power_control_indicator
             == PreemptionPowerIndicator.CarriesReverseChannelInformation
         ):
+            # skip RC in following embedded extraction
             return
 
         full_lc: Optional[FullLinkControl] = None
@@ -451,6 +465,13 @@ class PcapTool:
             default=[],
             help='Filter traffic by "ORIGIN" IP address(es)',
         )
+        parser.add_argument(
+            "--filter-rc",
+            dest="filter_rc",
+            default=False,
+            action="store_true",
+            help="Extract only bursts embedding RC by PreemptionPowerIndicator.CarriesReverseChannelInformation",
+        )
         return parser
 
     @staticmethod
@@ -478,8 +499,9 @@ class PcapTool:
         watcher = TransmissionWatcher().set_debug_voice_bytes(
             do_debug=args.debug_vocoder_bytes
         )
-        if args.extract_embedded_lc:
-            callback = EmbeddedExtractor().process_packet
+
+        if args.extract_embedded_lc or args.filter_rc:
+            callback = EmbeddedExtractor(filter_rc=args.filter_rc).process_packet
         elif args.observe_transmissions:
             callback = watcher.process_packet
             finish_callback = watcher.end_all_transmissions
@@ -497,7 +519,7 @@ class PcapTool:
             finish_callback=finish_callback,
         )
 
-        if args.analyze_ipsc:
+        if args.analyze_ipsc and not args.no_statistics:
             ipsc_analyze.print_stats()
 
         if return_stats:

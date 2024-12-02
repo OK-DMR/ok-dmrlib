@@ -196,7 +196,7 @@ class Burst(BytesInterface):
             and self.emb.preemption_and_power_control_indicator
             == PreemptionPowerIndicator.CarriesReverseChannelInformation
         ):
-            status += f"[RC Info {self.embedded_signalling_bits}] "
+            status += f"[RC Info {self.embedded_signalling_bits} hex {self.embedded_signalling_bits.tobytes().hex()}] "
 
         if self.is_vocoder:
             status += f" [{self.voice_burst}]"

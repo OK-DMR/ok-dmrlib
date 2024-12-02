@@ -56,9 +56,12 @@ class HammingCommon:
                 numpy.array(bits.tolist()), cls.PARITY_CHECK_MATRIX
             ).tolist()
             try:
+                # print("syndrome", syndrome)
+                # print(cls.PARITY_CHECK_MATRIX.T.tolist())
                 bits.invert(cls.PARITY_CHECK_MATRIX.T.tolist().index(syndrome))
                 check = True
             except ValueError as e:
+                print(e)
                 # ValueError is thrown in case syndrome is not found in parity check result, making the message uncorrectable
                 return False, bits
 
