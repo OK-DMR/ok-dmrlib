@@ -522,5 +522,4 @@ class PcapTool:
         if args.analyze_ipsc and not args.no_statistics:
             ipsc_analyze.print_stats()
 
-        if return_stats:
-            return stats
+        return stats if return_stats else None
