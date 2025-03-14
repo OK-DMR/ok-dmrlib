@@ -33,12 +33,6 @@ class HyteraIPSCSync(Burst):
         super().__init__(full_bits, burst_type)
         self.has_emb = False
         self.has_slot_type = False
-        self.source: int = ba2int(
-            full_bits[56:64] + full_bits[72:80] + full_bits[88:96]
-        )
-        self.target: int = ba2int(
-            full_bits[104:112] + full_bits[120:128] + full_bits[136:144]
-        )
 
     @staticmethod
     def deinterleave(bits: bitarray, data_type: DataTypes) -> bitarray:
@@ -49,7 +43,14 @@ class HyteraIPSCSync(Burst):
         return self.full_bits
 
     def __repr__(self):
-        return f"[IPSC SYNC] [SOURCE: {self.source}] [TARGET: {self.target}]"
+        return (
+            f"[IPSC SYNC] "
+            f"[SOURCE: {self.source_radio_id}] "
+            f"[TARGET: {self.target_radio_id}] "
+            f"[TS: {self.timeslot}] "
+            f"[IPSC_SLOT: {self.hytera_ipsc_original.slot_type}] "
+            f"[IPSC_PACKET: {self.hytera_ipsc_original.packet_type}]"
+        )
 
     @staticmethod
     def from_bits(bits: bitarray, burst_type: BurstTypes) -> "HyteraIPSCSync":

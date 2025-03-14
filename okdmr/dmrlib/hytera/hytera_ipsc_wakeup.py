@@ -30,7 +30,14 @@ class HyteraIPSCWakeup(Burst):
         return self.full_bits
 
     def __repr__(self):
-        return f"[IPSC WAKEUP]"
+        return (
+            f"[IPSC WAKEUP] "
+            f"[SOURCE: {self.source_radio_id}] "
+            f"[TARGET: {self.target_radio_id}] "
+            f"[TS: {self.timeslot}] "
+            f"[IPSC_SLOT: {self.hytera_ipsc_original.slot_type}] "
+            f"[IPSC_PACKET: {self.hytera_ipsc_original.packet_type}]"
+        )
 
     @staticmethod
     def from_bits(bits: bitarray, burst_type: BurstTypes) -> "HyteraIPSCWakeup":

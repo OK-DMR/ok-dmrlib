@@ -99,6 +99,7 @@ class Burst(BytesInterface):
         )
         # variables not standardized in ETSI, used for various DMR protocols processing
         self.timeslot: int = 1
+        self.hytera_ipsc_original: Optional[IpSiteConnectProtocol] = None
         self.source_radio_id: int = 0
         self._target_radio_id: int = 0
         self._target_radio_id_resolve_attempt: bool = False
@@ -258,30 +259,31 @@ class Burst(BytesInterface):
         fullbytes: bytes = byteswap_bytes(ipsc.ipsc_payload)[:-1]
         fullbits: bitarray = bytes_to_bits(fullbytes)
 
+        b: Optional[Burst] = None
         # special cases for IPSC Sync / Wakeup
         if ipsc.slot_type == IpSiteConnectProtocol.SlotTypes.slot_type_sync:
             # prevent circular dependency
             from okdmr.dmrlib.hytera.hytera_ipsc_sync import HyteraIPSCSync
 
-            return HyteraIPSCSync.from_bits(
-                bits=fullbits, burst_type=BurstTypes.Undefined
-            )
-        elif ipsc.slot_type == IpSiteConnectProtocol.SlotTypes.slot_type_wakeup_request:
+            b = HyteraIPSCSync.from_bits(bits=fullbits, burst_type=BurstTypes.Undefined)
+        elif ipsc.is_wakeup:
             # prevent circular dependency
             from okdmr.dmrlib.hytera.hytera_ipsc_wakeup import HyteraIPSCWakeup
 
-            return HyteraIPSCWakeup.from_bits(
+            b = HyteraIPSCWakeup.from_bits(
                 bits=fullbits, burst_type=BurstTypes.Undefined
             )
+        else:
+            b = Burst(
+                full_bits=fullbits,
+                burst_type=(
+                    BurstTypes.Vocoder
+                    if ipsc.slot_type in IPSC_KAITAI_VOICE_SLOTS
+                    else BurstTypes.DataAndControl
+                ),
+            )
 
-        b = Burst(
-            full_bits=fullbits,
-            burst_type=(
-                BurstTypes.Vocoder
-                if ipsc.slot_type in IPSC_KAITAI_VOICE_SLOTS
-                else BurstTypes.DataAndControl
-            ),
-        )
+        b.hytera_ipsc_original = ipsc
         b.set_sequence_no(ipsc.sequence_number)
         b.source_radio_id = ipsc.source_radio_id
         b.target_radio_id = ipsc.destination_radio_id
