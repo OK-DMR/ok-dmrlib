@@ -20,7 +20,7 @@ def test_tmp():
 
 
 def test_result_codes():
-    rc_bytes: bytes = b"\x0C"
+    rc_bytes: bytes = b"\x0c"
     rc: TMPResultCodes = TMPResultCodes.from_bytes(rc_bytes)
     assert rc.as_bytes() == rc_bytes
     assert rc == TMPResultCodes.TX_INTERRUPTED

@@ -243,12 +243,12 @@ class AutomaticRegistrationService(BytesInterface, LoggingTrait):
             if isinstance(first_header, FirstHeader)
             else FirstHeader.from_bytes(first_header)
         )
-        self.response_second_header: Optional[
-            ResponseSecondHeader
-        ] = response_second_header
-        self.registration_request_header: Optional[
-            RegistrationRequestHeader
-        ] = registration_request_header
+        self.response_second_header: Optional[ResponseSecondHeader] = (
+            response_second_header
+        )
+        self.registration_request_header: Optional[RegistrationRequestHeader] = (
+            registration_request_header
+        )
         self.device_identifier: Optional[str] = device_identifier
         self.user_identifier: Optional[str] = user_identifier
         self.password: Optional[str] = password
@@ -351,11 +351,13 @@ class AutomaticRegistrationService(BytesInterface, LoggingTrait):
             return AutomaticRegistrationService(
                 first_header=first_header,
                 is_csbk_ars=is_csbk_ars,
-                response_second_header=ResponseSecondHeader.from_bytes(
-                    data[idx : idx + 1]
-                ).context(first_header)
-                if first_header.has_more_headers
-                else None,
+                response_second_header=(
+                    ResponseSecondHeader.from_bytes(data[idx : idx + 1]).context(
+                        first_header
+                    )
+                    if first_header.has_more_headers
+                    else None
+                ),
             )
         elif first_header.pdu_type in (
             ARSPDUType.STATUS_QUERY_REQUEST,

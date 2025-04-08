@@ -1,21 +1,21 @@
 ---
 repos:
     - repo: https://github.com/psf/black
-      rev: 23.1.0
+      rev: 25.1.0
       hooks:
           - id: black
             language_version: python3
     - repo: https://github.com/adrienverge/yamllint.git
-      rev: v1.29.0
+      rev: v1.37.0
       hooks:
           - id: yamllint
             args: [-c=.yamllint, .]
     - repo: https://github.com/jumanjihouse/pre-commit-hook-yamlfmt
-      rev: 0.2.2
+      rev: 0.2.3
       hooks:
           - id: yamlfmt
     - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
-      rev: v2.8.0
+      rev: v2.14.0
       hooks:
           - id: pretty-format-toml
             args: [--autofix]

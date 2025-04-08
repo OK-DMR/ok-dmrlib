@@ -21,7 +21,7 @@ class LogColorFormatter(logging.Formatter):
     }
 
     def format(self, record):
-        print(f"OH {record.levelno}")
+        # print(f"OH {record.levelno}")
         log_fmt = self.FORMATS.get(record.levelno)
         formatter = logging.Formatter(log_fmt)
         return formatter.format(record)

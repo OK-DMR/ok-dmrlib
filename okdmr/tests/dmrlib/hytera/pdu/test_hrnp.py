@@ -29,7 +29,7 @@ def test_defaults():
     hrnp = HRNP()
     assert hrnp.block_number == 0x00
     assert hrnp.version == b"\x04"
-    assert hrnp.header == b"\x7E"
+    assert hrnp.header == b"\x7e"
 
 
 def test_hrnp_rcp_stability():
@@ -188,16 +188,16 @@ def test_hrnp_frombytes():
 
 def test_valid_checksums():
     testdata: Dict[str, bytes] = {
-        "7E0400FD10200000000C70D2": b"\x70\xD2",
-        "7E04001010200001000C71BE": b"\x71\xBE",
-        "7e04000020100001001b43b502471808000700000000000000c403": b"\x43\xB5",
-        "7E040000102000010014857A0247880100006203": b"\x85\x7A",
-        "7E040000102000030019FDF9025284060000010A0003E95F03": b"\xFD\xF9",
-        "7E040000102000020019E41402528406000000E90300006A03": b"\xE4\x14",
+        "7E0400FD10200000000C70D2": b"\x70\xd2",
+        "7E04001010200001000C71BE": b"\x71\xbe",
+        "7e04000020100001001b43b502471808000700000000000000c403": b"\x43\xb5",
+        "7E040000102000010014857A0247880100006203": b"\x85\x7a",
+        "7E040000102000030019FDF9025284060000010A0003E95F03": b"\xfd\xf9",
+        "7E040000102000020019E41402528406000000E90300006A03": b"\xe4\x14",
         "7E04000010200004002767790980B1001400000001000000010A000835610068006F006A000203": b"\x67\x79",
-        "7e04000020100000001c03f502c7100900040b010601050012012303": b"\x03\xF5",
-        "7e04000020100000001602fb02c8b003000b0400a803": b"\x02\xFB",
-        "7E040000102000010019FDFB025284060000010A0003E95F03": b"\xFD\xFB",
+        "7e04000020100000001c03f502c7100900040b010601050012012303": b"\x03\xf5",
+        "7e04000020100000001602fb02c8b003000b0400a803": b"\x02\xfb",
+        "7E040000102000010019FDFB025284060000010A0003E95F03": b"\xfd\xfb",
     }
     for hexmsg, expected_checksum in testdata.items():
         print("=" * 20)
@@ -219,7 +219,7 @@ def test_tt():
         opcode=HRNPOpcodes.DATA,
         data=TextMessageProtocol(
             opcode=TMPService.GroupShortData,
-            short_data=b"\xA0\xB0\xC0\xD0",
+            short_data=b"\xa0\xb0\xc0\xd0",
             is_reliable=False,
             is_confirmed=False,
             source_ip=RadioIP(1001),

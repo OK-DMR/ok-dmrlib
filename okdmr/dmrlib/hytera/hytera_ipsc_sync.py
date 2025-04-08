@@ -45,6 +45,7 @@ class HyteraIPSCSync(Burst):
     def __repr__(self):
         return (
             f"[IPSC SYNC] "
+            f"BURST[{self.as_bytes().hex()}] "
             f"[SOURCE: {self.source_radio_id}] "
             f"[TARGET: {self.target_radio_id}] "
             f"[TS: {self.timeslot}] "

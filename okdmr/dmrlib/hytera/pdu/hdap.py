@@ -82,7 +82,7 @@ class HDAP(BytesInterface, LoggingTrait):
 
     @staticmethod
     def get_reliable_and_service(
-        byte: Union[int, bytes] = 0x00
+        byte: Union[int, bytes] = 0x00,
     ) -> Tuple[bool, Optional[HyteraServiceType]]:
         """
         Uses first byte and returns (is_reliable_message, Optional[HyteraServiceType])

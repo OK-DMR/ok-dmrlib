@@ -14,7 +14,6 @@ from okdmr.dmrlib.etsi.layer2.elements.preemption_power_indicator import (
 )
 from okdmr.dmrlib.etsi.layer2.pdu.full_link_control import FullLinkControl
 from okdmr.dmrlib.transmission.transmission_watcher import TransmissionWatcher
-from okdmr.dmrlib.utils.bits_bytes import byteswap_bytes
 from okdmr.dmrlib.utils.parsing import try_parse_packet
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 from okdmr.kaitai.hytera.ip_site_connect_heartbeat import IpSiteConnectHeartbeat
@@ -146,7 +145,9 @@ class PcapTool:
     ) -> Optional[Burst]:
         pkt = try_parse_packet(udpdata=data)
         burst: Optional[Burst] = None
-        ip_str: str = f"{packet.src}:{packet.getlayer(UDP).sport}\t-> {packet.dst}:{packet.getlayer(UDP).dport}\t"
+        ip_str: str = (
+            f"{packet.src}:{packet.getlayer(UDP).sport}\t-> {packet.dst}:{packet.getlayer(UDP).dport}\t"
+        )
         if isinstance(pkt, IpSiteConnectProtocol):
             burst: Burst = Burst.from_hytera_ipsc(pkt)
             if not silent:

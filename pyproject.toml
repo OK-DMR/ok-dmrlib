@@ -19,7 +19,7 @@ classifiers = [
   "Programming Language :: Python :: 3.8"
 ]
 dependencies = [
-  "dmr-kaitai>=1.0",
+  "dmr-kaitai>=1.1.1",
   "bitarray>=2.9.2",
   "numpy>=1.24.4",  # 1.24.4 is latest release compatible with Python 3.8.x branch
   "scapy>=2.5.0",

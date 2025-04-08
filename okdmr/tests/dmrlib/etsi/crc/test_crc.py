@@ -20,7 +20,7 @@ def test_ccit_bitcrc_crc():
         ),
     )
 
-    data_bytes: bytes = b"\xFF\xEE\xAA\x88\x44"
+    data_bytes: bytes = b"\xff\xee\xaa\x88\x44"
     data_bits: bitarray = bytes_to_bits(data_bytes)
 
     assert crc_ccit.checksum(data_bytes) == ba2int(
@@ -42,7 +42,7 @@ def test_crc32_bitcrc_crc():
         ),
     )
 
-    data_bytes: bytes = b"\xAA\x88\x44\x00\x00"
+    data_bytes: bytes = b"\xaa\x88\x44\x00\x00"
     data_bits: bitarray = bytes_to_bits(data_bytes)
 
     assert crc32.checksum(data_bytes) == ba2int(bit_crc32.calculate_checksum(data_bits))

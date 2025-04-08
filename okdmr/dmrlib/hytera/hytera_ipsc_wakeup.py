@@ -32,6 +32,7 @@ class HyteraIPSCWakeup(Burst):
     def __repr__(self):
         return (
             f"[IPSC WAKEUP] "
+            f"BURST[{self.as_bytes().hex()}] "
             f"[SOURCE: {self.source_radio_id}] "
             f"[TARGET: {self.target_radio_id}] "
             f"[TS: {self.timeslot}] "

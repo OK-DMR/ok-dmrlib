@@ -196,9 +196,9 @@ class HRNPApp(LoggingTrait):
         pkt = HRNP(
             opcode=HRNPOpcodes.DATA,
             data=TextMessageProtocol(
-                opcode=TMPService.GroupShortData
-                if group
-                else TMPService.PrivateShortData,
+                opcode=(
+                    TMPService.GroupShortData if group else TMPService.PrivateShortData
+                ),
                 source_ip=self.self_radio_ip,
                 destination_ip=RadioIP(subnet=0, radio_id=int(_target_id)),
                 short_data=bytes.fromhex(_hex_payload),

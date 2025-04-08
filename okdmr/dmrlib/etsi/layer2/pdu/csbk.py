@@ -140,9 +140,9 @@ class CSBK(BitsInterface, BytesInterface):
         self.service_options: Optional[ServiceOptions] = service_options
         self.target_address: int = target_address
         self.answer_response: Optional[AnswerResponse] = answer_response
-        self.additional_information_field: Optional[
-            AdditionalInformationField
-        ] = additional_information_field
+        self.additional_information_field: Optional[AdditionalInformationField] = (
+            additional_information_field
+        )
         self.source_type: Optional[SourceType] = source_type
         self.service_type: Optional[CsbkOpcodes] = service_type
         self.reason_code: Optional[ReasonCode] = reason_code

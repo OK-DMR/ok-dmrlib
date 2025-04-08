@@ -25,7 +25,7 @@ class HRNP(BytesInterface):
     | HRNP Header Checksum (0x0000 - 0xFFFF) | Data (Payload, HDAP in case Opcode == DATA)
     """
 
-    DEFAULT_HEADER: bytes = b"\x7E"
+    DEFAULT_HEADER: bytes = b"\x7e"
     DEFAULT_VERSION: bytes = b"\x04"
 
     def __init__(

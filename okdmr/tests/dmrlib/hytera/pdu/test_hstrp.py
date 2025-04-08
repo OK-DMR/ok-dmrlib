@@ -5,7 +5,7 @@ from okdmr.dmrlib.hytera.pdu.hstrp import HSTRP, HSTRPPacketType, HSTRPOptionTyp
 
 
 def test_hstrp_option_byte():
-    assert HSTRPPacketType.from_bytes(b"\x0F").as_bytes() == b"\x0F"
+    assert HSTRPPacketType.from_bytes(b"\x0f").as_bytes() == b"\x0f"
     assert HSTRPPacketType.from_bytes(b"\x20").have_options
     assert HSTRPPacketType.from_bytes(b"\x10").is_reject
     assert HSTRPPacketType.from_bytes(b"\x08").is_close

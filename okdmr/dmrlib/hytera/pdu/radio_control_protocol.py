@@ -363,16 +363,16 @@ class RadioControlProtocol(HDAP):
         self.result: RCPResult = result
         self.repeater_mode: Optional[RepeaterMode] = repeater_mode
         self.repeater_status: Optional[RepeaterStatus] = repeater_status
-        self.repeater_service_type: Optional[
-            RepeaterServiceType
-        ] = repeater_service_type
+        self.repeater_service_type: Optional[RepeaterServiceType] = (
+            repeater_service_type
+        )
         self.broadcast_type: int = broadcast_type
         self.radio_ip_id_target: RadioIpIdTarget = target
         self.raw_value: bytes = raw_value
         self.broadcast_config_raw: bytes = broadcast_config_raw
-        self.talker_alias_data_format: Optional[
-            TalkerAliasDataFormat
-        ] = talker_alias_format
+        self.talker_alias_data_format: Optional[TalkerAliasDataFormat] = (
+            talker_alias_format
+        )
         self.talker_alias_data: bytes = talker_alias_data
         self.status_change_settings: Dict[
             StatusChangeNotificationTargets, StatusChangeNotificationSetting
@@ -498,9 +498,9 @@ class RadioControlProtocol(HDAP):
             _options = dict()
             _count = data[5]
             for i in range(0, _count * 2, 2):
-                _options[
-                    StatusChangeNotificationTargets(data[6 + i])
-                ] = StatusChangeNotificationSetting(data[7 + i])
+                _options[StatusChangeNotificationTargets(data[6 + i])] = (
+                    StatusChangeNotificationSetting(data[7 + i])
+                )
 
             return RadioControlProtocol(
                 opcode=opcode, is_reliable=is_reliable, status_change_settings=_options

@@ -46,8 +46,8 @@ def test_burst_info(capsys):
         burst.set_sequence_no(128)
         assert burst.sequence_no == 128
 
-        burst.set_stream_no(b"\xFF\xAA")
-        assert burst.stream_no == b"\xFF\xAA"
+        burst.set_stream_no(b"\xff\xaa")
+        assert burst.stream_no == b"\xff\xaa"
 
         noprintdebug: str = repr(burst)
         assert len(noprintdebug) > 0

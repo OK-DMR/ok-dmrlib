@@ -128,14 +128,14 @@ def test_construct_rate12():
     payload: UDPIPv4CompressedHeader = test_reconstruct(do_return=True)
     header: DataHeader = test_header(do_return=True)
 
-    full_transmission: List[
-        Burst
-    ] = TransmissionGenerator.generate_full_data_transmission(
-        data_header=header,
-        userdata=payload,
-        packet_type=Rate12Data,
-        csbk_count=16,
-        colour_code=5,
+    full_transmission: List[Burst] = (
+        TransmissionGenerator.generate_full_data_transmission(
+            data_header=header,
+            userdata=payload,
+            packet_type=Rate12Data,
+            csbk_count=16,
+            colour_code=5,
+        )
     )
 
     assert len(full_transmission) == len(

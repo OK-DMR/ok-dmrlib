@@ -42,7 +42,7 @@ class FullLinkControl(BytesInterface, BitsInterface):
         talker_alias_data_length: int = 0,
         talker_alias_data_msb: Union[int, bool] = 0,
         # without msb talker alias header data are 48bits (6bytes)
-        talker_alias_data: bytes = b""
+        talker_alias_data: bytes = b"",
         # Table 7.5: Talker Alias block Info PDU content
         # talker alias blocks 1,2,3 use "talker_alias_data" field, since data are 56bits (7bytes)
     ):
@@ -57,9 +57,9 @@ class FullLinkControl(BytesInterface, BitsInterface):
         self.position_error: Optional[PositionError] = position_error
         self.longitude: float = longitude
         self.latitude: float = latitude
-        self.talker_alias_data_format: Optional[
-            TalkerAliasDataFormat
-        ] = talker_alias_data_format
+        self.talker_alias_data_format: Optional[TalkerAliasDataFormat] = (
+            talker_alias_data_format
+        )
         self.talker_alias_data_length: int = talker_alias_data_length
         self.talker_alias_data_msb: bool = talker_alias_data_msb in (True, 1)
         self.talker_alias_data: bytes = talker_alias_data

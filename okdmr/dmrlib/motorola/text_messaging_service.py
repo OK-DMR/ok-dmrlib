@@ -145,9 +145,9 @@ class TextMessagingService(BytesInterface, LoggingTrait):
     ) -> None:
         self.header: FirstHeader = first_header
         self.address: bytes = address
-        self.availability_header: Optional[
-            AvailabilitySecondHeader
-        ] = availability_header
+        self.availability_header: Optional[AvailabilitySecondHeader] = (
+            availability_header
+        )
         self.sequence_number: Optional[int] = sequence_number
         self.encoding: Optional[TMSEncoding] = encoding
         self.message: Optional[bytes] = message

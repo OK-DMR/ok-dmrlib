@@ -157,6 +157,7 @@ class P2PDatagramProtocol(DatagramProtocol, LoggingTrait):
     def datagram_received(self, data: bytes, address: ADDRESS_TYPE) -> None:
         packet_type = self.command_get_type(data)
         is_command = self.packet_is_command(data)
+        self.log_debug(f"datagram_received {data.hex()} from: {address}")
         # must be handled outside
         # self.settings.ensure_repeater_data(address)
         if is_command:
