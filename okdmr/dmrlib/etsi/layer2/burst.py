@@ -193,7 +193,9 @@ class Burst(BytesInterface):
         raise ValueError("Cannot get colour code, no emb and no slot_type")
 
     def __repr__(self) -> str:
-        status: str = f"[{self.sync_or_embedded_signalling.name}] "
+        status: str = (
+            f"BURST[{self.as_bytes().hex()}] [{self.sync_or_embedded_signalling.name}] "
+        )
 
         if self.is_vocoder:
             status += f" [{self.voice_burst}]"

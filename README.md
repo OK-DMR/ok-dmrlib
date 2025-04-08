@@ -105,10 +105,15 @@ Transport Format (UDT Format), UDP Port Identifier (SPID/DPID), IP Address Ident
 ### Available CLI tools
 
 - dmrlib-pcap-tool - PCAP/PCAPNG traffic description and data extraction
-- dmrlib-dmr-burst - Describe full Tier-II burst (33 bytes)
+- dmrlib-dmr-burst - Describe full Tier-II burst (33 bytes) - assumes the burst type is Data &amp; Control
+- dmrlib-dmr-voiceburst - Describe full Tier-II burst (33 bytes) - assumes the burst type is Vocoder
 - dmrlib-dmr-header - Describe DMR Data Header
+- dmrlib-dmr-csbk - Describe CSBK PDU
+- dmrlib-full-lc - Describe Full LC (Link Control) PDU
 - dmrlib-dmr-ipudp - Describe DMR UDP/IPv4 Compressed data (header + user payload)
+- dmrlib-dsd-fme - Describes content of symbol dump from DSD-FME+
 - dmrlib-hytera-hstrp - Hytera Simple Transport Protocol
+- dmrlib-hytera-ipsc - Hytera IP Site Connect protocol
 - dmrlib-hytera-hdap - Hytera DMR Application Protocol
 - dmrlib-hytera-hrnp - Hytera Radio Network Protocol
 - dmrlib-hytera-lp - Hytera Location Protocol
