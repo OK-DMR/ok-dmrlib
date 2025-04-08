@@ -53,6 +53,10 @@ class Burst(BytesInterface):
             SyncPatterns.MsSourcedVoice,
             SyncPatterns.BsSourcedVoice,
         ]
+        # automatically set correct burst type for vocoder burst-center patterns
+        if self.is_voice_superframe_start:
+            burst_type = BurstTypes.Vocoder
+
         # set initial value, subsequent bursts must be detected and marked manually
         self.is_vocoder: bool = self.is_voice_superframe_start
         self.voice_burst: VoiceBursts = (
@@ -70,6 +74,9 @@ class Burst(BytesInterface):
                 SyncPatterns.MsSourcedData,
             ]
         )
+        # automatically set correct burst type for data burst-center patterns
+        if self.is_data_or_control:
+            burst_type = BurstTypes.DataAndControl
 
         self.has_emb: bool = (
             self.sync_or_embedded_signalling == SyncPatterns.EmbeddedSignalling

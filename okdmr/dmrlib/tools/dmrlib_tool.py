@@ -17,7 +17,18 @@ from okdmr.dmrlib.tools.pcap_tool import EmbeddedExtractor
 class DmrlibTool(ProtocolTool):
     @staticmethod
     def burst() -> None:
-        ProtocolTool._impl(protocol="DMR Burst (72 bytes)", impl=Burst)
+        ProtocolTool._impl(
+            protocol="DMR Burst (72 bytes) - Data & Control - will correctly handle MS/BS/TDMA Sourced Data/Voice bursts, might get confused on Vocoder bursts with embedded signalling",
+            impl=Burst,
+        )
+
+    @staticmethod
+    def voiceburst() -> None:
+        ProtocolTool._impl(
+            protocol="DMR Burst (72 bytes) - Vocoder - explicit",
+            impl=Burst,
+            extra_arguments={"burst_type": BurstTypes.Vocoder},
+        )
 
     @staticmethod
     def header() -> None:

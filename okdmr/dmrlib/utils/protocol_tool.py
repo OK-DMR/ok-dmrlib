@@ -1,6 +1,6 @@
 import sys
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
-from typing import Type, Optional, List
+from typing import Type, Optional, List, Dict
 
 from okdmr.dmrlib.utils.bytes_interface import BytesInterface
 
@@ -18,7 +18,10 @@ class ProtocolTool:
 
     @staticmethod
     def _impl(
-        protocol: str, impl: Type[BytesInterface], arguments: Optional[List[str]] = None
+        protocol: str,
+        impl: Type[BytesInterface],
+        arguments: Optional[List[str]] = None,
+        extra_arguments: Optional[Dict[str, any]] = None,
     ) -> None:
         args = ProtocolTool._args(protocol=protocol).parse_args(
             sys.argv[1:] if (not arguments or not len(arguments)) else arguments
@@ -26,7 +29,10 @@ class ProtocolTool:
         for hex_msg in args.hex:
             print(hex_msg)
             try:
-                pdu = impl.from_bytes(bytes.fromhex(hex_msg))
+                pdu = impl.from_bytes(
+                    bytes.fromhex(hex_msg),
+                    **extra_arguments if extra_arguments else dict(),
+                )
                 print(repr(pdu))
             except Exception as e:
                 print(e, file=sys.stderr)
