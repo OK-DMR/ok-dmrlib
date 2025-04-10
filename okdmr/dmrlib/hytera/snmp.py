@@ -4,9 +4,6 @@ import string
 import sys
 from typing import Union, Literal, Dict
 
-import puresnmp
-import puresnmp.exc
-
 from okdmr.dmrlib.utils.logging_trait import LoggingTrait
 
 KNOWN_SNMP_COMMUNITIES = Union[Literal["hytera"], Literal["public"]]
@@ -131,6 +128,9 @@ class SNMP(LoggingTrait):
         first_try: bool = True,
         timeout_secs: int = 2,
     ) -> Dict[str, any]:
+        # do not import sooner, so it's not required package on install
+        import puresnmp
+
         is_success: bool = False
 
         snmp_data: Dict[str, any] = {}
@@ -164,7 +164,7 @@ class SNMP(LoggingTrait):
             self.log_error("SNMP failed to obtain repeater info", se)
         except (
             asyncio.exceptions.CancelledError,
-            puresnmp.exc.Timeout,
+            puresnmp.api,
             asyncio.exceptions.TimeoutError,
             TimeoutError,
         ) as e:
@@ -247,7 +247,7 @@ if __name__ == "__main__":
 
     # optionally community from CLI invokation
     community: KNOWN_SNMP_COMMUNITIES = (
-        sys.argv[2] if len(sys.argv) > 2 else DEFAULT_SNMP_COMMUNITY
+        sys.argv[2].lower() if len(sys.argv) > 2 else DEFAULT_SNMP_COMMUNITY
     )
     community = (
         community if community in ("public", "hytera") else DEFAULT_SNMP_COMMUNITY

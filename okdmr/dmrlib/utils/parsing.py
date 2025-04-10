@@ -51,7 +51,8 @@ def try_parse_packet(udpdata: bytes) -> Optional[KaitaiStruct]:
         # known unsupported, that incidentally gets decoded as Hytera IPSC packet
         if udpdata[:4] == b"USRP":
             return None
-    finally:
+    except BaseException as e:
+        # basically only cases where udpdata is not at least 4 bytes long
         pass
 
     # Try MMDVM/Homebrew packets

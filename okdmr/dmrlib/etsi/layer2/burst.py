@@ -58,7 +58,17 @@ class Burst(BytesInterface):
             burst_type = BurstTypes.Vocoder
 
         # set initial value, subsequent bursts must be detected and marked manually
-        self.is_vocoder: bool = self.is_voice_superframe_start
+        self.is_vocoder: bool = (
+            self.is_voice_superframe_start or burst_type == BurstTypes.Vocoder
+        ) and not (
+            self.sync_or_embedded_signalling
+            in [
+                SyncPatterns.Tdma1Data,
+                SyncPatterns.Tdma2Data,
+                SyncPatterns.BsSourcedData,
+                SyncPatterns.MsSourcedData,
+            ]
+        )
         self.voice_burst: VoiceBursts = (
             VoiceBursts.VoiceBurstA
             if self.is_voice_superframe_start
@@ -74,6 +84,7 @@ class Burst(BytesInterface):
                 SyncPatterns.MsSourcedData,
             ]
         )
+
         # automatically set correct burst type for data burst-center patterns
         if self.is_data_or_control:
             burst_type = BurstTypes.DataAndControl
@@ -104,7 +115,7 @@ class Burst(BytesInterface):
                 bits=self.info_bits_original, data_type=self.data_type
             )
         )
-        # variables not standardized in ETSI, used for various DMR protocols processing
+        # variables not standardized in ETSI Layer II Burst, used for various DMR protocols processing
         self.timeslot: int = 1
         self.hytera_ipsc_original: Optional[IpSiteConnectProtocol] = None
         self.source_radio_id: int = 0
@@ -199,6 +210,7 @@ class Burst(BytesInterface):
 
         if self.is_vocoder:
             status += f" [{self.voice_burst}]"
+            status += f" [VOCODER BYTES: {self.voice_bits.tobytes().hex()}]"
 
         if self.has_emb:
             status += repr(self.emb)

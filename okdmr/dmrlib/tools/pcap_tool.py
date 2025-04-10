@@ -82,16 +82,16 @@ class IPSCAnalyze:
             data=data, packet=packet, hide_unknown=True, silent=True
         )
         if isinstance(kaitai_pkt, IpSiteConnectProtocol) and burst:
-            rowkey = (kaitai_pkt.slot_type, kaitai_pkt.frame_type)
+            stats_key = (kaitai_pkt.slot_type, kaitai_pkt.frame_type)
             data = burst.extract_data()
             if not burst.is_vocoder and data:
-                # prettyprint(kaitai_pkt)
-                row = self.map.get(rowkey, dict())
-                subrowkey = f"voice" if burst.is_vocoder else data.__class__.__name__
-                row[data.__class__.__name__] = row.get(data.__class__.__name__, 0) + 1
-                self.map[rowkey] = row
+                row = self.map.get(stats_key, dict())
+                sub_key = f"voice" if burst.is_vocoder else data.__class__.__name__
+                row[sub_key] = row.get(sub_key, 0) + 1
+                self.map[stats_key] = row
 
     def print_stats(self):
+        print(f"IPSC STATISTICS")
         for (slot, frame), dt_stats in self.map.items():
             print(f"SLOT: {slot} FRAME: {frame}")
             for dt, dt_count in dt_stats.items():
