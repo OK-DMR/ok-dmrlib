@@ -1,7 +1,6 @@
 from bitarray import bitarray
-from bitarray.util import ba2int
-
 from okdmr.dmrlib.etsi.layer2.burst import Burst
+
 from okdmr.dmrlib.etsi.layer2.elements.burst_types import BurstTypes
 from okdmr.dmrlib.etsi.layer2.elements.data_types import DataTypes
 
@@ -27,8 +26,7 @@ class HyteraIPSCSync(Burst):
         [EE EE] - slot type - "SYNC" in this case
         [55 55] - color code "5"
         [11 11] - frame type - "voice sync" in this case
-        [40 00 E2 08] - unknown data (4 bytes)
-        [01] - call type - "group call" in this case, 00 means "private call"
+        [40 00] - unknown data (2 bytes)
 
         --- IPSC DMR Data payload begin ---
 
@@ -47,7 +45,8 @@ class HyteraIPSCSync(Burst):
 
         --- IPSC DMR Data payload end ---
 
-        [E2 08 01] - unknown data, but matches end of "unknown data (4 bytes) and call type" fields from before payload
+        [E2 08] - unknown data (2 bytes)
+        [01] - call type - "group call" in this case, 00 means "private call"
 
         [00 6F 00 00] -> U4LE destination radio/repeater, (16)[00006F] == (10)[111]
         [00 FA 37 23] -> U4LE source radio/repeater, (16)[2337FA] == (10)[2308090]
@@ -68,15 +67,7 @@ class HyteraIPSCSync(Burst):
         return self.full_bits
 
     def __repr__(self):
-        return (
-            f"[IPSC SYNC] "
-            f"BURST[{self.as_bytes().hex()}] "
-            f"[SOURCE: {self.source_radio_id}] "
-            f"[TARGET: {self.target_radio_id}] "
-            f"[TS: {self.timeslot}] "
-            f"[IPSC_SLOT: {self.hytera_ipsc_original.slot_type}] "
-            f"[IPSC_PACKET: {self.hytera_ipsc_original.packet_type}]"
-        )
+        return repr(self.hytera_ipsc)
 
     @staticmethod
     def from_bits(bits: bitarray, burst_type: BurstTypes) -> "HyteraIPSCSync":

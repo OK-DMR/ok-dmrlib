@@ -1,9 +1,7 @@
-from typing import Optional, Literal
+from typing import Optional, Literal, Union
 
+import okdmr.dmrlib.hytera.ipsc_elements.slot_type
 from bitarray import bitarray
-from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
-from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
-
 from okdmr.dmrlib.etsi.fec.bptc_196_96 import BPTC19696
 from okdmr.dmrlib.etsi.fec.trellis import Trellis34
 from okdmr.dmrlib.etsi.layer2.elements.burst_types import BurstTypes
@@ -19,11 +17,14 @@ from okdmr.dmrlib.etsi.layer2.pdu.rate12_data import Rate12Data
 from okdmr.dmrlib.etsi.layer2.pdu.rate1_data import Rate1Data
 from okdmr.dmrlib.etsi.layer2.pdu.rate34_data import Rate34Data
 from okdmr.dmrlib.etsi.layer2.pdu.slot_type import SlotType
-from okdmr.dmrlib.hytera.hytera_constants import IPSC_KAITAI_VOICE_SLOTS
+from okdmr.dmrlib.hytera.hytera_ipsc import HyteraIPSC
+from okdmr.dmrlib.hytera.ipsc_elements.timeslot import Timeslot
 from okdmr.dmrlib.transmission.transmission_types import TransmissionTypes
-from okdmr.dmrlib.utils.bits_bytes import bits_to_bytes, bytes_to_bits, byteswap_bytes
+from okdmr.dmrlib.utils.bits_bytes import bits_to_bytes, bytes_to_bits
 from okdmr.dmrlib.utils.bits_interface import BitsInterface
 from okdmr.dmrlib.utils.bytes_interface import BytesInterface
+from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
+from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
 
 
 class Burst(BytesInterface):
@@ -117,7 +118,7 @@ class Burst(BytesInterface):
         )
         # variables not standardized in ETSI Layer II Burst, used for various DMR protocols processing
         self.timeslot: int = 1
-        self.hytera_ipsc_original: Optional[IpSiteConnectProtocol] = None
+        self.hytera_ipsc: Optional[HyteraIPSC] = None
         self.source_radio_id: int = 0
         self._target_radio_id: int = 0
         self._target_radio_id_resolve_attempt: bool = False
@@ -276,41 +277,52 @@ class Burst(BytesInterface):
         return b
 
     @staticmethod
-    def from_hytera_ipsc(ipsc: IpSiteConnectProtocol) -> "Burst":
-        fullbytes: bytes = byteswap_bytes(ipsc.ipsc_payload)[:-1]
-        fullbits: bitarray = bytes_to_bits(fullbytes)
+    def from_hytera_ipsc(ipsc: Union[bytes, IpSiteConnectProtocol]) -> "Burst":
+        ipsc: HyteraIPSC = (
+            HyteraIPSC.from_ipsc_bytes(ipsc)
+            if isinstance(ipsc, bytes)
+            else HyteraIPSC.from_kaitai(ipsc)
+        )
+
+        full_bytes: bytes = ipsc.payload
+        full_bits: bitarray = bytes_to_bits(full_bytes)
 
         b: Optional[Burst] = None
         # special cases for IPSC Sync / Wakeup
-        if ipsc.slot_type == IpSiteConnectProtocol.SlotTypes.slot_type_sync:
+        if (
+            ipsc.slot_type
+            == okdmr.dmrlib.hytera.ipsc_elements.slot_type.SlotType.VoiceOrDataSync
+        ):
             # prevent circular dependency
             from okdmr.dmrlib.hytera.hytera_ipsc_sync import HyteraIPSCSync
 
-            b = HyteraIPSCSync.from_bits(bits=fullbits, burst_type=BurstTypes.Undefined)
-        elif ipsc.is_wakeup:
+            b = HyteraIPSCSync.from_bits(
+                bits=full_bits, burst_type=BurstTypes.Undefined
+            )
+        elif ipsc.is_wakeup():
             # prevent circular dependency
             from okdmr.dmrlib.hytera.hytera_ipsc_wakeup import HyteraIPSCWakeup
 
             b = HyteraIPSCWakeup.from_bits(
-                bits=fullbits, burst_type=BurstTypes.Undefined
+                bits=full_bits, burst_type=BurstTypes.Undefined
             )
         else:
             b = Burst(
-                full_bits=fullbits,
+                full_bits=full_bits,
                 burst_type=(
                     BurstTypes.Vocoder
-                    if ipsc.slot_type in IPSC_KAITAI_VOICE_SLOTS
+                    if okdmr.dmrlib.hytera.ipsc_elements.slot_type.SlotType.is_vocoder(
+                        ipsc.slot_type
+                    )
                     else BurstTypes.DataAndControl
                 ),
             )
 
-        b.hytera_ipsc_original = ipsc
+        b.hytera_ipsc = ipsc
         b.set_sequence_no(ipsc.sequence_number)
         b.source_radio_id = ipsc.source_radio_id
         b.target_radio_id = ipsc.destination_radio_id
-        b.timeslot = (
-            1 if ipsc.timeslot_raw == IpSiteConnectProtocol.Timeslots.timeslot_1 else 2
-        )
+        b.timeslot = 1 if ipsc.timeslot == Timeslot.Timeslot_1 else 2
         return b
 
     def interleave(self) -> bitarray:

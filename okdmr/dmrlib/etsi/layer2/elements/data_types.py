@@ -29,5 +29,4 @@ class DataTypes(enum.Enum):
             0b0000 <= value <= 0b1111
         ), f"DT (Data Type) value out of range, got {value}"
 
-        if 0b1100 <= value <= 0b1111:
-            return DataTypes.Reserved
+        return DataTypes.Reserved

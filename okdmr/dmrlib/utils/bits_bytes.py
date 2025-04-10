@@ -78,3 +78,17 @@ def bitarray_to_numpy_array(bits: bitarray) -> numpy.ndarray:
     :return:
     """
     return numpy.array(bits.tolist())
+
+
+def half_byte_to_bytes(half_byte: int, output_bytes: int = 2) -> bytes:
+    """
+    Turns int (such as color code value 0xA) into 0xAAAA
+
+    Args:
+        half_byte: input value in range 0x0-0xF
+        output_bytes: by default 2 bytes or as configured
+
+    Returns:
+        half_byte_to_bytes(half_byte: 0xA, output_bytes: 2) -> 0xAAAA
+    """
+    return bytes([half_byte | half_byte << 4]) * output_bytes

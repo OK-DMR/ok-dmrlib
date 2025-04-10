@@ -91,7 +91,6 @@ class IPSCAnalyze:
                 self.map[stats_key] = row
 
     def print_stats(self):
-        print(f"IPSC STATISTICS")
         for (slot, frame), dt_stats in self.map.items():
             print(f"SLOT: {slot} FRAME: {frame}")
             for dt, dt_count in dt_stats.items():

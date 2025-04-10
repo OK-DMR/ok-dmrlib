@@ -100,6 +100,7 @@ def test_burst_info_hytera():
         # common features
         if burst.has_emb or burst.has_slot_type:
             assert burst.colour_code == ipsc.color_code
+
         assert len(repr(burst))
 
 
